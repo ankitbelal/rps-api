@@ -12,7 +12,7 @@ import { User } from 'src/user/user.entity';
       useFactory: (config: ConfigService) => ({
         type: 'mysql',
         host: config.get<string>('DB_HOST'),
-        port: config.get<number>('DB_PORT'),
+        port: Number(config.get<string>('DB_PORT')),
         username: config.get<string>('DB_USERNAME'),
         password: config.get<string>('DB_PASSWORD'),
         database: config.get<string>('DB_NAME'),
@@ -20,7 +20,6 @@ import { User } from 'src/user/user.entity';
         migrations: ['src/migrations/*.ts'],
         synchronize: true, // dev only
         ssl: { rejectUnauthorized: false }, // ✅ enable SSL for Aiven
-
       }),
     }),
     TypeOrmModule.forFeature([User]), //  register repositories globally
