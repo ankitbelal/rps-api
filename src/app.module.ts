@@ -4,8 +4,6 @@ import { AppService } from './app.service';
 import { ConfigModule,ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
-import { config } from 'process';
-import { UsersModule } from './user/users.module';
 import { UserModule } from './user/user.module';
 import { DatabaseModule } from './database/database.module';
 
