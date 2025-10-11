@@ -19,6 +19,8 @@ import { User } from 'src/user/user.entity';
         entities: [User], // ✅ register entities here
         migrations: ['src/migrations/*.ts'],
         synchronize: true, // dev only
+        ssl: { rejectUnauthorized: false }, // ✅ enable SSL for Aiven
+
       }),
     }),
     TypeOrmModule.forFeature([User]), //  register repositories globally
