@@ -21,7 +21,7 @@ export class AuthService {
     const platform = request.headers['user-agent'] || 'unknown';
     const user = await this.userService.loginValidateUser(loginDTO);
     if (!user) throw new UnauthorizedException('Invalid credentials');
-    await this.userService.logActivity(user, ip, platform, action);
+    await this.userService.logActivity(user.id, ip, platform, action);
     const payload = {
       userId: user.id,
       email: user.email,
@@ -104,7 +104,7 @@ export class AuthService {
     const user = request.user;
     const ip = request.clientIp;
     const platform = request.platform;
-    await this.userService.logActivity(user.id, ip, platform, action);
+    await this.userService.logActivity(user.userId, ip, platform, action);
     res.clearCookie('access_token');
     res.clearCookie('refresh_token');
     return {statusCode:200,status:"success", message: 'Logged out successfully' };

@@ -25,9 +25,9 @@ export class UserService {
     }
   }
 
-  async logActivity(user, ip, platform, action) {
+  async logActivity(userId, ip, platform, action) {
     const activity = await this.activityRepo.create({
-      user,
+      userId,
       ipAddress: ip,
       platform,
       action: action,
