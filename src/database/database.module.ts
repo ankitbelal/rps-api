@@ -18,10 +18,10 @@ const entities = [User, UserActivity];
         username: config.get<string>('DB_USERNAME'),
         password: config.get<string>('DB_PASSWORD'),
         database: config.get<string>('DB_NAME'),
-        entities: entities, // ✅ register entities here
+        entities: entities,
         migrations: ['src/migrations/*.ts'],
         synchronize: true, // dev only
-        ssl: { rejectUnauthorized: false }, // ✅ enable SSL for Aiven
+        ssl: { rejectUnauthorized: false },
       }),
     }),
     TypeOrmModule.forFeature(entities), //  register repositories globally
