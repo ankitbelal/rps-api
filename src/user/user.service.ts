@@ -34,4 +34,5 @@ export class UserService {
     });
     await this.activityRepo.save(activity);
   }
+
 }
