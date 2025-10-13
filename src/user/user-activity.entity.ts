@@ -26,7 +26,7 @@ export class UserActivity {
   @Column({ type: 'varchar', length: 255, nullable: true })
   platform: string;
 
-  @Column({ type: 'varchar', length: 45, nullable: true })
+  @Column({ type: 'varchar', length: 45, nullable: true , name:'ip_address'})
   ipAddress: string;
 
   @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
