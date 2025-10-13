@@ -36,6 +36,8 @@ export class JwtGuard implements CanActivate {
         secret: this.configService.get<string>('ACCESS_TOKEN_SECRET'),
       });
       request.user = payload;
+      request.clientIp = request.ip || request.headers['x-forwarded-for'] || 'unknown';
+      request.platform = request.headers['user-agent'] || 'unknown';
       return true;
     } catch (err) {
       throw new UnauthorizedException('Invalid or expired token');

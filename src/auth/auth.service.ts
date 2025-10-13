@@ -15,7 +15,7 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {}
 
-  async login(loginDTO: loginDTO, request,res) {
+  async login(loginDTO: loginDTO, request, res) {
     const action = 'login';
     const ip = request.ip || request.headers['x-forwarded-for'] || 'unknown';
     const platform = request.headers['user-agent'] || 'unknown';
@@ -42,7 +42,7 @@ export class AuthService {
       expiresIn: REFRESH_TOKEN_EXPIRES_IN,
     });
 
-        res.cookie('access_token', accessToken, {
+    res.cookie('access_token', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
@@ -57,6 +57,8 @@ export class AuthService {
     });
 
     return {
+      statusCode:200,
+      status:"success",
       message: 'logged in successfully',
       accessToken: accessToken,
       refreshToken: refreshToken,
@@ -93,8 +95,18 @@ export class AuthService {
       );
       return { accessToken: newAccessToken };
     } catch (err) {
-      throw new UnauthorizedException('Invalid refresh token');
+      throw new UnauthorizedException('Invalid access token');
     }
   }
 
+  async logout(request, res) {
+    const action = 'logout';
+    const user = request.user;
+    const ip = request.clientIp;
+    const platform = request.platform;
+    await this.userService.logActivity(user.id, ip, platform, action);
+    res.clearCookie('access_token');
+    res.clearCookie('refresh_token');
+    return {statusCode:200,status:"success", message: 'Logged out successfully' };
+  }
 }

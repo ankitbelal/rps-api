@@ -19,5 +19,11 @@ export class AuthController {
     return this.authService.refreshToken(refreshToken);
   }
   
+  @Post('logout')
+  @HttpCode(200)
+  async logout(@Req() req:Request, @Res({passthrough:true}) res:Response){
+   return await this.authService.logout(req, res);
 
+
+  }
 }
