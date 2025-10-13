@@ -37,10 +37,10 @@ userType:UserType;
 @Column({type:"enum",enum:Status, default:Status.PENDING})
 status:Status;
 
-@CreateDateColumn({type:"timestamp"})
+@CreateDateColumn({type:"timestamp",name:'created_at'})
 createdAt:Date;
 
-@UpdateDateColumn({type:"timestamp"})
+@UpdateDateColumn({type:"timestamp",name:'updated_at'})
 updatedAt:Date;
 
 @OneToMany(() => UserActivity, (activity) => activity.user)

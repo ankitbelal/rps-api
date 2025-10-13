@@ -14,18 +14,18 @@ export class program {
     @Column()
     faculty:string;
 
-    @Column({type:'int',nullable:true})
+    @Column({type:'int',nullable:true,name:'total_subjects'})
     totalSubjects:number
 
     @Column()
     totalSemester:number;
 
-    @Column({type:'int',nullable:true})
+    @Column({type:'int',nullable:true, name:'total_credits'})
     totalCredits:number;
 
-    @Column({type:'int',default:4})
+    @Column({type:'int',default:4,name:'duration_in_years'})
     durationInYears:number;
 
-    @CreateDateColumn({type:'timestamp'})
+    @CreateDateColumn({type:'timestamp',name:'created_at'})
     createdAt:Date;
 }

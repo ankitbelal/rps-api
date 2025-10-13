@@ -29,6 +29,6 @@ export class UserActivity {
   @Column({ type: 'varchar', length: 45, nullable: true })
   ipAddress: string;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
   createdAt: Date;
 }
