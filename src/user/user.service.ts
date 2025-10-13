@@ -18,7 +18,7 @@ export class UserService {
   async loginValidateUser(loginDTO: loginDTO) {
     const { email, password } = loginDTO;
     const user = await this.userRepo.findOne({ where: { email } });
-    if (user && (await bcrypt.compare(password, user.password))) {
+    if (user && (await bcrypt.compare(password, user.password) &&user.status=="A")) {
       return user;
     } else {
       return null;
