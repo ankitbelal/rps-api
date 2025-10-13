@@ -2,7 +2,9 @@ import { Global, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { User } from 'src/user/user.entity';
+import { UserActivity } from 'src/user/user-activity.entity';
 
+const entities = [User, UserActivity];
 @Global()
 @Module({
   imports: [
@@ -16,13 +18,13 @@ import { User } from 'src/user/user.entity';
         username: config.get<string>('DB_USERNAME'),
         password: config.get<string>('DB_PASSWORD'),
         database: config.get<string>('DB_NAME'),
-        entities: [User], // ✅ register entities here
+        entities: entities, // ✅ register entities here
         migrations: ['src/migrations/*.ts'],
         synchronize: true, // dev only
         ssl: { rejectUnauthorized: false }, // ✅ enable SSL for Aiven
       }),
     }),
-    TypeOrmModule.forFeature([User]), //  register repositories globally
+    TypeOrmModule.forFeature(entities), //  register repositories globally
   ],
   exports: [TypeOrmModule], // exports connection + repositories
 })
