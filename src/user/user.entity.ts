@@ -13,7 +13,7 @@ PENDING="P",
 DISABLED="D"
 }
 
-@Entity('users')
+@Entity("users")
 export class User{
 
 @PrimaryGeneratedColumn()
@@ -31,16 +31,16 @@ password:string;
 @Column({type:"varchar",length:10})
 contact:string;
 
-@Column({name:'user_type', type:"enum",enum:UserType,default:UserType.TEACHER})
+@Column({name:"user_type", type:"enum",enum:UserType,default:UserType.TEACHER})
 userType:UserType;
 
 @Column({type:"enum",enum:Status, default:Status.PENDING})
 status:Status;
 
-@CreateDateColumn({type:"timestamp",name:'created_at'})
+@CreateDateColumn({type:"timestamp",name:"created_at"})
 createdAt:Date;
 
-@UpdateDateColumn({type:"timestamp",name:'updated_at'})
+@UpdateDateColumn({type:"timestamp",name:"updated_at"})
 updatedAt:Date;
 
 @OneToMany(() => UserActivity, (activity) => activity.user)

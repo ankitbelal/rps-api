@@ -5,30 +5,30 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
-} from 'typeorm';
-import { User } from './user.entity';
+} from "typeorm";
+import { User } from "./user.entity";
 
-@Entity('user_activity')
+@Entity("user_activity")
 export class UserActivity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ name: 'user_id' })
+  @Column({ name: "user_id" })
   userId: number;
 
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'user_id' })
+  @ManyToOne(() => User, { onDelete: "CASCADE" })
+  @JoinColumn({ name: "user_id" })
   user: User;
 
   @Column({ nullable: true })
   action: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: "varchar", length: 255, nullable: true })
   platform: string;
 
-  @Column({ type: 'varchar', length: 45, nullable: true , name:'ip_address'})
+  @Column({ type: "varchar", length: 45, nullable: true , name:"ip_address"})
   ipAddress: string;
 
-  @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
+  @CreateDateColumn({ type: "timestamp", name: "created_at" })
   createdAt: Date;
 }

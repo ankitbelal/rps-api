@@ -5,6 +5,7 @@ import { User } from './user.entity';
 import { Repository } from 'typeorm';
 import { UserActivity } from './user-activity.entity';
 import * as bcrypt from 'bcrypt';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export class UserService {
@@ -18,7 +19,11 @@ export class UserService {
   async loginValidateUser(loginDTO: loginDTO) {
     const { email, password } = loginDTO;
     const user = await this.userRepo.findOne({ where: { email } });
-    if (user && (await bcrypt.compare(password, user.password) &&user.status=="A")) {
+    if (
+      user &&
+      (await bcrypt.compare(password, user.password)) &&
+      user.status == 'A'
+    ) {
       return user;
     } else {
       return null;
@@ -35,4 +40,17 @@ export class UserService {
     await this.activityRepo.save(activity);
   }
 
+  async createUser(name, email, contact, userType, status) {
+    const password = randomBytes(10);
+    const user = await this.userRepo.create({
+      email,
+      password: password.toString(),
+      name,
+      contact,
+      userType,
+      status,
+    });
+
+    await this.userRepo.save(user);
+  }
 }
