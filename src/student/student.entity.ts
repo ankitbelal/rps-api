@@ -1,12 +1,16 @@
-import { Program } from "src/program/program.entity";
-import { Column, Entity, ManyToOne } from "typeorm";
+import { Program } from 'src/program/program.entity';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
-@Entity("Student")
+@Entity('Student')
 export class Student {
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @Column({name:"program_id"})
-    programId:number;
+  @Column({ name: 'program_id' })
+  programId: number;
 
-    @ManyToOne(()=>Program, program=>program.students,{onDelete:"CASCADE"})
-    program:Program;
+  @ManyToOne(() => Program, (program) => program.students, {
+    onDelete: 'CASCADE',
+  })
+  program: Program;
 }

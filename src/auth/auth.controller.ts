@@ -10,13 +10,13 @@ export class AuthController {
   @Public()
   @Post('login')
   @HttpCode(200)
-  login(@Body() loginDTO: loginDTO, @Req() req:Request, @Res({passthrough:true}) res:Response) {
-    return this.authService.login(loginDTO, req, res);
+ async login(@Body() loginDTO: loginDTO, @Req() req:Request, @Res({passthrough:true}) res:Response) {
+    return await this.authService.login(loginDTO, req, res);
   }
 
   @Post('refresh-token')
   async refreshToken(@Body('refreshToken') refreshToken: string) {
-    return this.authService.refreshToken(refreshToken);
+    return await this.authService.refreshToken(refreshToken);
   }
   
   @Post('logout')

@@ -42,10 +42,10 @@ export class Program {
   @UpdateDateColumn({ type: "timestamp", name: "updated_at" })
   updatedAt: Date;
 
-  @OneToMany(() => Subject, (subject) => subject.program)
+  @OneToMany(() => Subject, (subject) => subject.program,{cascade:true})
   subjects: Subject[];
 
-  @OneToMany(() => Student, (student) => student.program)
+  @OneToMany(() => Student, (student) => student.program,{cascade:true})
   students: Student[];
 
 }

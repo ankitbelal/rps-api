@@ -43,7 +43,7 @@ createdAt:Date;
 @UpdateDateColumn({type:"timestamp",name:"updated_at"})
 updatedAt:Date;
 
-@OneToMany(() => UserActivity, (activity) => activity.user)
+@OneToMany(() => UserActivity, (activity) => activity.user,{cascade:true,onDelete:'CASCADE'})
 activities: UserActivity[]; // Collection of all activities
 
 }
