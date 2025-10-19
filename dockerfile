@@ -44,4 +44,5 @@ EXPOSE 3000
 RUN echo "Production dist contents:" && ls -l dist
 
 # Start the app
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/src/main.js"]
+
