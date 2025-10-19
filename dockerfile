@@ -1,48 +1,41 @@
-# Multi-stage build for production
-FROM node:24-alpine AS builder
+# ===== Stage 1: Builder =====
+FROM node:24-bullseye AS builder
 
-WORKDIR /app
+# Set working directory
+WORKDIR /usr/src/app
 
 # Copy package files
 COPY package*.json ./
-COPY tsconfig*.json ./
-COPY nest-cli.json ./
 
-# Install all dependencies including dev dependencies for building
+# Install all dependencies (dev + prod)
 RUN npm ci
 
-# Copy source code
+# Copy all source code
 COPY . .
 
-# Build the application and show output
-RUN npm run build && ls -la dist/
+# Build the NestJS app (outputs to dist/)
+RUN npm run build
 
-# Production stage
-FROM node:24-alpine AS production
+# ===== Stage 2: Production =====
+FROM node:24-slim
 
-WORKDIR /app
+# Set working directory (match the builder output copy path)
+WORKDIR /usr/src/app
 
-# Create non-root user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nestjs -u 1001
+# Set NODE_ENV
+ENV NODE_ENV=production
 
-# Copy package files
+# Copy only package files
 COPY package*.json ./
 
 # Install only production dependencies
-RUN npm ci --only=production --no-audit
+RUN npm ci --omit=dev
 
-# Copy built application from builder stage
-COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
-
-# Verify the copied files
-RUN ls -la dist/
-
-# Switch to non-root user
-USER nestjs
+# Copy built app from builder stage
+COPY --from=builder /usr/src/app/dist ./dist
 
 # Expose port
 EXPOSE 3000
 
-# Start the application
-CMD ["node", "dist/main"]
+# Start the app
+CMD ["node", "dist/main.js"]
