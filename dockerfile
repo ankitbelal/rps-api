@@ -16,17 +16,19 @@ RUN npm run build
 FROM node:24-slim
 WORKDIR /usr/src/app
 
-# Set production environment
 ENV NODE_ENV=production
 
-# Copy only package files
+# Copy package files
 COPY package*.json ./
 
 # Install only production dependencies
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev  # or `npm install --omit=dev` if no lockfile
 
-# Copy the built app from builder
+# Copy built app
 COPY --from=builder /usr/src/app/dist ./dist
+
+# Debug: verify dist contents
+RUN ls -R /usr/src/app/dist
 
 # Expose app port
 EXPOSE 3000
