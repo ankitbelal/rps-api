@@ -1,26 +1,33 @@
+# ===== Stage 1: Build =====
 FROM node:24-bullseye AS builder
 WORKDIR /usr/src/app
 
-# Install dependencies
+# Copy package files and install all deps (including dev)
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
-# Copy source code
+# Copy all source files
 COPY . .
 
-# Build the project
+# Build the app (creates /dist)
 RUN npm run build
 
-FROM node:24-bullseye
+
+# ===== Stage 2: Production =====
+FROM node:24-slim
 WORKDIR /usr/src/app
 
-# Copy build artifacts and dependencies
-COPY --from=builder /usr/src/app/dist ./dist
-COPY --from=builder /usr/src/app/node_modules ./node_modules
-COPY --from=builder /usr/src/app/package*.json ./
+ENV NODE_ENV=production
 
-# Expose port
+# Copy only needed files
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+# Copy built app from builder
+COPY --from=builder /usr/src/app/dist ./dist
+
+# Expose app port
 EXPOSE 3000
 
-# Run the production build
-CMD ["npm", "run", "start:prod"]
+# Start the server
+CMD ["node", "dist/main.js"]
