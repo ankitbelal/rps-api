@@ -58,14 +58,14 @@ export class ProgramService {
 
   async update(id: number, updateProgramDto: UpdateProgramDto) {
     const program = await this.programRepo.findOne({ where: { id } });
-    if (!program) throw new NotFoundException(`Program with ${id} not found`);
+    if (!program) throw new NotFoundException(`Program with ${id} doesn't exists`);
     Object.assign(program, updateProgramDto);
     return await this.programRepo.save(program);
   }
 
   async remove(id: number) {
     const program = await this.programRepo.findOne({ where: { id } });
-    if (!program) throw new NotFoundException(`program with ${id} not found`);
+    if (!program) throw new NotFoundException(`program with ${id} doesn't exists`);
     await this.programRepo.remove(program);
   }
 }

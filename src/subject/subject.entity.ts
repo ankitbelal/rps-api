@@ -10,12 +10,6 @@ import {
   Unique,
 } from 'typeorm';
 
-export enum TYPE {
-  CORE = 'C',
-  ELECTIVE = 'E',
-  INTERNSHIP = 'I',
-}
-
 @Entity('subjects')
 @Unique(['programId', 'code']) //duplicacy of subject should be considered when program and subject are same
 export class Subject {
@@ -31,8 +25,8 @@ export class Subject {
   @Column({ type: 'int' })
   semester: number;
 
-  @Column({ type: 'enum', enum: TYPE, default: TYPE.CORE })
-  type: TYPE;
+  @Column({ type: 'varchar'})
+  type: string;
 
   @Column({ name: 'program_id' })
   programId: number;

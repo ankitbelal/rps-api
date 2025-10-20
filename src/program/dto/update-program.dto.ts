@@ -6,33 +6,33 @@ import { Type } from 'class-transformer';
 export class UpdateProgramDto extends PartialType(CreateProgramDto) {
   @IsOptional()
   @IsString()
-  name: string;
+  name?: string | undefined;
 
   @IsOptional()
   @IsString()
-  code: string;
+  code?: string | undefined;
 
   @IsOptional()
   @IsString()
-  faculty: string;
+  faculty?: string | undefined;
 
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
-  totalSubjects: number;
+  totalSubjects?: number | undefined;
 
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
-  totalSemester: number;
+  totalSemester?: number | undefined;
 
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
-  totalCredits: number;
+  totalCredits?: number | undefined;
 
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
-  durationInYears: number;
+  durationInYears?: number | undefined;
 }

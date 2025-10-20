@@ -23,7 +23,7 @@ export class ProgramController {
   @HttpCode(201)
   async create(@Body() createProgramDto: CreateProgramDto) {
     const program = await this.programService.create(createProgramDto);
-    return ApiResponse.successData(program, 'Program Created Successfully', 201);
+    return ApiResponse.successData(program, 'Program Added Successfully', 201);
   }
 
   @Get()
