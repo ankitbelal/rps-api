@@ -15,6 +15,11 @@ export class UpdateSubjectDto extends PartialType(CreateSubjectDto) {
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
+  credits?: number | undefined;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
   semester?: number | undefined;
 
   @IsOptional()

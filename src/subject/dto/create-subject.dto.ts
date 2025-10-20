@@ -8,6 +8,11 @@ export class CreateSubjectDto {
   @IsNotEmpty({ message: 'subject code is required' })
   code: string;
 
+  @IsNotEmpty({ message: 'credits is required' })
+  @IsNumber()
+  @Type(() => Number)
+  credits: number;
+
   @IsNotEmpty({ message: 'semester is required' })
   @IsNumber()
   @Type(() => Number)

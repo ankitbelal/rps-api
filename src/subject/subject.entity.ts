@@ -23,9 +23,12 @@ export class Subject {
   code: string;
 
   @Column({ type: 'int' })
+  credits: number;
+
+  @Column({ type: 'int' })
   semester: number;
 
-  @Column({ type: 'varchar'})
+  @Column({ type: 'varchar' })
   type: string;
 
   @Column({ name: 'program_id' })
