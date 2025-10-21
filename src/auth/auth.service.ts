@@ -42,23 +42,24 @@ export class AuthService {
       expiresIn: REFRESH_TOKEN_EXPIRES_IN,
     });
 
+    const isProd = process.env.NODE_ENV === 'production';
     res.cookie('access_token', accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProd,
       sameSite: 'strict',
       maxAge: 15 * 60 * 1000, // 15 minutes
     });
 
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProd,
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
-    return {
-      statusCode:200,
-      status:"success",
+    const responseBody: any = {
+      statusCode: 200,
+      status: 'success',
       message: 'logged in successfully',
       accessToken: accessToken,
       refreshToken: refreshToken,
@@ -71,6 +72,12 @@ export class AuthService {
         status: user.status,
       },
     };
+    if (!isProd) {
+      responseBody.accessToken = accessToken;
+      responseBody.refreshToken = refreshToken;
+    }
+
+    return responseBody;
   }
 
   async refreshToken(refreshToken: string) {
@@ -107,6 +114,10 @@ export class AuthService {
     await this.userService.logActivity(user.userId, ip, platform, action);
     res.clearCookie('access_token');
     res.clearCookie('refresh_token');
-    return {statusCode:200,status:"success", message: 'Logged out successfully' };
+    return {
+      statusCode: 200,
+      status: 'success',
+      message: 'Logged out successfully',
+    };
   }
 }
