@@ -4,6 +4,7 @@ import { RequestMethod, ValidationPipe } from '@nestjs/common';
 import { JwtGuard } from './auth/jwt/jwt.guard';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -23,8 +24,10 @@ async function bootstrap() {
   );
   app.enableCors({
     origin: ['http://localhost:5173', 'https://ui-rps.vercel.app'],
-    Credential:true,
+    Credential: true,
   });
+  app.use(cookieParser());
+
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();

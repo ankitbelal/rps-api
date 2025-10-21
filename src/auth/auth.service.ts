@@ -4,7 +4,7 @@ import { UserService } from 'src/user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import { UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-
+import type { Request, Response } from 'express';
 const ACCESS_TOKEN_EXPIRES_IN = '15m';
 const REFRESH_TOKEN_EXPIRES_IN = '7d';
 @Injectable()
@@ -15,7 +15,7 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {}
 
-  async login(loginDTO: loginDTO, request, res) {
+  async login(loginDTO: loginDTO, request, res:Response) {
     const action = 'login';
     const ip = request.ip || request.headers['x-forwarded-for'] || 'unknown';
     const platform = request.headers['user-agent'] || 'unknown';
@@ -42,7 +42,8 @@ export class AuthService {
       expiresIn: REFRESH_TOKEN_EXPIRES_IN,
     });
 
-    const isProd = process.env.NODE_ENV === 'production';
+    const isProd = this.configService.get<string>('NODE_ENV') === 'production';
+    console.log(isProd);
     res.cookie('access_token', accessToken, {
       httpOnly: true,
       secure: isProd,
@@ -61,8 +62,6 @@ export class AuthService {
       statusCode: 200,
       status: 'success',
       message: 'logged in successfully',
-      accessToken: accessToken,
-      refreshToken: refreshToken,
       userDetails: {
         id: user.id,
         name: user.name,
@@ -80,29 +79,30 @@ export class AuthService {
     return responseBody;
   }
 
-  async refreshToken(refreshToken: string) {
+  async refreshToken(refreshToken: string, res: Response) {
     try {
       const payload = this.jwtService.verify(refreshToken, {
-        secret:
-          this.configService.get<string>('REFRESH_TOKEN_SECRET') ||
-          'defaultAccessSecret',
+        secret: this.configService.get('REFRESH_TOKEN_SECRET'),
       });
+
       const newAccessToken = this.jwtService.sign(
+        { userId: payload.userId, email: payload.email },
         {
-          userId: payload.userId,
-          email: payload.email,
-          userType: payload.userType,
-        },
-        {
-          secret:
-            this.configService.get<string>('ACCESS_TOKEN_SECRET') ||
-            'defaultAccessSecret',
-          expiresIn: ACCESS_TOKEN_EXPIRES_IN,
+          secret: this.configService.get('ACCESS_TOKEN_SECRET'),
+          expiresIn: '15m',
         },
       );
-      return { accessToken: newAccessToken };
-    } catch (err) {
-      throw new UnauthorizedException('Invalid access token');
+
+      res.cookie('access_token', newAccessToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        maxAge: 15 * 60 * 1000,
+      });
+
+      return { message: 'Access token refreshed successfully' };
+    } catch {
+      throw new UnauthorizedException('Invalid refresh token');
     }
   }
 
