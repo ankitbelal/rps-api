@@ -47,9 +47,6 @@ export class Student {
   })
   registrationNumber: string;
 
-  @Column({ type: 'int' })
-  age: number;
-
   @Column({ type: 'enum', enum: Gender })
   gender: Gender;
 
