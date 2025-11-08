@@ -1,12 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { User } from 'src/user/user.entity';
-import { UserActivity } from 'src/user/user-activity.entity';
-import { Program } from 'src/program/program.entity';
-import { Subject } from 'src/subject/subject.entity';
-import { Student } from 'src/student/student.entity';
-const entities = [User, UserActivity,Program,Subject,Student];
+import { entities } from './entities';
 @Global()
 @Module({
   imports: [
