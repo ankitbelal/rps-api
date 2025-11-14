@@ -9,9 +9,9 @@ import {
   JoinColumn,
 } from 'typeorm';
 
-import { Subject } from 'src/subject/subject.entity';
-import { Student } from 'src/student/student.entity';
-import { Faculty } from 'src/faculty/faculty.entity';
+import { Subject } from 'src/database/entities/subject.entity';
+import { Student } from 'src/database/entities/student.entity';
+import { Faculty } from 'src/database/entities/faculty.entity';
 
 @Entity('programs')
 export class Program {

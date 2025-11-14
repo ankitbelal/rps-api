@@ -1,4 +1,4 @@
-import { Program } from 'src/program/program.entity';
+import { Program } from 'src/database/entities/program.entity';
 import {
   Column,
   CreateDateColumn,

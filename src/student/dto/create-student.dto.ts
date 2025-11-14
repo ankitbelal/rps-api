@@ -7,7 +7,7 @@ import {
   IsEnum,
   MaxDate,
 } from 'class-validator';
-import { Gender } from '../student.entity';
+import { Gender } from '../../database/entities/student.entity';
 import { Type } from 'class-transformer';
 
 export class CreateStudentDto {

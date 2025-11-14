@@ -6,7 +6,7 @@ import {
 import { CreateProgramDto } from './dto/create-program.dto';
 import { UpdateProgramDto } from './dto/update-program.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Program } from './program.entity';
+import { Program } from '../database/entities/program.entity';
 import { Repository } from 'typeorm';
 import { ProgramQueryDto } from './dto/program-query-dto';
 

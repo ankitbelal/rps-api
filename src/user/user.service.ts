@@ -1,9 +1,9 @@
 import { Injectable} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { loginDTO } from 'src/auth/dto/login.dto';
-import { User } from './user.entity';
+import { User } from '../database/entities/user.entity';
 import { Repository } from 'typeorm';
-import { UserActivity } from './user-activity.entity';
+import { UserActivity } from '../database/entities/user-activity.entity';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 

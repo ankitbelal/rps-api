@@ -6,7 +6,7 @@ import {
 import { CreateSubjectDto } from './dto/create-subject.dto';
 import { UpdateSubjectDto } from './dto/update-subject.dto';
 import { Repository } from 'typeorm';
-import { Subject } from './subject.entity';
+import { Subject } from '../database/entities/subject.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SubjectQueryDto } from './dto/subject-query-dto';
 

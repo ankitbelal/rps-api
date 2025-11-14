@@ -1,5 +1,5 @@
-import { User } from 'src/user/user.entity';
-import { Subject } from 'src/subject/subject.entity';
+import { User } from 'src/database/entities/user.entity';
+import { Subject } from 'src/database/entities/subject.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,

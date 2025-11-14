@@ -1,6 +1,6 @@
 import { UserActivity } from './user-activity.entity';
-import { Student } from 'src/student/student.entity';
-import { Teacher } from 'src/teacher/teacher.entity';
+import { Student } from './student.entity';
+import { Teacher } from './teacher.entity';
 import {
   Entity,
   Column,

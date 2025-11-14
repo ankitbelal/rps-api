@@ -1,5 +1,5 @@
-import { Program } from 'src/program/program.entity';
-import { Teacher } from 'src/teacher/teacher.entity';
+import { Program } from 'src/database/entities/program.entity';
+import { Teacher } from 'src/database/entities/teacher.entity';
 import {
   Column,
   Entity,
