@@ -1,5 +1,6 @@
 import { Program } from 'src/database/entities/program.entity';
 import { Teacher } from 'src/database/entities/teacher.entity';
+import { StudentSubjectMarks } from './student-marks.entity';
 import {
   Column,
   Entity,
@@ -9,6 +10,7 @@ import {
   ManyToOne,
   JoinColumn,
   Unique,
+  OneToMany
 } from 'typeorm';
 
 @Entity('subjects')
@@ -42,6 +44,11 @@ export class Subject {
   @ManyToOne(() => Teacher, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'teacher_id' })
   teacher: Teacher;
+
+  @OneToMany(() => StudentSubjectMarks, (marks) => marks.student, {
+    cascade: true,
+  })
+  studentSubjectMarks: StudentSubjectMarks[];
 
   @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
   createdAt: Date;
