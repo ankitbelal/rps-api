@@ -1,4 +1,5 @@
 import { Program } from 'src/program/program.entity';
+import { User } from 'src/user/user.entity';
 import {
   Column,
   Entity,
@@ -6,6 +7,7 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToOne,
 } from 'typeorm';
 
 export enum Gender {
@@ -13,7 +15,14 @@ export enum Gender {
   FEMALE = 'F',
   OTHER = 'O',
 }
-@Entity('Student')
+
+export enum Status {
+  ACTIVE = 'A',
+  PASSED = 'P',
+  SUSPENDED = 'S',
+}
+
+@Entity('students')
 export class Student {
   @PrimaryGeneratedColumn()
   id: number;
@@ -36,8 +45,8 @@ export class Student {
   @Column({ name: 'enrollment_date', type: 'date' })
   enrollmentDate: Date;
 
-  @Column({ type: 'text', nullable: true })
-  address: string;
+  @Column({ type: 'enum', enum: Status })
+  status: Status;
 
   @Column({
     name: 'registration_no',
@@ -53,6 +62,15 @@ export class Student {
   @Column({ type: 'date', name: 'dob' })
   DOB: Date;
 
+  @Column({ nullable: false, type: 'varchar' })
+  address1: string;
+
+  @Column({ nullable: true })
+  address2: string;
+
+  @Column({ name: 'current_semester', default: 1, type: 'int' })
+  currentSemester: Number;
+
   @Column({ name: 'program_id' })
   programId: number;
 
@@ -60,6 +78,9 @@ export class Student {
     onDelete: 'CASCADE',
   })
   program: Program;
+
+  @OneToOne(() => User, (user) => user.student)
+  user: User;
 
   @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
   createdAt: Date;

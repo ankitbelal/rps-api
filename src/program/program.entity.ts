@@ -5,12 +5,15 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
   OneToMany,
-} from "typeorm";
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 
-import { Subject } from "src/subject/subject.entity";
-import { Student } from "src/student/student.entity";
+import { Subject } from 'src/subject/subject.entity';
+import { Student } from 'src/student/student.entity';
+import { Faculty } from 'src/faculty/faculty.entity';
 
-@Entity("programs")
+@Entity('programs')
 export class Program {
   @PrimaryGeneratedColumn()
   id: number;
@@ -18,34 +21,35 @@ export class Program {
   @Column()
   name: string;
 
-  @Column({ type: "varchar", length: 10 })
+  @Column({ type: 'varchar', length: 10 })
   code: string;
 
-  @Column()
-  faculty: string;
-
-  @Column({ type: "int", nullable: true, name: "total_subjects" })
+  @Column({ type: 'int', nullable: true, name: 'total_subjects' })
   totalSubjects: number;
 
-  @Column()
+  @Column({ type: 'int', nullable: true, name: 'total_semester' })
   totalSemester: number;
 
-  @Column({ type: "int", nullable: true, name: "total_credits" })
+  @Column({ type: 'int', nullable: true, name: 'total_credits' })
   totalCredits: number;
 
-  @Column({ type: "int", default: 4, name: "duration_in_years" })
+  @Column({ type: 'int', default: 4, name: 'duration_in_years' })
   durationInYears: number;
 
-  @CreateDateColumn({ type: "timestamp", name: "created_at" })
-  createdAt: Date;
 
-  @UpdateDateColumn({ type: "timestamp", name: "updated_at" })
-  updatedAt: Date;
+  @ManyToOne(() => Faculty, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'faculty_id' })
+  faculty: Faculty;
 
-  @OneToMany(() => Subject, (subject) => subject.program,{cascade:true})
+  @OneToMany(() => Subject, (subject) => subject.program, { cascade: true })
   subjects: Subject[];
 
-  @OneToMany(() => Student, (student) => student.program,{cascade:true})
+  @OneToMany(() => Student, (student) => student.program, { cascade: true })
   students: Student[];
 
+    @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ type: 'timestamp', name: 'updated_at' })
+  updatedAt: Date;
 }

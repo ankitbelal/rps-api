@@ -14,7 +14,8 @@ export class UpdateProgramDto extends PartialType(CreateProgramDto) {
 
   @IsOptional()
   @IsString()
-  faculty?: string | undefined;
+  @Type(()=>Number)
+  faculty?: Number | undefined;
 
   @IsOptional()
   @IsNumber()

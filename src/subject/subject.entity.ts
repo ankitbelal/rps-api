@@ -1,4 +1,5 @@
 import { Program } from 'src/program/program.entity';
+import { Teacher } from 'src/teacher/teacher.entity';
 import {
   Column,
   Entity,
@@ -37,6 +38,10 @@ export class Subject {
   @ManyToOne(() => Program, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'program_id' })
   program: Program;
+
+  @ManyToOne(() => Teacher, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'teacher_id' })
+  teacher: Teacher;
 
   @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
   createdAt: Date;

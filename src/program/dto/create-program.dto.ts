@@ -7,8 +7,9 @@ export class CreateProgramDto {
   @IsNotEmpty({ message: 'Code is required' })
   code: string;
 
-  @IsNotEmpty({ message: 'Faculty is required' })
-  faculty: string;
+  @IsNotEmpty({ message: 'Faculty id is required' })
+  @Type(()=>Number)
+  faculty_id: Number;
 
   @IsNotEmpty({ message: 'Total Subjects is required' })
   @IsNumber()
