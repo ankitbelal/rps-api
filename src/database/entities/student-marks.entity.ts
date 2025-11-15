@@ -3,11 +3,11 @@ import { Student } from './student.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
-  OneToOne,
   JoinColumn,
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
 } from 'typeorm';
 
 export enum ExamTerm {
@@ -20,11 +20,11 @@ export class StudentSubjectMarks {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @OneToOne(() => Student, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Student, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'student_id' })
   student: Student;
 
-  @OneToOne(() => Subject, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Subject, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'subject_id' })
   subject: Subject;
 

@@ -10,8 +10,9 @@ import {
   ManyToOne,
   JoinColumn,
   Unique,
-  OneToMany
+  OneToMany,
 } from 'typeorm';
+import { StudentAttendance } from './student-attendance';
 
 @Entity('subjects')
 @Unique(['programId', 'code']) //duplicacy of subject should be considered when program and subject are same
@@ -45,10 +46,15 @@ export class Subject {
   @JoinColumn({ name: 'teacher_id' })
   teacher: Teacher;
 
-  @OneToMany(() => StudentSubjectMarks, (marks) => marks.student, {
+  @OneToMany(() => StudentSubjectMarks, (marks) => marks.subject, {
     cascade: true,
   })
   studentSubjectMarks: StudentSubjectMarks[];
+
+  @OneToMany(() => StudentAttendance, (attentance) => attentance.subject, {
+    cascade: true,
+  })
+  studentAttendance: StudentAttendance[];
 
   @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
   createdAt: Date;

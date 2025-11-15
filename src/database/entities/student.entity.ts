@@ -11,6 +11,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { StudentSubjectMarks } from './student-marks.entity';
+import { StudentAttendance } from './student-attendance';
 
 export enum Gender {
   MALE = 'M',
@@ -84,8 +85,15 @@ export class Student {
   @OneToOne(() => User, (user) => user.student)
   user: User;
 
-  @OneToMany(() => StudentSubjectMarks, (marks) => marks.student, { cascade: true })
+  @OneToMany(() => StudentSubjectMarks, (marks) => marks.student, {
+    cascade: true,
+  })
   studentSubjectMarks: StudentSubjectMarks[];
+
+  @OneToMany(() => StudentAttendance, (attentance) => attentance.student, {
+    cascade: true,
+  })
+  studentAttendance: StudentAttendance[];
 
   @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
   createdAt: Date;
