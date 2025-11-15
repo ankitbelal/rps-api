@@ -28,8 +28,8 @@ export class StudentAttendance {
   @JoinColumn({ name: 'subject_id' })
   subject: Subject;
 
-  @Column({type:'enum',enum:Status, default:Status.ABSENT})
-  status:Status;
+  @Column({ type: 'enum', enum: Status, default: Status.ABSENT })
+  status: Status;
 
   @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
   createdAt: Date;
