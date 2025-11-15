@@ -24,7 +24,9 @@ async function bootstrap() {
   );
   app.enableCors({
     origin: ['http://localhost:5173', 'https://rps-ui-two.vercel.app'],
-    Credential: true,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   });
   app.use(cookieParser());
 
