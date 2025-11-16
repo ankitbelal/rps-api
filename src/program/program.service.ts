@@ -23,7 +23,7 @@ export class ProgramService {
     });
     if (exists)
       throw new BadRequestException(
-        `Program already exists for Code ${createProgramDto.code}`,
+        `Program already exists for Code: ${createProgramDto.code}.`,
       );
     const program = this.programRepo.create(createProgramDto);
     return await this.programRepo.save(program);
@@ -59,7 +59,7 @@ export class ProgramService {
   async update(id: number, updateProgramDto: UpdateProgramDto) {
     const program = await this.programRepo.findOne({ where: { id } });
     if (!program)
-      throw new NotFoundException(`Program with id: ${id} doesn't exists`);
+      throw new NotFoundException(`Program with id: ${id} doesn't exists.`);
     Object.assign(program, updateProgramDto);
     return await this.programRepo.save(program);
   }
@@ -67,7 +67,7 @@ export class ProgramService {
   async remove(id: number) {
     const program = await this.programRepo.findOne({ where: { id } });
     if (!program)
-      throw new NotFoundException(`program with id: ${id} doesn't exists`);
+      throw new NotFoundException(`Program with id: ${id} doesn't exists.`);
     await this.programRepo.remove(program);
   }
 }

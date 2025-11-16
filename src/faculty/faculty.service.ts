@@ -8,10 +8,14 @@ import { Faculty } from 'src/database/entities/faculty.entity';
 import { Repository } from 'typeorm';
 import { UpdateFacultyDto } from './dto/update-faculty-dto';
 import { FacultyQueryDto } from './dto/faculty-query-dto';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class FacultyService {
-  constructor(private readonly facultyRepo: Repository<Faculty>) {}
+  constructor(
+    @InjectRepository(Faculty)
+    private readonly facultyRepo: Repository<Faculty>,
+  ) {}
 
   async create(createFacultyDto: CreateFacultyDto): Promise<Faculty> {
     const exists = await this.facultyRepo.findOne({
