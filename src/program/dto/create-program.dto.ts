@@ -9,7 +9,7 @@ export class CreateProgramDto {
 
   @IsNotEmpty({ message: 'Faculty id is required.' })
   @Type(() => Number)
-  faculty_id: Number;
+  facultyId: number;
 
   @IsNotEmpty({ message: 'Total Subjects is required.' })
   @IsNumber()
@@ -19,7 +19,7 @@ export class CreateProgramDto {
   @IsNotEmpty({ message: 'Total Semester is required.' })
   @IsNumber()
   @Type(() => Number)
-  totalSemester: number;
+  totalSemesters: number;
 
   @IsOptional()
   @IsNumber()

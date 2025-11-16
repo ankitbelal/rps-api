@@ -27,8 +27,8 @@ export class Program {
   @Column({ type: 'int', nullable: true, name: 'total_subjects' })
   totalSubjects: number;
 
-  @Column({ type: 'int', nullable: true, name: 'total_semester' })
-  totalSemester: number;
+  @Column({ type: 'int', nullable: true, name: 'total_semesters' })
+  totalSemesters: number;
 
   @Column({ type: 'int', nullable: true, name: 'total_credits' })
   totalCredits: number;
@@ -36,10 +36,12 @@ export class Program {
   @Column({ type: 'int', default: 4, name: 'duration_in_years' })
   durationInYears: number;
 
-
   @ManyToOne(() => Faculty, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'faculty_id' })
   faculty: Faculty;
+
+  @Column({ name: 'faculty_id', nullable: true })
+  facultyId?: number;
 
   @OneToMany(() => Subject, (subject) => subject.program, { cascade: true })
   subjects: Subject[];
@@ -47,7 +49,7 @@ export class Program {
   @OneToMany(() => Student, (student) => student.program, { cascade: true })
   students: Student[];
 
-    @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
+  @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
   createdAt: Date;
 
   @UpdateDateColumn({ type: 'timestamp', name: 'updated_at' })

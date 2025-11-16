@@ -48,9 +48,13 @@ export class FacultyService {
     id: number,
     UpdateFacultyDto: UpdateFacultyDto,
   ): Promise<Faculty> {
+    const exists = await this.facultyRepo.findOne({
+      where: { name: UpdateFacultyDto.name },
+    });
+    if (exists) throw new BadRequestException('Faculty already exists.');
     const faculty = await this.facultyRepo.findOne({ where: { id } });
     if (!faculty)
-      throw new NotFoundException(`faculty with id: ${id} doesnt exists`);
+      throw new NotFoundException(`Faculty with id: ${id} doesnt exists.`);
     Object.assign(faculty, UpdateFacultyDto);
     return await this.facultyRepo.save(faculty);
   }

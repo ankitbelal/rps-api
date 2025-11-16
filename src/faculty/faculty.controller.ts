@@ -5,7 +5,7 @@ import { ApiResponse } from 'utils/api-response';
 import { UpdateFacultyDto } from './dto/update-faculty-dto';
 import { FacultyQueryDto } from './dto/faculty-query-dto';
 
-@Controller('faculty')
+@Controller('faculties')
 export class FacultyController {
   constructor(private readonly facultyService: FacultyService) {}
 
@@ -13,7 +13,7 @@ export class FacultyController {
   @Post()
   async create(@Body() createFacultyDto: CreateFacultyDto) {
     const faculties = await this.facultyService.create(createFacultyDto);
-    return ApiResponse.successData(faculties, 'Faculty registered successfully.', 201);
+    return ApiResponse.successData(faculties, 'Faculties registered successfully.', 201);
   }
 
   @HttpCode(200)

@@ -1,10 +1,11 @@
-import { Injectable, Res } from '@nestjs/common';
-import { loginDTO } from './dto/login.dto';
+import { Injectable, NotFoundException, Res } from '@nestjs/common';
+import { loginDTO, PasswordResetDto, VerifyEmailDto } from './dto/login.dto';
 import { UserService } from 'src/user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import { UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
+import { generateRandomNumbers } from 'utils/general-utils';
 const ACCESS_TOKEN_EXPIRES_IN = '15m';
 const REFRESH_TOKEN_EXPIRES_IN = '7d';
 @Injectable()
@@ -15,12 +16,12 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {}
 
-  async login(loginDTO: loginDTO, request, res:Response) {
+  async login(loginDTO: loginDTO, request, res: Response) {
     const action = 'login';
     const ip = request.ip || request.headers['x-forwarded-for'] || 'unknown';
     const platform = request.headers['user-agent'] || 'unknown';
     const user = await this.userService.loginValidateUser(loginDTO);
-    if (!user) throw new UnauthorizedException('Invalid credentials');
+    if (!user) throw new UnauthorizedException('Invalid credentials.');
     await this.userService.logActivity(user.id, ip, platform, action);
     const payload = {
       userId: user.id,
@@ -28,11 +29,12 @@ export class AuthService {
       userType: user.userType,
     };
 
+    const isProd = this.configService.get<string>('NODE_ENV') === 'production';
     const accessToken = this.jwtService.sign(payload, {
       secret:
         this.configService.get<string>('ACCESS_TOKEN_SECRET') ||
         'defaultAccessSecret',
-      expiresIn: ACCESS_TOKEN_EXPIRES_IN,
+      expiresIn: isProd ? ACCESS_TOKEN_EXPIRES_IN : '10000y',
     });
 
     const refreshToken = this.jwtService.sign(payload, {
@@ -42,8 +44,6 @@ export class AuthService {
       expiresIn: REFRESH_TOKEN_EXPIRES_IN,
     });
 
-    const isProd = this.configService.get<string>('NODE_ENV') === 'production';
-    console.log(isProd);
     res.cookie('access_token', accessToken, {
       httpOnly: true,
       secure: isProd,
@@ -61,7 +61,7 @@ export class AuthService {
     const responseBody: any = {
       statusCode: 200,
       status: 'success',
-      message: 'logged in successfully',
+      message: 'Logged in successfully.',
       userDetails: {
         id: user.id,
         name: user.name,
@@ -102,7 +102,7 @@ export class AuthService {
 
       return { message: 'Access token refreshed successfully' };
     } catch {
-      throw new UnauthorizedException('Invalid refresh token');
+      throw new UnauthorizedException('Invalid refresh token.');
     }
   }
 
@@ -117,7 +117,29 @@ export class AuthService {
     return {
       statusCode: 200,
       status: 'success',
-      message: 'Logged out successfully',
+      message: 'Logged out successfully.',
     };
   }
+
+  async verifyResetEmail(verifyEmailDto: VerifyEmailDto) {
+    const user = await this.userService.findUserByEmail(verifyEmailDto.email);
+    if (user?.status == 'P')
+      throw new NotFoundException(
+        'User with this email is not activated yet. Contact Admin to Activate your Account',
+      );
+    if (user?.status == 'D')
+      throw new NotFoundException(
+        'User with this email is Deactivated. Contact Admin to Activate your Account',
+      );
+
+    if (!user)
+      throw new NotFoundException('User with this email does not exists.');
+
+    //call mailer center service here sir
+    const otp = await generateRandomNumbers(6);
+    console.log(otp);
+    return true;
+  }
+
+  async resetPassword(passwordResetDto: PasswordResetDto) {}
 }

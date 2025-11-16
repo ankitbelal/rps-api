@@ -2,26 +2,26 @@ import { Type } from 'class-transformer';
 import { IsNotEmpty, IsNumber } from 'class-validator';
 
 export class CreateSubjectDto {
-  @IsNotEmpty({ message: 'subject name is required' })
+  @IsNotEmpty({ message: 'Subject Name is required.' })
   name: string;
 
-  @IsNotEmpty({ message: 'subject code is required' })
+  @IsNotEmpty({ message: 'Subject Code is required.' })
   code: string;
 
-  @IsNotEmpty({ message: 'credits is required' })
+  @IsNotEmpty({ message: 'Credits is required.' })
   @IsNumber()
   @Type(() => Number)
   credits: number;
 
-  @IsNotEmpty({ message: 'semester is required' })
+  @IsNotEmpty({ message: 'Semester is required.' })
   @IsNumber()
   @Type(() => Number)
   semester: number;
 
-  @IsNotEmpty({ message: 'type is required' })
+  @IsNotEmpty({ message: 'Type is required.' })
   type: string;
 
-  @IsNotEmpty({ message: 'programId is required' })
+  @IsNotEmpty({ message: 'Program Id is required.' })
   @IsNumber()
   @Type(() => Number)
   programId: number;

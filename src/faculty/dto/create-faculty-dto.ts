@@ -6,6 +6,5 @@ export class CreateFacultyDto {
   name: string;
 
   @IsOptional()
-  @Type(() => Text)
   description: string;
 }

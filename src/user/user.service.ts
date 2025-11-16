@@ -1,6 +1,6 @@
-import { Injectable} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { loginDTO } from 'src/auth/dto/login.dto';
+import { loginDTO, VerifyEmailDto } from 'src/auth/dto/login.dto';
 import { User } from '../database/entities/user.entity';
 import { Repository } from 'typeorm';
 import { UserActivity } from '../database/entities/user-activity.entity';
@@ -52,5 +52,11 @@ export class UserService {
     });
 
     await this.userRepo.save(user);
+  }
+
+  async findUserByEmail(email) {
+    const user = await this.userRepo.findOne({ where: { email } });
+    if (user) return user;
+    return null;
   }
 }
