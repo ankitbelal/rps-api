@@ -133,10 +133,11 @@ All routes protected with guard-driven permissions.
 
 ### Frontend
 - React.js  
-- React Query / Axios  
-- Tailwind CSS / MUI  
+- RTK query / Axios  
+- Bootarap CSS
 
 ### Deployment
+- Render
 - Docker support  
 - Nginx Reverse Proxy  
 - PM2 Process Manager  
