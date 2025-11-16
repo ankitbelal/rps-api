@@ -26,7 +26,7 @@ export class ProgramService {
         `Program already exists for Code ${createProgramDto.code}`,
       );
     const program = this.programRepo.create(createProgramDto);
-    return this.programRepo.save(program);
+    return await this.programRepo.save(program);
   }
 
   async findAll(programQueryDto: ProgramQueryDto): Promise<{
@@ -41,11 +41,11 @@ export class ProgramService {
       query.andWhere('program.name LIKE :name', { name: `%${filters.name}%` });
     }
     if (filters?.code) {
-      query.andWhere('program.name LIKE :code', { name: `%${filters.code}%` });
+      query.andWhere('program.code LIKE :code', { code: `%${filters.code}%` });
     }
-    if (filters?.faculty) {
-      query.andWhere('program.name LIKE :faculty', {
-        name: `%${filters.faculty}%`,
+    if (filters?.faculty_id) {
+      query.andWhere('program.faculty_id LIKE :faculty_id', {
+        faculty_id: `%${filters.faculty_id}%`,
       });
     }
     query.skip((page - 1) * limit).take(limit);
@@ -58,14 +58,16 @@ export class ProgramService {
 
   async update(id: number, updateProgramDto: UpdateProgramDto) {
     const program = await this.programRepo.findOne({ where: { id } });
-    if (!program) throw new NotFoundException(`Program with ${id} doesn't exists`);
+    if (!program)
+      throw new NotFoundException(`Program with id: ${id} doesn't exists`);
     Object.assign(program, updateProgramDto);
     return await this.programRepo.save(program);
   }
 
   async remove(id: number) {
     const program = await this.programRepo.findOne({ where: { id } });
-    if (!program) throw new NotFoundException(`program with ${id} doesn't exists`);
+    if (!program)
+      throw new NotFoundException(`program with id: ${id} doesn't exists`);
     await this.programRepo.remove(program);
   }
 }

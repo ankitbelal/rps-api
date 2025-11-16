@@ -4,12 +4,11 @@ import { Type } from 'class-transformer';
 
 export class ProgramQueryDto {
   @IsOptional()
-  @IsString()
   name?: string;
 
   @IsOptional()
-  @IsString()
-  faculty?: string;
+  @IsNumber()
+  faculty_id?: number;
 
   @IsOptional()
   @IsString()

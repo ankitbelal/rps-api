@@ -11,39 +11,39 @@ import { Gender } from '../../database/entities/student.entity';
 import { Type } from 'class-transformer';
 
 export class CreateStudentDto {
-  @IsNotEmpty({ message: 'firstName is required' })
+  @IsNotEmpty({ message: 'First Name is required' })
   firstName: string;
 
-  @IsNotEmpty({ message: 'lastName is required' })
+  @IsNotEmpty({ message: 'Last Name is required' })
   lastName: string;
 
-  @IsNotEmpty({ message: 'email is required' })
+  @IsNotEmpty({ message: 'Email is required' })
   @IsEmail()
   email: string;
 
-  @IsNotEmpty({ message: 'rollNumber is required' })
-  @IsNumber({}, { message: 'rollNumber must be number' })
+  @IsNotEmpty({ message: 'Roll Number is required' })
+  @IsNumber({}, { message: 'Roll Number must be number' })
   @Type(() => Number)
   rollNumber: number;
 
-  @IsNotEmpty({ message: 'phone is required' })
-  @IsNumber({}, { message: 'phone must be number' })
+  @IsNotEmpty({ message: 'Phone is required' })
+  @IsNumber({}, { message: 'Phone must be number' })
   @Type(() => Number)
   phone: number;
 
-  @IsNotEmpty({ message: 'enrollmentDate is required' })
+  @IsNotEmpty({ message: 'Enrollment Date is required' })
   @Type(() => Date)
-  @IsDate({ message: 'enrollmentDate must be a valid date' })
+  @IsDate({ message: 'Enrollment Date must be a valid date' })
   enrollmentDate: Date;
 
-  @IsNotEmpty({ message: 'address is required' })
+  @IsNotEmpty({ message: 'Address is required' })
   address: string;
 
-  @IsNotEmpty({ message: 'registrationNumber is required' })
+  @IsNotEmpty({ message: 'Registration Number is required' })
   registrationNumber: number;
 
-  @IsNotEmpty({ message: 'gender is required' })
-  @IsEnum(Gender, { message: 'gender must be a valid' })
+  @IsNotEmpty({ message: 'Gender is required' })
+  @IsEnum(Gender, { message: 'Gender must be a valid' })
   gender: Gender;
 
   @IsNotEmpty({ message: 'DOB is required' })
@@ -52,8 +52,8 @@ export class CreateStudentDto {
   @MaxDate(new Date(), { message: 'DOB cannot be a future date' })
   DOB: Date;
 
-  @IsNotEmpty({ message: 'programId is required' })
-  @IsNumber({}, { message: 'programId must be a number' })
+  @IsNotEmpty({ message: 'Program Id is required' })
+  @IsNumber({}, { message: 'Program Id must be a number' })
   @Type(() => Number)
   programId: number;
 }
