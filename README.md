@@ -144,5 +144,3 @@ All routes protected with guard-driven permissions.
 
 ---
 
-## 📁 Project Structure
-
