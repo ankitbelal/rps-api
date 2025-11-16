@@ -11,7 +11,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { StudentSubjectMarks } from './student-marks.entity';
-import { StudentAttendance } from './student-attendance';
+import { StudentAttendance } from './student-attendance.entity';
 
 export enum Gender {
   MALE = 'M',

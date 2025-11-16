@@ -12,6 +12,7 @@ import {
   JoinColumn,
   PrimaryColumn,
 } from 'typeorm';
+import { UserOTP } from './user-otps.entity';
 
 export enum UserType {
   ADMIN = 'A',
@@ -72,5 +73,10 @@ export class User {
     onDelete: 'CASCADE',
   })
   activities: UserActivity[];
-  s;
+
+  @OneToMany(() => UserOTP, (otp) => otp.user, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
+  userOtp: UserOTP;
 }

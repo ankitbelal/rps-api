@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { loginDTO, VerifyEmailDto } from 'src/auth/dto/login.dto';
-import { User } from '../database/entities/user.entity';
+import { loginDTO, PasswordResetDto } from 'src/auth/dto/login.dto';
+import { User, UserType, Status } from '../database/entities/user.entity';
 import { Repository } from 'typeorm';
 import { UserActivity } from '../database/entities/user-activity.entity';
 import * as bcrypt from 'bcrypt';
@@ -30,7 +30,12 @@ export class UserService {
     }
   }
 
-  async logActivity(userId, ip, platform, action) {
+  async logActivity(
+    userId: number,
+    ip: string,
+    platform: string,
+    action: string,
+  ) {
     const activity = await this.activityRepo.create({
       userId,
       ipAddress: ip,
@@ -40,7 +45,13 @@ export class UserService {
     await this.activityRepo.save(activity);
   }
 
-  async createUser(name, email, contact, userType, status) {
+  async createUser(
+    name: string,
+    email: string,
+    contact: string,
+    userType: UserType,
+    status: Status,
+  ): Promise<User> {
     const password = randomBytes(10);
     const user = await this.userRepo.create({
       email,
@@ -51,12 +62,22 @@ export class UserService {
       status,
     });
 
-    await this.userRepo.save(user);
+    return await this.userRepo.save(user);
   }
 
-  async findUserByEmail(email) {
+  async findUserByEmail(email: string): Promise<User | null> {
     const user = await this.userRepo.findOne({ where: { email } });
     if (user) return user;
     return null;
+  }
+
+  async resetPassword(passwordResetDto: PasswordResetDto): Promise<Boolean> {
+    const user = await this.findUserByEmail(passwordResetDto.email);
+    if (!user)
+      throw new NotFoundException('User with this email does not exists');
+    const hashedPassword = await bcrypt.hash(passwordResetDto.password, 10);
+    user.password = hashedPassword;
+    await this.userRepo.save(user);
+    return true;
   }
 }

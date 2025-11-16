@@ -141,5 +141,7 @@ export class AuthService {
     return true;
   }
 
-  async resetPassword(passwordResetDto: PasswordResetDto) {}
+  async resetPassword(passwordResetDto: PasswordResetDto) {
+    return await this.userService.resetPassword(passwordResetDto);
+  }
 }

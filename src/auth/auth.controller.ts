@@ -36,16 +36,19 @@ export class AuthController {
     return await this.authService.logout(req, res);
   }
 
+  @Public()
   @Post('verify-email')
   @HttpCode(200)
   async verifyEmail(@Body() verifyEmailDto: VerifyEmailDto) {
     await this.authService.verifyResetEmail(verifyEmailDto);
-    return ApiResponse.success('OTP has been sent to your email', 200);
+    return ApiResponse.success('OTP has been sent to your email.', 200);
   }
 
+  @Public()
   @Post('reset-password')
   @HttpCode(200)
   async resetPassword(@Body() passwordResetDto: PasswordResetDto) {
-    return await this.authService.resetPassword(passwordResetDto);
+    await this.authService.resetPassword(passwordResetDto);
+    return ApiResponse.success('Password reset successfully.', 200);
   }
 }

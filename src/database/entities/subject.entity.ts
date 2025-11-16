@@ -12,7 +12,7 @@ import {
   Unique,
   OneToMany,
 } from 'typeorm';
-import { StudentAttendance } from './student-attendance';
+import { StudentAttendance } from './student-attendance.entity';
 
 @Entity('subjects')
 @Unique(['programId', 'code']) //duplicacy of subject should be considered when program and subject are same

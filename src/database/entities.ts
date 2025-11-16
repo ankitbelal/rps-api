@@ -6,7 +6,8 @@ import { Student } from 'src/database/entities/student.entity';
 import { Teacher } from 'src/database/entities/teacher.entity';
 import { Faculty } from 'src/database/entities/faculty.entity';
 import { StudentSubjectMarks } from './entities/student-marks.entity';
-import { StudentAttendance } from './entities/student-attendance';
+import { StudentAttendance } from './entities/student-attendance.entity';
+import { UserOTP } from './entities/user-otps.entity';
 export const entities = [
   User,
   UserActivity,
@@ -17,4 +18,5 @@ export const entities = [
   Faculty,
   StudentSubjectMarks,
   StudentAttendance,
+  UserOTP,
 ];
