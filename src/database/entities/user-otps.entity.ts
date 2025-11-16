@@ -43,7 +43,7 @@ export class UserOTP {
   lockOutUntil: Date;
 
   @Column({ name: 'expires_at', type: 'timestamp', nullable: true })
-  exipiresAt: Date;
+  expiresAt: Date;
 
   @Column({ name: 'verified_at', type: 'timestamp', nullable: true })
   verifiedAt: Date;
