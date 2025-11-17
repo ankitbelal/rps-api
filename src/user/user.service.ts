@@ -6,12 +6,16 @@ import { Repository } from 'typeorm';
 import { UserActivity } from '../database/entities/user-activity.entity';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
+import { UserOTP } from 'src/database/entities/user-otps.entity';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+
+    @InjectRepository(UserOTP)
+    private readonly userOTPRepo: Repository<UserOTP>,
 
     @InjectRepository(UserActivity)
     private readonly activityRepo: Repository<UserActivity>,
@@ -78,6 +82,22 @@ export class UserService {
     const hashedPassword = await bcrypt.hash(passwordResetDto.password, 10);
     user.password = hashedPassword;
     await this.userRepo.save(user);
+    return true;
+  }
+
+  async storeOTP(
+    userId: number,
+    otp: string,
+    type: string,
+    expiresAt: Date,
+  ): Promise<Boolean> {
+    const saveOTP = this.userOTPRepo.create({
+      userId,
+      otp,
+      type,
+      expiresAt,
+    });
+    await this.userOTPRepo.save(saveOTP);
     return true;
   }
 }

@@ -6,6 +6,7 @@ import { UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
 import { generateRandomNumbers } from 'utils/general-utils';
+import { MessageCenterService } from 'src/message-center/message-center.service';
 const ACCESS_TOKEN_EXPIRES_IN = '15m';
 const REFRESH_TOKEN_EXPIRES_IN = '7d';
 @Injectable()
@@ -14,6 +15,7 @@ export class AuthService {
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly messaageCenterService: MessageCenterService,
   ) {}
 
   async login(loginDTO: loginDTO, request, res: Response) {
@@ -135,11 +137,20 @@ export class AuthService {
     if (!user)
       throw new NotFoundException('User with this email does not exists.');
 
-    //call mailer center service here sir
     const otp = await generateRandomNumbers(6);
-    console.log(otp);
-    return true;
+    const message = `your confirmation code is ${otp}. if you didn't request this emai, you can safely ignore it.`;
+    const subject = 'Reset Password';
+    const otpSent = await this.messaageCenterService.sendEmail(
+      verifyEmailDto.email,
+      subject,
+      message,
+    );
+    const expiresAt: Date = new Date(Date.now() + 5 * 60 * 1000); //5 minute expiry
+    const type: string = 'reset-password';
+    if (otpSent)
+      return await this.userService.storeOTP(user.id, otp, type, expiresAt);
   }
+  async verifyOTP() {}
 
   async resetPassword(passwordResetDto: PasswordResetDto) {
     return await this.userService.resetPassword(passwordResetDto);
