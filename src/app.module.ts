@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule,ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { DatabaseModule } from './database/database.module';
@@ -11,6 +10,7 @@ import { SubjectModule } from './subject/subject.module';
 import { TeacherModule } from './teacher/teacher.module';
 import { StudentModule } from './student/student.module';
 import { FacultyModule } from './faculty/faculty.module';
+import { MessageCenterModule } from './message-center/message-center.module';
 
 @Module({
   imports: [
@@ -25,6 +25,7 @@ import { FacultyModule } from './faculty/faculty.module';
     TeacherModule,
     StudentModule,
     FacultyModule,
+    MessageCenterModule,
   ],
   controllers: [AppController],
   providers: [AppService],
