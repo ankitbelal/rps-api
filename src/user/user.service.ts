@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { loginDTO, PasswordResetDto } from 'src/auth/dto/login.dto';
 import { User, UserType, Status } from '../database/entities/user.entity';
@@ -91,13 +95,59 @@ export class UserService {
     type: string,
     expiresAt: Date,
   ): Promise<Boolean> {
+    const hashedOTP = await bcrypt.hash(otp, 10);
     const saveOTP = this.userOTPRepo.create({
       userId,
-      otp,
+      otp: hashedOTP,
       type,
       expiresAt,
     });
     await this.userOTPRepo.save(saveOTP);
     return true;
+  }
+
+  async validateOTP(otp: string, userId: number) {
+    const userOTP = await this.userOTPRepo.findOne({ where: { userId } });
+
+    if (!userOTP) {
+      throw new BadRequestException({
+        message: 'Something went wrong. Please try again.',
+      });
+    }
+    const now = new Date();
+
+    if (userOTP.lockOutUntil && new Date(userOTP.lockOutUntil) > now) {
+      throw new BadRequestException({
+        message: 'Too many attempts. Please try again later.',
+        lockedUntil: userOTP.lockOutUntil,
+      });
+    }
+    const isMatch = await bcrypt.compare(otp, userOTP.otp);
+
+    if (isMatch) {
+      await this.userOTPRepo.remove(userOTP);
+      return true;
+    } else {
+      userOTP.attempts += 1;
+      if (userOTP.attempts >= 10) {
+        const lockoutMinutes = 15;
+        userOTP.lockOutUntil = new Date(
+          now.getTime() + lockoutMinutes * 60 * 1000,
+        );
+        await this.userOTPRepo.save(userOTP);
+
+        throw new BadRequestException({
+          message: 'Too many invalid attempts. Try again later.',
+          lockedUntil: userOTP.lockOutUntil,
+        });
+      }
+
+      await this.userOTPRepo.save(userOTP);
+
+      throw new BadRequestException({
+        message: 'Invalid OTP',
+        remainingAttempts: 10 - userOTP.attempts,
+      });
+    }
   }
 }

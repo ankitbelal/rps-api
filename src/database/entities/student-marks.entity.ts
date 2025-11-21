@@ -8,7 +8,9 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
+  OneToMany,
 } from 'typeorm';
+import { ExtraParametersMarks } from './extra-parameters-marks.entity';
 
 export enum ExamTerm {
   FIRST = 'F',
@@ -35,45 +37,50 @@ export class StudentSubjectMarks {
   })
   examTerm: ExamTerm;
 
-  @Column({
-    name: 'discipline_marks',
-    type: 'decimal',
-    precision: 5,
-    scale: 2,
-    default: 0,
-    nullable: true,
+  @OneToMany(() => ExtraParametersMarks, (marks) => marks.studentSubjectMarks, {
+    cascade: true,
   })
-  disciplineMarks: number;
+  extraParametersMarks: ExtraParametersMarks[];
 
-  @Column({
-    name: 'uniform_marks',
-    type: 'decimal',
-    precision: 5,
-    scale: 2,
-    default: 0,
-    nullable: true,
-  })
-  uniformMarks: number;
+  // @Column({
+  //   name: 'discipline_marks',
+  //   type: 'decimal',
+  //   precision: 5,
+  //   scale: 2,
+  //   default: 0,
+  //   nullable: true,
+  // })
+  // disciplineMarks: number;
 
-  @Column({
-    name: 'punctuality_marks',
-    type: 'decimal',
-    precision: 5,
-    scale: 2,
-    default: 0,
-    nullable: true,
-  })
-  punctualityMarks: number;
+  // @Column({
+  //   name: 'uniform_marks',
+  //   type: 'decimal',
+  //   precision: 5,
+  //   scale: 2,
+  //   default: 0,
+  //   nullable: true,
+  // })
+  // uniformMarks: number;
 
-  @Column({
-    name: 'attendance_marks',
-    type: 'decimal',
-    precision: 5,
-    scale: 2,
-    default: 0,
-    nullable: true,
-  })
-  attendanceMarks: number;
+  // @Column({
+  //   name: 'punctuality_marks',
+  //   type: 'decimal',
+  //   precision: 5,
+  //   scale: 2,
+  //   default: 0,
+  //   nullable: true,
+  // })
+  // punctualityMarks: number;
+
+  // @Column({
+  //   name: 'attendance_marks',
+  //   type: 'decimal',
+  //   precision: 5,
+  //   scale: 2,
+  //   default: 0,
+  //   nullable: true,
+  // })
+  // attendanceMarks: number;
 
   @Column({
     name: 'subject_marks',
@@ -84,6 +91,9 @@ export class StudentSubjectMarks {
     nullable: true,
   })
   subjectMarks: number;
+
+  @Column()
+  semester: number;
 
   @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
   createdAt: Date;

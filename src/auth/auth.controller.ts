@@ -1,9 +1,15 @@
 import { Body, Controller, HttpCode, Post, Req, Res } from '@nestjs/common';
-import { loginDTO, PasswordResetDto, VerifyEmailDto } from './dto/login.dto';
+import {
+  loginDTO,
+  PasswordResetDto,
+  validateOTPDTO,
+  VerifyEmailDto,
+} from './dto/login.dto';
 import { AuthService } from './auth.service';
 import { Public } from './jwt/public.decorator';
 import type { Request, Response } from 'express';
 import { ApiResponse } from 'utils/api-response';
+import { validate } from 'class-validator';
 
 @Controller('auth')
 export class AuthController {
@@ -42,6 +48,14 @@ export class AuthController {
   async verifyEmail(@Body() verifyEmailDto: VerifyEmailDto) {
     await this.authService.verifyResetEmail(verifyEmailDto);
     return ApiResponse.success('OTP has been sent to your email.', 200);
+  }
+
+  @Public()
+  @Post('validate-otp')
+  @HttpCode(200)
+  async validateOTP(@Body() validateOTPDTO: validateOTPDTO) {
+    await this.authService.validateOTP(validateOTPDTO);
+    return ApiResponse.success('OTP verified successfully.', 200);
   }
 
   @Public()

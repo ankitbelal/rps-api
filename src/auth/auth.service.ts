@@ -1,5 +1,10 @@
 import { Injectable, NotFoundException, Res } from '@nestjs/common';
-import { loginDTO, PasswordResetDto, VerifyEmailDto } from './dto/login.dto';
+import {
+  loginDTO,
+  PasswordResetDto,
+  validateOTPDTO,
+  VerifyEmailDto,
+} from './dto/login.dto';
 import { UserService } from 'src/user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import { UnauthorizedException } from '@nestjs/common';
@@ -150,7 +155,13 @@ export class AuthService {
     if (otpSent)
       return await this.userService.storeOTP(user.id, otp, type, expiresAt);
   }
-  async verifyOTP() {}
+
+  async validateOTP(validateOTPDTO: validateOTPDTO) {
+    const user = await this.userService.findUserByEmail(validateOTPDTO.email);
+    if (!user)
+      throw new NotFoundException('User with this email does not exists.');
+    return await this.userService.validateOTP(validateOTPDTO.otp, user.id);
+  }
 
   async resetPassword(passwordResetDto: PasswordResetDto) {
     return await this.userService.resetPassword(passwordResetDto);

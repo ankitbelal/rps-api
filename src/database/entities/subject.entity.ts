@@ -13,6 +13,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { StudentAttendance } from './student-attendance.entity';
+import { SubjectsEvaluationParameter } from './subject-evaluation-parameter.entity';
 
 @Entity('subjects')
 @Unique(['programId', 'code']) //duplicacy of subject should be considered when program and subject are same
@@ -50,6 +51,11 @@ export class Subject {
     cascade: true,
   })
   studentSubjectMarks: StudentSubjectMarks[];
+
+  @OneToMany(() => SubjectsEvaluationParameter, (marks) => marks.subject, {
+    cascade: true,
+  })
+  subjectEvaluationParameter: SubjectsEvaluationParameter[];
 
   @OneToMany(() => StudentAttendance, (attentance) => attentance.subject, {
     cascade: true,

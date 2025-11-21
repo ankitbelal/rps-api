@@ -34,3 +34,11 @@ export class VerifyEmailDto {
   @IsEmail({}, { message: 'Invalid Email Format' })
   email: string;
 }
+
+export class validateOTPDTO {
+  @IsNotEmpty({ message: 'Email is required.' })
+  email: string;
+
+  @IsNotEmpty({ message: 'OTP is required.' })
+  otp: string;
+}
