@@ -106,7 +106,7 @@ export class UserService {
     return true;
   }
 
-  async validateOTP(otp: string, userId: number) {
+  async validateOTP(otp: string, userId: number): Promise<Boolean> {
     const userOTP = await this.userOTPRepo.findOne({ where: { userId } });
 
     if (!userOTP) {
