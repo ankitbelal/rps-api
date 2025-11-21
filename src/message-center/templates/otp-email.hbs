@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>OTP Verification</title>
+    <style>
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #e6f0ff;
+        margin: 0;
+        padding: 0;
+      }
+
+      .email-container {
+        max-width: 600px;
+        margin: 40px auto;
+        background-color: #ffffff;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+        border-top: 6px solid #007bff;
+      }
+
+      .header {
+        background-color: #f5f8ff;
+        padding: 25px 0;
+        text-align: center;
+      }
+
+      .header img {
+        width: 160px;
+      }
+
+      .body {
+        padding: 40px 30px;
+        text-align: center;
+      }
+
+      .body h2 {
+        color: #333333;
+        margin-bottom: 15px;
+      }
+
+      .body p {
+        color: #555555;
+        font-size: 16px;
+        margin: 10px 0 20px 0;
+      }
+
+      .otp-box {
+        display: inline-block;
+        background-color: #f0f4ff;
+        padding: 20px 40px;
+        font-size: 32px;
+        font-weight: 700;
+        color: #007bff;
+        border-radius: 12px;
+        border: 2px dashed #007bff;
+        letter-spacing: 6px;
+        margin-bottom: 25px;
+      }
+
+      .footer {
+        background-color: #007bff;
+        color: #ffffff;
+        padding: 20px 15px;
+        text-align: center;
+      }
+
+      .footer img {
+        width: 120px;
+        margin-bottom: 8px;
+      }
+
+      .footer p {
+        margin: 0;
+        font-size: 13px;
+      }
+
+      .body small {
+        color: #999999;
+        font-size: 12px;
+        display: block;
+        margin-top: 15px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="email-container">
+      <div class="header">
+        <img src="{{logoUrl}}" alt="RPS Logo">
+      </div>
+      <div class="body">
+        <h2>Hello {{name}},</h2>
+        <p>Use the following OTP to <strong>{{action}}</strong>. This OTP is valid for {{expiryMinutes}} minutes.</p>
+        <div class="otp-box">{{otp}}</div>
+        <p>If you didn't request this, you can safely ignore this email.</p>
+        <small>This is an automated email. Please do not reply.</small>
+      </div>
+      <div class="footer">
+        <img src="{{footerLogoUrl}}" alt="RPS Logo">
+        <p>&copy; 2025 RPS Mini LMS. All rights reserved.</p>
+      </div>
+    </div>
+  </body>
+</html>

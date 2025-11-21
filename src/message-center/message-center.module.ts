@@ -3,6 +3,8 @@ import { MessageCenterService } from './message-center.service';
 import { MessageCenterController } from './message-center.controller';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigService, ConfigModule } from '@nestjs/config';
+import { join } from 'path';
+import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 
 const DEFAULT_MAIL_PORT = 587;
 
@@ -24,6 +26,13 @@ const DEFAULT_MAIL_PORT = 587;
         },
         defaults: {
           from: config.get<string>('MAIL_FROM'),
+        },
+        template: {
+          dir: join(__dirname, 'templates'),
+          adapter: new HandlebarsAdapter(),
+          options: {
+            strict: true,
+          },
         },
       }),
     }),
