@@ -1,6 +1,7 @@
 import {
   IsEmail,
   IsNotEmpty,
+  IsString,
   IsStrongPassword,
   Matches,
   Validate,
@@ -40,5 +41,5 @@ export class validateOTPDTO {
   email: string;
 
   @IsNotEmpty({ message: 'OTP is required.' })
-  otp: string;
+  otp: number;
 }

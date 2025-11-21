@@ -6,7 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { loginDTO, PasswordResetDto } from 'src/auth/dto/login.dto';
 import { User, UserType, Status } from '../database/entities/user.entity';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { UserActivity } from '../database/entities/user-activity.entity';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
@@ -94,6 +94,7 @@ export class UserService {
     otp: string,
     type: string,
     expiresAt: Date,
+    deviceId: string,
   ): Promise<Boolean> {
     const hashedOTP = await bcrypt.hash(otp, 10);
     const saveOTP = this.userOTPRepo.create({
@@ -101,53 +102,63 @@ export class UserService {
       otp: hashedOTP,
       type,
       expiresAt,
+      deviceId,
     });
     await this.userOTPRepo.save(saveOTP);
     return true;
   }
 
-  async validateOTP(otp: string, userId: number): Promise<Boolean> {
-    const userOTP = await this.userOTPRepo.findOne({ where: { userId } });
-
-    if (!userOTP) {
-      throw new BadRequestException({
-        message: 'Something went wrong. Please try again.',
-      });
-    }
+  async validateOTP(
+    otp: number,
+    userId: number,
+    deviceId: string,
+  ): Promise<boolean> {
     const now = new Date();
 
-    if (userOTP.lockOutUntil && new Date(userOTP.lockOutUntil) > now) {
+    const otpRecords = await this.userOTPRepo.find({
+      where: { userId, deviceId, verifiedAt: IsNull() },
+    });
+
+    if (!otpRecords.length) {
+      throw new BadRequestException(
+        'No OTP found for this device. Please request a new one.',
+      );
+    }
+
+    const userOTP = otpRecords.find((record) =>
+      bcrypt.compareSync(String(otp), record.otp),
+    );
+
+    if (!userOTP) {
+      for (const record of otpRecords) {
+        record.attempts += 1;
+        if (record.attempts >= 10) {
+          record.lockOutUntil = new Date(now.getTime() + 15 * 60 * 1000); // 15 min lock
+        }
+        await this.userOTPRepo.save(record);
+      }
+
       throw new BadRequestException({
-        message: 'Too many attempts. Please try again later.',
+        message: 'Invalid OTP. Please try again.',
+        remainingAttempts: 10 - Math.min(...otpRecords.map((r) => r.attempts)),
+      });
+    }
+
+    if (userOTP.expiresAt && userOTP.expiresAt < now) {
+      throw new BadRequestException(
+        'OTP has been expired. Please request a new one.',
+      );
+    }
+
+    if (userOTP.lockOutUntil && userOTP.lockOutUntil > now) {
+      throw new BadRequestException({
+        message: 'Too many attempts. Try again later.',
         lockedUntil: userOTP.lockOutUntil,
       });
     }
-    const isMatch = await bcrypt.compare(otp, userOTP.otp);
+    userOTP.verifiedAt = now;
+    await this.userOTPRepo.save(userOTP);
 
-    if (isMatch) {
-      await this.userOTPRepo.remove(userOTP);
-      return true;
-    } else {
-      userOTP.attempts += 1;
-      if (userOTP.attempts >= 10) {
-        const lockoutMinutes = 15;
-        userOTP.lockOutUntil = new Date(
-          now.getTime() + lockoutMinutes * 60 * 1000,
-        );
-        await this.userOTPRepo.save(userOTP);
-
-        throw new BadRequestException({
-          message: 'Too many invalid attempts. Try again later.',
-          lockedUntil: userOTP.lockOutUntil,
-        });
-      }
-
-      await this.userOTPRepo.save(userOTP);
-
-      throw new BadRequestException({
-        message: 'Invalid OTP',
-        remainingAttempts: 10 - userOTP.attempts,
-      });
-    }
+    return true;
   }
 }

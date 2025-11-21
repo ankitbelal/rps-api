@@ -30,8 +30,8 @@ export class UserOTP {
   @Column({ type: 'int', default: 0 })
   attempts: number;
 
-  @Column({ type: 'int', default: 0 })
-  revoked: number;
+  @Column({ name: 'device_id', nullable: true })
+  deviceId: string;
 
   @Column({ name: 'lockout_until', type: 'timestamp', nullable: true })
   lockOutUntil: Date;

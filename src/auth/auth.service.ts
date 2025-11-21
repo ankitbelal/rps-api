@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, Res } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   loginDTO,
   PasswordResetDto,
@@ -12,16 +16,22 @@ import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
 import { generateRandomNumbers } from 'utils/general-utils';
 import { MessageCenterService } from 'src/message-center/message-center.service';
+import { v4 as uuidv4 } from 'uuid';
+
 const ACCESS_TOKEN_EXPIRES_IN = '15m';
 const REFRESH_TOKEN_EXPIRES_IN = '7d';
+
 @Injectable()
 export class AuthService {
+  isProd: boolean = false;
   constructor(
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly messaageCenterService: MessageCenterService,
-  ) {}
+  ) {
+    this.isProd = this.configService.get<string>('NODE_ENV') === 'production';
+  }
 
   async login(loginDTO: loginDTO, request, res: Response) {
     const action = 'login';
@@ -36,12 +46,11 @@ export class AuthService {
       userType: user.userType,
     };
 
-    const isProd = this.configService.get<string>('NODE_ENV') === 'production';
     const accessToken = this.jwtService.sign(payload, {
       secret:
         this.configService.get<string>('ACCESS_TOKEN_SECRET') ||
         'defaultAccessSecret',
-      expiresIn: isProd ? ACCESS_TOKEN_EXPIRES_IN : '10000y',
+      expiresIn: this.isProd ? ACCESS_TOKEN_EXPIRES_IN : '10000y',
     });
 
     const refreshToken = this.jwtService.sign(payload, {
@@ -53,14 +62,14 @@ export class AuthService {
 
     res.cookie('access_token', accessToken, {
       httpOnly: true,
-      secure: isProd,
+      secure: this.isProd,
       sameSite: 'strict',
-      maxAge: 15 * 60 * 1000, // 15 minutes
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
 
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
-      secure: isProd,
+      secure: this.isProd,
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
@@ -78,7 +87,7 @@ export class AuthService {
         status: user.status,
       },
     };
-    if (!isProd) {
+    if (!this.isProd) {
       responseBody.accessToken = accessToken;
       responseBody.refreshToken = refreshToken;
     }
@@ -102,7 +111,7 @@ export class AuthService {
 
       res.cookie('access_token', newAccessToken, {
         httpOnly: true,
-        secure: true,
+        secure: this.isProd,
         sameSite: 'strict',
         maxAge: 15 * 60 * 1000,
       });
@@ -119,8 +128,16 @@ export class AuthService {
     const ip = request.clientIp;
     const platform = request.platform;
     await this.userService.logActivity(user.userId, ip, platform, action);
-    res.clearCookie('access_token');
-    res.clearCookie('refresh_token');
+    res.clearCookie('access_token', {
+      httpOnly: true,
+      secure: this.isProd,
+      sameSite: 'strict',
+    });
+    res.clearCookie('refresh_token', {
+      httpOnly: true,
+      secure: this.isProd,
+      sameSite: 'strict',
+    });
     return {
       statusCode: 200,
       status: 'success',
@@ -128,7 +145,11 @@ export class AuthService {
     };
   }
 
-  async verifyResetEmail(verifyEmailDto: VerifyEmailDto) {
+  async verifyResetEmail(
+    verifyEmailDto: VerifyEmailDto,
+    req: Request,
+    res: Response,
+  ) {
     const user = await this.userService.findUserByEmail(verifyEmailDto.email);
     if (user?.status == 'P')
       throw new NotFoundException(
@@ -152,18 +173,68 @@ export class AuthService {
     );
     const expiresAt: Date = new Date(Date.now() + 5 * 60 * 1000); //5 minute expiry
     const type: string = 'reset-password';
-    if (otpSent)
-      return await this.userService.storeOTP(user.id, otp, type, expiresAt);
+    if (otpSent) {
+      const deviceId = req.cookies['device_id'] ?? uuidv4();
+      res.cookie('device_id', deviceId, {
+        httpOnly: true,
+        secure: this.isProd,
+        sameSite: 'strict',
+      });
+      return await this.userService.storeOTP(
+        user.id,
+        otp,
+        type,
+        expiresAt,
+        deviceId,
+      );
+    } else
+      throw new InternalServerErrorException(
+        'Failed to send OTP. Please try again',
+      );
   }
 
-  async validateOTP(validateOTPDTO: validateOTPDTO) {
+  async validateOTP(
+    validateOTPDTO: validateOTPDTO,
+    req: Request,
+    res: Response,
+  ) {
+    const deviceId = req.cookies['device_id'];
     const user = await this.userService.findUserByEmail(validateOTPDTO.email);
     if (!user)
       throw new NotFoundException('User with this email does not exists.');
-    return await this.userService.validateOTP(validateOTPDTO.otp, user.id);
+    const validOTP = await this.userService.validateOTP(
+      validateOTPDTO.otp,
+      user.id,
+      deviceId,
+    );
+    if (validOTP)
+      res.cookie('otp_verified', true, {
+        httpOnly: true,
+        secure: this.isProd,
+        sameSite: 'strict',
+      });
+    return validOTP;
   }
 
-  async resetPassword(passwordResetDto: PasswordResetDto) {
+  async resetPassword(
+    passwordResetDto: PasswordResetDto,
+    req: Request,
+    res: Response,
+  ) {
+    const otpVerified = req.cookies['otp_verified'];
+    if (!otpVerified || otpVerified !== 'true') {
+      throw new UnauthorizedException('OTP verification required.');
+    }
+    res.clearCookie('access_token', {
+      httpOnly: true,
+      secure: this.isProd,
+      sameSite: 'strict',
+    });
+    res.clearCookie('otp_verified', {
+      httpOnly: true,
+      secure: this.isProd,
+      sameSite: 'strict',
+    });
     return await this.userService.resetPassword(passwordResetDto);
   }
 }

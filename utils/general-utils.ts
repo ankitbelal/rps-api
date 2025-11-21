@@ -10,3 +10,4 @@ export async function generateRandomNumbers(digits = 6): Promise<string> {
   const number = randomInt(0, max);
   return number.toString().padStart(digits, '0');
 }
+

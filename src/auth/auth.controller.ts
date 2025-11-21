@@ -9,7 +9,6 @@ import { AuthService } from './auth.service';
 import { Public } from './jwt/public.decorator';
 import type { Request, Response } from 'express';
 import { ApiResponse } from 'utils/api-response';
-import { validate } from 'class-validator';
 
 @Controller('auth')
 export class AuthController {
@@ -45,24 +44,36 @@ export class AuthController {
   @Public()
   @Post('verify-email')
   @HttpCode(200)
-  async verifyEmail(@Body() verifyEmailDto: VerifyEmailDto) {
-    await this.authService.verifyResetEmail(verifyEmailDto);
+  async verifyEmail(
+    @Body() verifyEmailDto: VerifyEmailDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    await this.authService.verifyResetEmail(verifyEmailDto, req, res);
     return ApiResponse.success('OTP has been sent to your email.', 200);
   }
 
   @Public()
   @Post('validate-otp')
   @HttpCode(200)
-  async validateOTP(@Body() validateOTPDTO: validateOTPDTO) {
-    await this.authService.validateOTP(validateOTPDTO);
+  async validateOTP(
+    @Body() validateOTPDTO: validateOTPDTO,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    await this.authService.validateOTP(validateOTPDTO, req, res);
     return ApiResponse.success('OTP verified successfully.', 200);
   }
 
   @Public()
   @Post('reset-password')
   @HttpCode(200)
-  async resetPassword(@Body() passwordResetDto: PasswordResetDto) {
-    await this.authService.resetPassword(passwordResetDto);
+  async resetPassword(
+    @Body() passwordResetDto: PasswordResetDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    await this.authService.resetPassword(passwordResetDto, req, res);
     return ApiResponse.success('Password reset successfully.', 200);
   }
 }
