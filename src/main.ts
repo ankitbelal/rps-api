@@ -5,11 +5,9 @@ import { JwtGuard } from './auth/jwt/jwt.guard';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import cookieParser from 'cookie-parser';
-import { join } from 'path';
-import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api', {
     exclude: [{ path: '/', method: RequestMethod.ALL }],
   });
@@ -31,7 +29,6 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
   app.use(cookieParser());
-  app.useStaticAssets(join(__dirname, '..', 'src/public'));
 
   await app.listen(process.env.PORT ?? 3000);
 }

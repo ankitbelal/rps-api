@@ -166,12 +166,12 @@ export class AuthService {
     const otp = await generateRandomNumbers(6);
     const message = `your confirmation code is ${otp}. if you didn't request this emai, you can safely ignore it.`;
     const subject = 'Reset Password';
-    const otpSent = await this.messaageCenterService.sendOTP(
+    const otpSent = await this.messaageCenterService.sendEmail(
       verifyEmailDto.email,
       subject,
       message,
     );
-
+    
     const expiresAt: Date = new Date(Date.now() + 5 * 60 * 1000); //5 minute expiry
     const type: string = 'reset-password';
     if (otpSent) {
