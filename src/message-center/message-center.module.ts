@@ -28,7 +28,7 @@ const isProd = process.env.NODE_ENV === 'production';
         defaults: {
           from: config.get<string>('MAIL_FROM'),
         },
-        emplate: {
+        template: {
           dir: join(
             __dirname,
             isProd ? 'message-center/templates' : '..',
