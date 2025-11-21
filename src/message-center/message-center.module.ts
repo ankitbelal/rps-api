@@ -7,6 +7,7 @@ import { join } from 'path';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 
 const DEFAULT_MAIL_PORT = 587;
+const isProd = process.env.NODE_ENV === 'production';
 
 @Module({
   imports: [
@@ -27,12 +28,15 @@ const DEFAULT_MAIL_PORT = 587;
         defaults: {
           from: config.get<string>('MAIL_FROM'),
         },
-        template: {
-          dir: join(__dirname, 'templates'),
+        emplate: {
+          dir: join(
+            __dirname,
+            isProd ? 'message-center/templates' : '..',
+            'message-center',
+            'templates',
+          ),
           adapter: new HandlebarsAdapter(),
-          options: {
-            strict: true,
-          },
+          options: { strict: true },
         },
       }),
     }),
