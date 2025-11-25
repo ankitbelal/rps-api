@@ -7,8 +7,8 @@ import {
   IsEnum,
   MaxDate,
 } from 'class-validator';
-import { Gender } from '../../database/entities/student.entity';
 import { Type } from 'class-transformer';
+import { Gender } from 'utils/enums/general-enums';
 
 export class CreateStudentDto {
   @IsNotEmpty({ message: 'First Name is required.' })

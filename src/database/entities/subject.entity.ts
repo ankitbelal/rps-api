@@ -43,6 +43,9 @@ export class Subject {
   @JoinColumn({ name: 'program_id' })
   program: Program;
 
+  @Column({ name: 'teacher_id' })
+  teacherId: number;
+
   @ManyToOne(() => Teacher, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'teacher_id' })
   teacher: Teacher;

@@ -51,7 +51,8 @@ export class FacultyService {
     const exists = await this.facultyRepo.findOne({
       where: { name: UpdateFacultyDto.name },
     });
-    if (exists) throw new BadRequestException('Faculty already exists.');
+    if (exists && exists.id != id)
+      throw new BadRequestException('Faculty already exists.');
     const faculty = await this.facultyRepo.findOne({ where: { id } });
     if (!faculty)
       throw new NotFoundException(`Faculty with id: ${id} doesnt exists.`);
@@ -64,5 +65,11 @@ export class FacultyService {
     if (!faculty)
       throw new NotFoundException(`Faculty with ${id} doesnt exists.`);
     await this.facultyRepo.remove(faculty);
+  }
+
+  async findFacultyById(id: number): Promise<Boolean> {
+    const faculty = await this.facultyRepo.findOne({ where: { id } });
+    if (!faculty) return false;
+    return true;
   }
 }

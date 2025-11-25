@@ -9,15 +9,25 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Program } from '../database/entities/program.entity';
 import { Repository } from 'typeorm';
 import { ProgramQueryDto } from './dto/program-query-dto';
+import { FacultyService } from 'src/faculty/faculty.service';
 
 @Injectable()
 export class ProgramService {
   constructor(
     @InjectRepository(Program)
     private readonly programRepo: Repository<Program>,
+    private readonly facultyService: FacultyService,
   ) {}
 
   async create(createProgramDto: CreateProgramDto): Promise<Program> {
+    const faculty = await this.facultyService.findFacultyById(
+      createProgramDto.facultyId,
+    );
+    if (!faculty)
+      throw new BadRequestException(
+        `Faculty with ${createProgramDto.facultyId} does not exist`,
+      );
+
     const exists = await this.programRepo.findOne({
       where: { code: createProgramDto.code },
     });

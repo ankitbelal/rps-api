@@ -9,21 +9,11 @@ import {
   UpdateDateColumn,
   OneToOne,
   OneToMany,
+  JoinColumn,
 } from 'typeorm';
 import { StudentSubjectMarks } from './student-marks.entity';
-import { StudentAttendance } from './student-attendance.entity';
-
-export enum Gender {
-  MALE = 'M',
-  FEMALE = 'F',
-  OTHER = 'O',
-}
-
-export enum Status {
-  ACTIVE = 'A',
-  PASSED = 'P',
-  SUSPENDED = 'S',
-}
+import { Status, StudentAttendance } from './student-attendance.entity';
+import { Gender, StudentStatus } from 'utils/enums/general-enums';
 
 @Entity('students')
 export class Student {
@@ -48,8 +38,8 @@ export class Student {
   @Column({ name: 'enrollment_date', type: 'date' })
   enrollmentDate: Date;
 
-  @Column({ type: 'enum', enum: Status })
-  status: Status;
+  @Column({ type: 'enum', enum: StudentStatus })
+  status: StudentStatus;
 
   @Column({
     name: 'registration_no',
@@ -80,6 +70,7 @@ export class Student {
   @ManyToOne(() => Program, (program) => program.students, {
     onDelete: 'CASCADE',
   })
+  @JoinColumn({ name: 'program_id' })
   program: Program;
 
   @OneToOne(() => User, (user) => user.student)

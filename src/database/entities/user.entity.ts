@@ -13,18 +13,7 @@ import {
   PrimaryColumn,
 } from 'typeorm';
 import { UserOTP } from './user-otps.entity';
-
-export enum UserType {
-  ADMIN = 'A',
-  TEACHER = 'T',
-  STUDENT = 'S',
-}
-
-export enum Status {
-  ACTIVE = 'A',
-  PENDING = 'P',
-  DISABLED = 'D',
-}
+import { UserStatus, UserType } from 'utils/enums/general-enums';
 
 @Entity('users')
 export class User {
@@ -51,12 +40,18 @@ export class User {
   })
   userType: UserType;
 
-  @Column({ type: 'enum', enum: Status, default: Status.PENDING })
-  status: Status;
+  @Column({ type: 'enum', enum: UserStatus, default: UserStatus.PENDING })
+  status: UserStatus;
+
+  @Column({ name: 'student_id', nullable: true })
+  studentId: number | null;
 
   @OneToOne(() => Student, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'student_id' })
   student?: Student;
+
+  @Column({ name: 'teacher_id', nullable: true })
+  teacherId: number | null;
 
   @OneToOne(() => Teacher, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'teacher_id' })

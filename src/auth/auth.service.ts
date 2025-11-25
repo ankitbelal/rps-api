@@ -172,7 +172,7 @@ export class AuthService {
       message,
     );
     
-    const expiresAt: Date = new Date(Date.now() + 5 * 60 * 1000); //5 minute expiry
+    const expiresAt: Date = new Date(Date.now() + 10 * 60 * 1000); //5 minute expiry
     const type: string = 'reset-password';
     if (otpSent) {
       const deviceId = req.cookies['device_id'] ?? uuidv4();

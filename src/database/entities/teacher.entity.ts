@@ -7,8 +7,9 @@ import {
   OneToOne,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToMany
+  OneToMany,
 } from 'typeorm';
+import { Gender } from 'utils/enums/general-enums';
 @Entity('teachers')
 export class Teacher {
   @PrimaryGeneratedColumn()
@@ -26,6 +27,12 @@ export class Teacher {
   @Column({ nullable: true, unique: true })
   phone: string;
 
+  @Column({ type: 'enum', enum: Gender })
+  gender: Gender;
+
+  @Column({ type: 'date', name: 'dob' })
+  DOB: Date;
+
   @Column({ nullable: false, type: 'varchar' })
   address1: string;
 
@@ -36,6 +43,7 @@ export class Teacher {
     cascade: true,
     onDelete: 'CASCADE',
   })
+  user: User;
 
   @OneToMany(() => Subject, (subject) => subject.teacher, { cascade: true })
   subjects: Subject[];

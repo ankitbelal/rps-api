@@ -5,12 +5,13 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { loginDTO, PasswordResetDto } from 'src/auth/dto/login.dto';
-import { User, UserType, Status } from '../database/entities/user.entity';
+import { User } from '../database/entities/user.entity';
 import { IsNull, Repository } from 'typeorm';
 import { UserActivity } from '../database/entities/user-activity.entity';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 import { UserOTP } from 'src/database/entities/user-otps.entity';
+import { UserStatus, UserType } from 'utils/enums/general-enums';
 
 @Injectable()
 export class UserService {
@@ -51,26 +52,6 @@ export class UserService {
       action: action,
     });
     await this.activityRepo.save(activity);
-  }
-
-  async createUser(
-    name: string,
-    email: string,
-    contact: string,
-    userType: UserType,
-    status: Status,
-  ): Promise<User> {
-    const password = randomBytes(10);
-    const user = await this.userRepo.create({
-      email,
-      password: password.toString(),
-      name,
-      contact,
-      userType,
-      status,
-    });
-
-    return await this.userRepo.save(user);
   }
 
   async findUserByEmail(email: string): Promise<User | null> {
@@ -160,5 +141,40 @@ export class UserService {
     await this.userOTPRepo.save(userOTP);
 
     return true;
+  }
+
+  async createUser(
+    id: number,
+    name: string,
+    email: string,
+    contact: string,
+    userType: UserType,
+    status: UserStatus,
+  ): Promise<User> {
+    const randomPass = randomBytes(10).toString('hex');
+    const hashedPassword = await bcrypt.hash(randomPass, 10);
+
+    const userData: Partial<User> = {
+      email,
+      password: hashedPassword,
+      name,
+      contact,
+      userType,
+      status,
+      studentId: null,
+      teacherId: null,
+    };
+
+    if (userType === UserType.TEACHER) {
+      userData.teacherId = id;
+    }
+
+    if (userType === UserType.STUDENT) {
+      userData.studentId = id;
+    }
+
+    const user = this.userRepo.create(userData);
+
+    return await this.userRepo.save(user);
   }
 }
