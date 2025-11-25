@@ -4,7 +4,7 @@ import { AuthService } from './auth.service';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UserModule } from 'src/user/user.module';
-import { MessageCenterModule } from 'src/message-center/message-center.module';
+import { MessageCenterModule } from 'src/mailing/mailing.module';
 
 const ACCESS_TOKEN_EXPIRES_IN = '15m';  //done this because typescript return error while getting from env
 @Module({

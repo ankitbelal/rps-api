@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { MessageCenterService } from './message-center.service';
-import { MessageCenterController } from './message-center.controller';
+import { MessageCenterService } from './mailing.service';
+import { MessageCenterController } from './mailing.controller';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigService, ConfigModule } from '@nestjs/config';
 

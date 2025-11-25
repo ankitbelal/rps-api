@@ -10,7 +10,7 @@ import { SubjectModule } from './subject/subject.module';
 import { TeacherModule } from './teacher/teacher.module';
 import { StudentModule } from './student/student.module';
 import { FacultyModule } from './faculty/faculty.module';
-import { MessageCenterModule } from './message-center/message-center.module';
+import { MessageCenterModule } from './mailing/mailing.module';
 
 @Module({
   imports: [

@@ -15,7 +15,7 @@ import { UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
 import { generateRandomNumbers } from 'utils/general-utils';
-import { MessageCenterService } from 'src/message-center/message-center.service';
+import { MessageCenterService } from 'src/mailing/mailing.service';
 import { v4 as uuidv4 } from 'uuid';
 
 const ACCESS_TOKEN_EXPIRES_IN = '15m';

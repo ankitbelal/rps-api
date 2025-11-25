@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode } from '@nestjs/common';
-import { MessageCenterService } from './message-center.service';
+import { MessageCenterService } from './mailing.service';
 import { Public } from 'src/auth/jwt/public.decorator';
 @Controller('message-center')
 export class MessageCenterController {
