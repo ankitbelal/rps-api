@@ -12,6 +12,7 @@ import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 import { UserOTP } from 'src/database/entities/user-otps.entity';
 import { UserStatus, UserType } from 'utils/enums/general-enums';
+import { MailingService } from 'src/mailing/mailing.service';
 
 @Injectable()
 export class UserService {
@@ -24,6 +25,8 @@ export class UserService {
 
     @InjectRepository(UserActivity)
     private readonly activityRepo: Repository<UserActivity>,
+
+    private readonly mailingService: MailingService,
   ) {}
   async loginValidateUser(loginDTO: loginDTO) {
     const { email, password } = loginDTO;
@@ -174,7 +177,9 @@ export class UserService {
     }
 
     const user = this.userRepo.create(userData);
-
+    const message: string =
+      'Hi !, Your Account created successfully. you can access your account with below link ';
+    await this.mailingService.sendEmail(user.email, 'User Account', message);
     return await this.userRepo.save(user);
   }
 }

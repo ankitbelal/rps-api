@@ -1,7 +1,7 @@
 import { MailerService } from '@nestjs-modules/mailer';
 import { Injectable } from '@nestjs/common';
 @Injectable()
-export class MessageCenterService {
+export class MailingService {
   constructor(private readonly mailService: MailerService) {}
 
   async sendEmail(email: string, subject: string, message: string) {

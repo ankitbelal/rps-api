@@ -1,9 +1,9 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode } from '@nestjs/common';
-import { MessageCenterService } from './mailing.service';
+import { MailingService } from './mailing.service';
 import { Public } from 'src/auth/jwt/public.decorator';
 @Controller('message-center')
-export class MessageCenterController {
-  constructor(private readonly messageCenterService: MessageCenterService) {}
+export class MailingController {
+  constructor(private readonly messageCenterService: MailingService) {}
   
   // @Public()
   // @HttpCode(200)

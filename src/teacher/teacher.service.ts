@@ -9,7 +9,6 @@ import { Teacher } from 'src/database/entities/teacher.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserService } from 'src/user/user.service';
-import { STATUS_CODES } from 'http';
 import { UserStatus, UserType } from 'utils/enums/general-enums';
 
 @Injectable()

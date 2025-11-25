@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { MessageCenterService } from './mailing.service';
-import { MessageCenterController } from './mailing.controller';
+import { MailingService} from './mailing.service';
+import { MailingController } from './mailing.controller';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigService, ConfigModule } from '@nestjs/config';
 
@@ -28,8 +28,8 @@ const DEFAULT_MAIL_PORT = 587;
       }),
     }),
   ],
-  controllers: [MessageCenterController],
-  providers: [MessageCenterService],
-  exports: [MessageCenterService],
+  controllers: [MailingController],
+  providers: [MailingService],
+  exports: [MailingService],
 })
-export class MessageCenterModule {}
+export class MailingModule {}
