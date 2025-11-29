@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -163,6 +164,21 @@ export class AuthService {
     if (!user)
       throw new NotFoundException('User with this email does not exists.');
 
+    const deviceId = req.cookies['device_id'] ?? uuidv4();
+    const type: string = 'reset-password';
+    const now = new Date();
+    const latestOTP = await this.userService.findDeviceWiselatestOTP(
+      user.id,
+      deviceId,
+      type,
+    );
+
+    if (latestOTP && latestOTP.lockOutUntil > now)
+      throw new BadRequestException({
+        message: 'Too many attempts. Try again later.',
+        lockedUntil: latestOTP.lockOutUntil,
+      });
+
     const otp = await generateRandomNumbers(6);
     const message = `your confirmation code is ${otp}. if you didn't request this emai, you can safely ignore it.`;
     const subject = 'Reset Password';
@@ -171,11 +187,9 @@ export class AuthService {
       subject,
       message,
     );
-    
+
     const expiresAt: Date = new Date(Date.now() + 10 * 60 * 1000); //5 minute expiry
-    const type: string = 'reset-password';
     if (otpSent) {
-      const deviceId = req.cookies['device_id'] ?? uuidv4();
       res.cookie('device_id', deviceId, {
         httpOnly: true,
         secure: this.isProd,
@@ -222,7 +236,7 @@ export class AuthService {
     req: Request,
     res: Response,
   ) {
-    const otpVerified = req.cookies['otp_verified'];
+    const otpVerified = await req.cookies['otp_verified'];
     if (!otpVerified || otpVerified !== 'true') {
       throw new UnauthorizedException('OTP verification required.');
     }

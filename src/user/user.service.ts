@@ -98,52 +98,55 @@ export class UserService {
     deviceId: string,
   ): Promise<boolean> {
     const now = new Date();
-
-    const otpRecords = await this.userOTPRepo.find({
-      where: { userId, deviceId, verifiedAt: IsNull() },
-    });
-
-    if (!otpRecords.length) {
+    const latestOTP = await this.findDeviceWiselatestOTP(userId, deviceId);
+    if (!latestOTP) {
       throw new BadRequestException(
         'No OTP found for this device. Please request a new one.',
       );
     }
 
-    const userOTP = otpRecords.find((record) =>
-      bcrypt.compareSync(String(otp), record.otp),
-    );
-
-    if (!userOTP) {
-      for (const record of otpRecords) {
-        record.attempts += 1;
-        if (record.attempts >= 10) {
-          record.lockOutUntil = new Date(now.getTime() + 15 * 60 * 1000); // 15 min lock
-        }
-        await this.userOTPRepo.save(record);
-      }
-
+    if (latestOTP.lockOutUntil && latestOTP.lockOutUntil > now) {
       throw new BadRequestException({
-        message: 'Invalid OTP. Please try again.',
-        remainingAttempts: 10 - Math.min(...otpRecords.map((r) => r.attempts)),
+        message: 'Too many attempts. Try again later.',
+        lockedUntil: latestOTP.lockOutUntil,
       });
     }
 
-    if (userOTP.expiresAt && userOTP.expiresAt < now) {
+    if (latestOTP.expiresAt && latestOTP.expiresAt < now) {
       throw new BadRequestException(
         'OTP has been expired. Please request a new one.',
       );
     }
+    const isValid = bcrypt.compareSync(String(otp), latestOTP.otp);
 
-    if (userOTP.lockOutUntil && userOTP.lockOutUntil > now) {
+    if (!isValid) {
+      latestOTP.attempts += 1;
+      if (latestOTP.attempts >= 10) {
+        latestOTP.lockOutUntil = new Date(now.getTime() + 15 * 60 * 1000); // 15 min lock
+      }
+      await this.userOTPRepo.save(latestOTP);
+
       throw new BadRequestException({
-        message: 'Too many attempts. Try again later.',
-        lockedUntil: userOTP.lockOutUntil,
+        message: 'Invalid OTP. Please try again.',
+        remainingAttempts: 10 - latestOTP.attempts,
       });
     }
-    userOTP.verifiedAt = now;
-    await this.userOTPRepo.save(userOTP);
+
+    latestOTP.verifiedAt = now;
+    await this.userOTPRepo.save(latestOTP);
 
     return true;
+  }
+
+  async findDeviceWiselatestOTP(
+    userId: number,
+    deviceId: string,
+    type: string = '',
+  ) {
+    return await this.userOTPRepo.findOne({
+      where: { userId, deviceId, verifiedAt: IsNull() },
+      order: { createdAt: 'DESC' },
+    });
   }
 
   async createUser(
