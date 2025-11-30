@@ -1,9 +1,21 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query } from '@nestjs/common';
-import { CreateFacultyDto } from './dto/create-faculty-dto';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { FacultyService } from './faculty.service';
 import { ApiResponse } from 'utils/api-response';
-import { UpdateFacultyDto } from './dto/update-faculty-dto';
-import { FacultyQueryDto } from './dto/faculty-query-dto';
+import {
+  CreateFacultyDto,
+  UpdateFacultyDto,
+  FacultyQueryDto,
+} from './dto/faculty-dto';
 
 @Controller('faculties')
 export class FacultyController {
@@ -13,28 +25,42 @@ export class FacultyController {
   @Post()
   async create(@Body() createFacultyDto: CreateFacultyDto) {
     const faculties = await this.facultyService.create(createFacultyDto);
-    return ApiResponse.successData(faculties, 'Faculties registered successfully.', 201);
+    return ApiResponse.successData(
+      faculties,
+      'Faculties registered successfully.',
+      201,
+    );
   }
 
   @HttpCode(200)
   @Get()
-  async findAll(@Query() facultyQueryDto:FacultyQueryDto){
-  const faculties=await this.facultyService.findAll(facultyQueryDto);
-  return ApiResponse.successData(faculties,'Faculty fetched successfully.',200);
+  async findAll(@Query() facultyQueryDto: FacultyQueryDto) {
+    const faculties = await this.facultyService.findAll(facultyQueryDto);
+    return ApiResponse.successData(
+      faculties,
+      'Faculty fetched successfully.',
+      200,
+    );
   }
-
 
   @HttpCode(200)
   @Patch(':id')
-  async update(@Param('id') id:string, @Body() updateFacultyDto:UpdateFacultyDto){
-  const faculty=await this.facultyService.update(+id,updateFacultyDto);
-  return ApiResponse.successData(faculty,'Faculty updated successfully.',200);
+  async update(
+    @Param('id') id: string,
+    @Body() updateFacultyDto: UpdateFacultyDto,
+  ) {
+    const faculty = await this.facultyService.update(+id, updateFacultyDto);
+    return ApiResponse.successData(
+      faculty,
+      'Faculty updated successfully.',
+      200,
+    );
   }
 
   @HttpCode(200)
   @Delete(':id')
-  async remove(@Param('id') id:string){
+  async remove(@Param('id') id: string) {
     await this.facultyService.remove(+id);
-    return ApiResponse.success('Faculty deleted successfully.',200);
+    return ApiResponse.success('Faculty deleted successfully.', 200);
   }
 }

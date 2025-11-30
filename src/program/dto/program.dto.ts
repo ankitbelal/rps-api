@@ -1,5 +1,6 @@
+import { PartialType } from '@nestjs/mapped-types';
 import { Type } from 'class-transformer';
-import { IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 export class CreateProgramDto {
   @IsNotEmpty({ message: 'Name is required.' })
   name: string;
@@ -30,4 +31,33 @@ export class CreateProgramDto {
   @IsNumber()
   @Type(() => Number)
   durationInYears: number;
+}
+
+export class UpdateProgramDto extends PartialType(CreateProgramDto) {}
+
+export class ProgramQueryDto {
+  @IsOptional()
+  @IsNumber()
+  id: number;
+
+  @IsOptional()
+  name?: string;
+
+  @IsOptional()
+  @IsNumber()
+  faculty_id?: number;
+
+  @IsOptional()
+  @IsString()
+  code?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  page?: number = 1;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  limit?: number = 10;
 }

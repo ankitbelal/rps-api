@@ -1,3 +1,4 @@
+import { PartialType } from '@nestjs/mapped-types';
 import { Type } from 'class-transformer';
 import {
   IsEmail,
@@ -41,4 +42,42 @@ export class CreateTeacherDto {
 
   @IsOptional()
   address2: string;
+}
+
+export class UpdateTeacherDto extends PartialType(CreateTeacherDto) {}
+
+export class TeacherQueryDto {
+  @IsOptional()
+  @IsNumber()
+  id: number;
+
+  @IsOptional()
+  firstName?: string;
+
+  @IsOptional()
+  lastName?: string;
+
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @IsOptional()
+  phone: string;
+
+  @IsOptional()
+  @IsEnum(Gender, { message: 'Gender must be a valid.' })
+  gender?: Gender;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  page?: number = 1;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  limit?: number = 10;
+
+  @IsOptional()
+  search: string;
 }

@@ -1,14 +1,17 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateProgramDto } from './dto/create-program.dto';
-import { UpdateProgramDto } from './dto/update-program.dto';
+import {
+  CreateProgramDto,
+  ProgramQueryDto,
+  UpdateProgramDto,
+} from './dto/program.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Program } from '../database/entities/program.entity';
 import { Repository } from 'typeorm';
-import { ProgramQueryDto } from './dto/program-query-dto';
 import { FacultyService } from 'src/faculty/faculty.service';
 
 @Injectable()
@@ -24,7 +27,7 @@ export class ProgramService {
       createProgramDto.facultyId,
     );
     if (!faculty)
-      throw new BadRequestException(
+      throw new NotFoundException(
         `Faculty with ${createProgramDto.facultyId} does not exist`,
       );
 
@@ -32,7 +35,7 @@ export class ProgramService {
       where: { code: createProgramDto.code },
     });
     if (exists)
-      throw new BadRequestException(
+      throw new ConflictException(
         `Program already exists for Code: ${createProgramDto.code}.`,
       );
     const program = this.programRepo.create(createProgramDto);
@@ -68,7 +71,7 @@ export class ProgramService {
         throw new NotFoundException(
           `Program with id: ${filters.id} doesn't exists.`,
         );
-      return {data:[data]};
+      return { data: [data] };
     }
     query.select(Program.ALLOWED_FIELDS_LIST);
 

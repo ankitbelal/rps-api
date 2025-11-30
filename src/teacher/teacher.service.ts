@@ -2,14 +2,19 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
-import { CreateTeacherDto } from './dto/create-teacher.dto';
-import { UpdateTeacherDto } from './dto/update-teacher.dto';
+import {
+  CreateTeacherDto,
+  TeacherQueryDto,
+  UpdateTeacherDto,
+} from './dto/teacher.dto';
 import { Teacher } from 'src/database/entities/teacher.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserService } from 'src/user/user.service';
 import { UserStatus, UserType } from 'utils/enums/general-enums';
+import { SelectQueryBuilder } from 'typeorm/browser';
 
 @Injectable()
 export class TeacherService {
@@ -41,7 +46,7 @@ export class TeacherService {
     if (emailUsed && !phoneUsed)
       throw new ConflictException({
         success: false,
-        statusCode: 422,
+        statusCode: 409,
         message: 'Validation failed',
         errors: {
           email: 'Already Used',
@@ -51,7 +56,7 @@ export class TeacherService {
       if (emailUsed && !phoneUsed)
         throw new ConflictException({
           success: false,
-          statusCode: 422,
+          statusCode: 409,
           message: 'Validation failed',
           errors: {
             phone: 'Already Used',
@@ -72,12 +77,74 @@ export class TeacherService {
     return teacher;
   }
 
-  findAll() {
-    return `This action returns all teacher`;
+  async findAll(teacherQueryDto: TeacherQueryDto): Promise<{
+    data: Teacher[];
+    total?: number;
+    page?: number;
+    lastPage?: number;
+  }> {
+    const { page = 1, limit = 10, ...filters } = teacherQueryDto;
+    const query = this.teacherRepo.createQueryBuilder('teacher');
+    if (filters?.id) {
+      query.andWhere('');
+      query.select(Teacher.ALLOWED_DETAILS);
+      const data = await query.getOne();
+      if (!data)
+        throw new NotFoundException({
+          statusCode: 404,
+          message: `Teacher with id: ${filters.id} does not exists`,
+        });
+      return { data: [data] };
+    }
+
+    const filteredquery = this.applyFilters(query, filters);
+    filteredquery.select(Teacher.ALLOWED_FIELDS_LIST);
+    filteredquery.skip((page - 1) * limit).take(limit);
+    filteredquery.orderBy('teacher.first_name', 'ASC');
+    const [data, total] = await filteredquery.getManyAndCount();
+    const lastPage = Math.ceil(total / limit);
+    return { data, total, page, lastPage };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} teacher`;
+  private applyFilters(
+    query: SelectQueryBuilder<Teacher>,
+    filters: Partial<TeacherQueryDto>,
+  ): SelectQueryBuilder<Teacher> {
+    if (filters?.firstName) {
+      query.andWhere('teacher.first_name = :firstName', {
+        firstName: filters.firstName,
+      });
+    }
+
+    if (filters?.lastName) {
+      query.andWhere('teacher.last_name = :lastName', {
+        lastName: filters.lastName,
+      });
+    }
+
+    if (filters?.email) {
+      query.andWhere('teacher.email = :email', { email: filters.email });
+    }
+
+    if (filters?.gender) {
+      query.andWhere('teacher.gender = :gender', { gender: filters.gender });
+    }
+    if (filters.phone) {
+      query.andWhere('teacher.phone = :phone', { phone: filters.phone });
+    }
+
+    if (filters?.search) {
+      query
+        .orWhere('teacher.first_name= :firstName', {
+          firstName: `%${filters.search}%`,
+        })
+        .orWhere('teacher.last_name = :lastName', {
+          lastName: `%${filters.lastName}%`,
+        })
+        .orWhere('teacher.email = :email', { email: filters.email })
+        .orWhere('teacher.phone = :phone', { phone: filters.phone });
+    }
+    return query;
   }
 
   update(id: number, updateTeacherDto: UpdateTeacherDto) {

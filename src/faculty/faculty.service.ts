@@ -3,13 +3,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateFacultyDto } from './dto/create-faculty-dto';
-import {
-  Faculty,
-} from 'src/database/entities/faculty.entity';
+import { Faculty } from 'src/database/entities/faculty.entity';
 import { Repository } from 'typeorm';
-import { UpdateFacultyDto } from './dto/update-faculty-dto';
-import { FacultyQueryDto } from './dto/faculty-query-dto';
+import {
+  CreateFacultyDto,
+  UpdateFacultyDto,
+  FacultyQueryDto,
+} from './dto/faculty-dto';
 import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()

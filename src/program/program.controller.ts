@@ -10,10 +10,13 @@ import {
   Query,
 } from '@nestjs/common';
 import { ProgramService } from './program.service';
-import { CreateProgramDto } from './dto/create-program.dto';
-import { UpdateProgramDto } from './dto/update-program.dto';
+import {
+  CreateProgramDto,
+  ProgramQueryDto,
+  UpdateProgramDto,
+} from './dto/program.dto';
+
 import { ApiResponse } from 'utils/api-response';
-import { ProgramQueryDto } from './dto/program-query-dto';
 
 @Controller('programs')
 export class ProgramController {

@@ -7,10 +7,14 @@ import {
   Param,
   Delete,
   HttpCode,
+  Query,
 } from '@nestjs/common';
 import { TeacherService } from './teacher.service';
-import { CreateTeacherDto } from './dto/create-teacher.dto';
-import { UpdateTeacherDto } from './dto/update-teacher.dto';
+import {
+  CreateTeacherDto,
+  TeacherQueryDto,
+  UpdateTeacherDto,
+} from './dto/teacher.dto';
 import { ApiResponse } from 'utils/api-response';
 
 @Controller('teacher')
@@ -21,17 +25,21 @@ export class TeacherController {
   @Post()
   async create(@Body() createTeacherDto: CreateTeacherDto) {
     const teacher = await this.teacherService.create(createTeacherDto);
-    return ApiResponse.successData(teacher, 'Teacher Registered successfully.', 201);
+    return ApiResponse.successData(
+      teacher,
+      'Teacher registered successfully.',
+      201,
+    );
   }
-
+  @HttpCode(200)
   @Get()
-  findAll() {
-    return this.teacherService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.teacherService.findOne(+id);
+  async findAll(@Query() teacherQueryDto: TeacherQueryDto) {
+    const teachers = this.teacherService.findAll(teacherQueryDto);
+    return ApiResponse.successData(
+      teachers,
+      'Teachers fetched successfully',
+      200,
+    );
   }
 
   @Patch(':id')
