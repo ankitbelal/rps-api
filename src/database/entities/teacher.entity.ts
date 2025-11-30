@@ -53,4 +53,8 @@ export class Teacher {
 
   @UpdateDateColumn({ type: 'timestamp', name: 'updated_at' })
   updatedAt: Date;
+
+  static readonly   ALLOWED_FIELDS_LIST=['id','firstName','lastName','email','phone','gender','dob','address1','address2'];
+  static readonly ALLOWEED_DETAILS=[];
+
 }

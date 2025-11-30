@@ -31,7 +31,7 @@ export class TeacherService {
     if (emailUsed && phoneUsed)
       throw new ConflictException({
         success: false,
-        statusCode: 422,
+        statusCode: 409,
         message: 'Validation failed',
         errors: {
           phone: 'Already Used',

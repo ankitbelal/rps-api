@@ -37,7 +37,7 @@ export class FacultyService {
     const { page = 1, limit = 10, ...filters } = facultyQueryDto;
     const query = this.facultyRepo.createQueryBuilder('faculty');
     if (filters.name) {
-      query.andWhere('faculty.name :LIKE :name', { name: `%${filters.name}%` });
+      query.andWhere('faculty.name LIKE :name', { name: `%${filters.name}%` });
     }
 
     query.select(Faculty.ALLOWED_FIELDS_LIST);

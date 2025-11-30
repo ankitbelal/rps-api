@@ -4,6 +4,9 @@ import { Type } from 'class-transformer';
 
 export class ProgramQueryDto {
   @IsOptional()
+  id: number;
+
+  @IsOptional()
   name?: string;
 
   @IsOptional()

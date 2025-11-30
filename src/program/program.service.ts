@@ -41,9 +41,9 @@ export class ProgramService {
 
   async findAll(programQueryDto: ProgramQueryDto): Promise<{
     data: Program[];
-    total: number;
-    page: number;
-    lastPage: number;
+    total?: number;
+    page?: number;
+    lastPage?: number;
   }> {
     const { page = 1, limit = 10, ...filters } = programQueryDto;
     const query = this.programRepo.createQueryBuilder('program');
@@ -53,10 +53,22 @@ export class ProgramService {
     if (filters?.code) {
       query.andWhere('program.code LIKE :code', { code: `%${filters.code}%` });
     }
-    if (filters?.faculty_id) {
-      query.andWhere('program.faculty_id LIKE :faculty_id', {
-        faculty_id: `%${filters.faculty_id}%`,
+    if (filters.faculty_id) {
+      query.andWhere('program.faculty_id = :faculty_id', {
+        faculty_id: filters.faculty_id,
       });
+    }
+
+    //only one details fetch
+    if (filters?.id) {
+      query.andWhere('program.id = :id', { id: filters.id });
+      query.select(Program.ALLOWED_DETAILS);
+      const data = await query.getOne();
+      if (!data)
+        throw new NotFoundException(
+          `Program with id: ${filters.id} doesn't exists.`,
+        );
+      return {data:[data]};
     }
     query.select(Program.ALLOWED_FIELDS_LIST);
 

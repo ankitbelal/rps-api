@@ -56,12 +56,25 @@ export class Program {
   updatedAt: Date;
 
   static readonly ALLOWED_FIELDS_LIST = [
-    'id',
-    'name',
-    'code',
-    'totalSubjects',
-    'totalSemesters',
-    'totalCredits',
-    'durationInYears',
+    'program.id',
+    'program.name',
+    'program.code',
+    // 'program.totalSubjects',
+    // 'program.totalSemesters',
+    // 'program.totalCredits',
+    // 'program.durationInYears',
+  ];
+
+  static readonly ALLOWED_DETAILS = [
+    'program.id',
+    'program.name',
+    'program.code',
+    'program.totalSubjects',
+    'program.totalSemesters',
+    'program.totalCredits',
+    'program.durationInYears',
+    'program.facultyId',
+    'program.createdAt',
+    // 'program.updated_at AS updatedAt',
   ];
 }
