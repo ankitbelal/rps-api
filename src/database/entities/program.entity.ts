@@ -54,4 +54,14 @@ export class Program {
 
   @UpdateDateColumn({ type: 'timestamp', name: 'updated_at' })
   updatedAt: Date;
+
+  static readonly ALLOWED_FIELDS_LIST = [
+    'id',
+    'name',
+    'code',
+    'totalSubjects',
+    'totalSemesters',
+    'totalCredits',
+    'durationInYears',
+  ];
 }

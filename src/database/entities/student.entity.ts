@@ -64,6 +64,9 @@ export class Student {
   @Column({ name: 'current_semester', default: 1, type: 'int' })
   currentSemester: Number;
 
+  @Column({name:'is_passsed',default:0,type:'int'})
+  isPassed:Number;
+
   @Column({ name: 'program_id' })
   programId: number;
 

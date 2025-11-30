@@ -4,7 +4,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CreateFacultyDto } from './dto/create-faculty-dto';
-import { Faculty } from 'src/database/entities/faculty.entity';
+import {
+  Faculty,
+} from 'src/database/entities/faculty.entity';
 import { Repository } from 'typeorm';
 import { UpdateFacultyDto } from './dto/update-faculty-dto';
 import { FacultyQueryDto } from './dto/faculty-query-dto';
@@ -37,7 +39,8 @@ export class FacultyService {
     if (filters.name) {
       query.andWhere('faculty.name :LIKE :name', { name: `%${filters.name}%` });
     }
-    query.skip((page - 1) * limit).take(limit);
+
+    query.select(Faculty.ALLOWED_FIELDS_LIST);
     query.orderBy('faculty.name', 'ASC');
     const [data, total] = await query.getManyAndCount();
     const lastPage = Math.ceil(total / limit);

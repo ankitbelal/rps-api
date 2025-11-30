@@ -58,6 +58,8 @@ export class ProgramService {
         faculty_id: `%${filters.faculty_id}%`,
       });
     }
+    query.select(Program.ALLOWED_FIELDS_LIST);
+
     query.skip((page - 1) * limit).take(limit);
     query.orderBy('program.name', 'ASC');
     const [data, total] = await query.getManyAndCount();

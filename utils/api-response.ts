@@ -1,26 +1,44 @@
-export class ApiResponse<T> {
+export class ApiResponse<T extends object> {
   success: boolean;
   statusCode: number;
   message?: string;
   data?: T;
 
-  constructor(success: boolean, statusCode: number, message?: string, data?: T) {
+  constructor(
+    success: boolean,
+    statusCode: number,
+    message?: string,
+    data?: T,
+  ) {
     this.success = success;
     this.statusCode = statusCode;
     this.message = message;
     this.data = data;
   }
 
-  // Success response
-  static successData<T>(data?: T, message: string = 'Success', statusCode: number = 200) {
-    return new ApiResponse<T>(true, statusCode, message, data);
-  }
-    static success<T>(message: string = 'Success', statusCode: number = 200) {
-    return new ApiResponse<T>(true, statusCode, message);
+  static successData<T extends object>(
+    data?: T,
+    message: string = 'Success',
+    statusCode: number = 200,
+  ) {
+    if (data) {
+      return { success: true, statusCode, message, ...data };
+    }
+    return { success: true, statusCode, message };
   }
 
-  // Error response
-  static error<T>(message: string = 'Error', data?: T, statusCode: number = 400) {
-    return new ApiResponse<T>(false, statusCode, message, data);
+  static success<T>(message: string = 'Success', statusCode: number = 200) {
+    return { success: true, statusCode, message };
+  }
+
+  static error<T>(
+    message: string = 'Error',
+    data?: T,
+    statusCode: number = 400,
+  ) {
+    if (data) {
+      return { success: false, statusCode, message, ...data };
+    }
+    return { success: false, statusCode, message };
   }
 }
