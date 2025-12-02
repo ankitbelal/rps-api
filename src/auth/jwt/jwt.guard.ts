@@ -17,7 +17,6 @@ export class JwtGuard implements CanActivate {
     private readonly reflector: Reflector,
   ) {}
   async canActivate(context: ExecutionContext): Promise<boolean> {
-
     // check if a public route
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
@@ -27,16 +26,22 @@ export class JwtGuard implements CanActivate {
 
     // checks for guarded route
     const request = context.switchToHttp().getRequest();
+
+    let token: string | undefined;
+    token = request.cookies?.access_token;
+
     const authHeader = request.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer '))
-      throw new UnauthorizedException('Unauthorized');
-    const token = authHeader.split(' ')[1];
+    if (!token && authHeader?.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    }
+    if (!token) throw new UnauthorizedException('Unauthorized');
     try {
       const payload = await this.jwtService.verifyAsync(token, {
         secret: this.configService.get<string>('ACCESS_TOKEN_SECRET'),
       });
       request.user = payload;
-      request.clientIp = request.ip || request.headers['x-forwarded-for'] || 'unknown';
+      request.clientIp =
+        request.ip || request.headers['x-forwarded-for'] || 'unknown';
       request.platform = request.headers['user-agent'] || 'unknown';
       return true;
     } catch (err) {
