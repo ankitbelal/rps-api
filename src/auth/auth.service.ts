@@ -132,12 +132,12 @@ export class AuthService {
     res.clearCookie('access_token', {
       httpOnly: true,
       secure: this.isProd,
-      sameSite: 'none',
+      sameSite: this.isProd ? 'none' : 'lax',
     });
     res.clearCookie('refresh_token', {
       httpOnly: true,
       secure: this.isProd,
-      sameSite: 'none',
+      sameSite: this.isProd ? 'none' : 'lax',
     });
     return {
       statusCode: 200,
