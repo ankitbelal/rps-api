@@ -54,7 +54,7 @@ export class ProgramService {
       query.andWhere('program.name LIKE :name', { name: `%${filters.name}%` });
     }
     if (filters?.code) {
-      query.andWhere('program.code LIKE :code', { code: `%${filters.code}%` });
+      query.andWhere('program.code := :code', { code: filters.code });
     }
     if (filters.faculty_id) {
       query.andWhere('program.faculty_id = :faculty_id', {

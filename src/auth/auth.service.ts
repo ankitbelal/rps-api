@@ -40,7 +40,9 @@ export class AuthService {
     const platform = request.headers['user-agent'] || 'unknown';
     const user = await this.userService.loginValidateUser(loginDTO);
     if (!user) throw new UnauthorizedException('Invalid credentials.');
-    await this.userService.logActivity(user.id, ip, platform, action);
+    await this.userService
+      .logActivity(user.id, ip, platform, action)
+      .catch((err) => console.log('Activity log error:', err.message));
     const payload = {
       userId: user.id,
       email: user.email,
