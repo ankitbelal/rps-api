@@ -81,3 +81,8 @@ export class TeacherQueryDto {
   @IsOptional()
   search: string;
 }
+
+export class SearchTeacherListDto {
+  @IsOptional()
+  name?: string;
+}

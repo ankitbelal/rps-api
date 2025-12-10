@@ -22,14 +22,10 @@ export class CreateStudentDto {
   email: string;
 
   @IsNotEmpty({ message: 'Roll Number is required.' })
-  @IsNumber({}, { message: 'Roll Number must be number.' })
-  @Type(() => Number)
-  rollNumber: number;
+  rollNumber: string;
 
   @IsNotEmpty({ message: 'Phone is required.' })
-  @IsNumber({}, { message: 'Phone must be number.' })
-  @Type(() => Number)
-  phone: number;
+  phone: string;
 
   @IsNotEmpty({ message: 'Enrollment Date is required.' })
   @Type(() => Date)
@@ -40,7 +36,7 @@ export class CreateStudentDto {
   address: string;
 
   @IsNotEmpty({ message: 'Registration Number is required.' })
-  registrationNumber: number;
+  registrationNumber: string;
 
   @IsNotEmpty({ message: 'Gender is required.' })
   @IsEnum(Gender, { message: 'Gender must be a valid.' })

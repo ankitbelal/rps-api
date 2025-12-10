@@ -12,6 +12,7 @@ import {
 import { TeacherService } from './teacher.service';
 import {
   CreateTeacherDto,
+  SearchTeacherListDto,
   TeacherQueryDto,
   UpdateTeacherDto,
 } from './dto/teacher.dto';
@@ -34,10 +35,10 @@ export class TeacherController {
   @HttpCode(200)
   @Get()
   async findAll(@Query() teacherQueryDto: TeacherQueryDto) {
-    const teachers = this.teacherService.findAll(teacherQueryDto);
+    const teachers = await this.teacherService.findAll(teacherQueryDto);
     return ApiResponse.successData(
       teachers,
-      'Teachers fetched successfully',
+      'Teachers fetched successfully.',
       200,
     );
   }
@@ -50,5 +51,17 @@ export class TeacherController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.teacherService.remove(+id);
+  }
+
+  @HttpCode(200)
+  @Get('teacher-list')
+  async getAllTeachersList(@Body() searchTeacherListDto: SearchTeacherListDto) {
+    const teachersList =
+      await this.teacherService.getAllTeachersList(searchTeacherListDto);
+    return ApiResponse.successData(
+      teachersList,
+      'Teacher list fetched successfully.',
+      200,
+    );
   }
 }

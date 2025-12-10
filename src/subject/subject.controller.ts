@@ -28,7 +28,7 @@ export class SubjectController {
 
   @Get()
   @HttpCode(200)
-  async findAll(@Query() SubjectQueryDto:SubjectQueryDto) {
+  async findAll(@Query() SubjectQueryDto: SubjectQueryDto) {
     return this.subjectService.findAll(SubjectQueryDto);
   }
 
@@ -39,14 +39,21 @@ export class SubjectController {
     @Body() updateSubjectDto: UpdateSubjectDto,
   ) {
     const subject = await this.subjectService.update(+id, updateSubjectDto);
-    return ApiResponse.successData(subject,'Subject Updated Successfully',200);
-
+    return ApiResponse.successData(
+      subject,
+      'Subject Updated Successfully',
+      200,
+    );
   }
 
   @Delete(':id')
   @HttpCode(200)
   async remove(@Param('id') id: string) {
     await this.subjectService.remove(+id);
-    return ApiResponse.success('Subject Deleted Successfully',200);
+    return ApiResponse.success('Subject Deleted Successfully', 200);
   }
+
+  @HttpCode(200)
+  @Get('get-assigned-subjects')
+  async getAssignedSubjects() {}
 }

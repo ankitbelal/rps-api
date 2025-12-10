@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import {
   CreateTeacherDto,
+  SearchTeacherListDto,
   TeacherQueryDto,
   UpdateTeacherDto,
 } from './dto/teacher.dto';
@@ -31,38 +32,23 @@ export class TeacherService {
       ],
     });
 
-    const emailUsed = exists?.email == createTeacherDto.email;
-    const phoneUsed = exists?.phone == createTeacherDto.phone;
-    if (emailUsed && phoneUsed)
-      throw new ConflictException({
-        success: false,
-        statusCode: 409,
-        message: 'Validation failed',
-        errors: {
-          phone: 'Already Used',
-          email: 'Already Used',
-        },
-      });
-    if (emailUsed && !phoneUsed)
-      throw new ConflictException({
-        success: false,
-        statusCode: 409,
-        message: 'Validation failed',
-        errors: {
-          email: 'Already Used',
-        },
-      });
-    if (phoneUsed && !emailUsed)
-      if (emailUsed && !phoneUsed)
-        throw new ConflictException({
-          success: false,
-          statusCode: 409,
-          message: 'Validation failed',
-          errors: {
-            phone: 'Already Used',
-          },
-        });
+    const { emailUsed, phoneUsed, valid } = await this.validateTeacherContact({
+      email: createTeacherDto.email,
+      phone: createTeacherDto.phone,
+    });
 
+    if (!valid) {
+      const errors: any = {};
+      if (emailUsed) errors.email = 'Already used.';
+      if (phoneUsed) errors.phone = 'Alread used.';
+
+      throw new ConflictException({
+        success: false,
+        statusCode: 409,
+        message: 'Validation failed',
+        errors,
+      });
+    }
     const teacher = await this.teacherRepo.save(
       this.teacherRepo.create(createTeacherDto),
     );
@@ -147,11 +133,109 @@ export class TeacherService {
     return query;
   }
 
-  update(id: number, updateTeacherDto: UpdateTeacherDto) {
-    return `This action updates a #${id} teacher`;
+  async update(id: number, updateTeacherDto: UpdateTeacherDto) {
+    const teacher = await this.teacherRepo.findOne({ where: { id } });
+    if (!teacher) {
+      throw new NotFoundException({
+        status: 'false',
+        statusCode: 404,
+        message: `Teacher with id: ${id} does not exists.`,
+      });
+    }
+
+    if (updateTeacherDto.email || updateTeacherDto.phone) {
+      const { emailUsed, phoneUsed, valid } =
+        await this.validateTeacherContact(updateTeacherDto);
+
+      if (!valid) {
+        const errors: any = {};
+        if (emailUsed && updateTeacherDto.email !== teacher.email)
+          errors.email = 'Already used';
+        if (phoneUsed && updateTeacherDto.phone !== teacher.phone)
+          errors.phone = 'Already used';
+
+        if (Object.keys(errors).length > 0) {
+          throw new ConflictException({
+            success: false,
+            statusCode: 409,
+            message: 'Validation failed',
+            errors,
+          });
+        }
+      }
+    }
+
+    Object.assign(teacher, updateTeacherDto);
+    return await this.teacherRepo.save(teacher);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} teacher`;
+  async remove(id: number) {
+    const teacher = await this.teacherRepo.findOne({ where: { id } });
+    if (!teacher)
+      throw new NotFoundException({
+        status: 'false',
+        statusCode: 404,
+        message: `Teacher with id: ${id} does not exists.`,
+      });
+    this.teacherRepo.remove(teacher);
+  }
+
+  async getAllTeachersList(
+    searchTeacherListDto: SearchTeacherListDto,
+  ): Promise<{ teachersList: Teacher[] }> {
+    const query = this.teacherRepo
+      .createQueryBuilder('teacher')
+      .select('teacher.id', 'id')
+      .addSelect("CONCAT(teacher.first_name, ' ', teacher.last_name)", 'name');
+
+    if (searchTeacherListDto?.name) {
+      const parts = searchTeacherListDto.name.trim().split(/\s+/);
+
+      if (parts.length === 1) {
+        query.andWhere(
+          '(teacher.firstName LIKE :name OR teacher.lastName LIKE :name)',
+          { name: `%${parts[0]}%` },
+        );
+      } else {
+        query.andWhere(
+          '(teacher.firstName LIKE :first AND teacher.lastName LIKE :last)',
+          {
+            first: `%${parts[0]}%`,
+            last: `%${parts[1]}%`,
+          },
+        );
+      }
+    }
+
+    const teachersList = await query.getRawMany();
+    return { teachersList };
+  }
+
+  async validateTeacherContact(data: {
+    email?: string;
+    phone?: string;
+  }): Promise<{
+    emailUsed: boolean;
+    phoneUsed: boolean;
+    valid: boolean;
+  }> {
+    let emailUsed = false;
+    let phoneUsed = false;
+
+    if (data.email) {
+      const email = await this.teacherRepo.findOne({
+        where: { email: data.email },
+      });
+      emailUsed = !!email;
+    }
+
+    if (data.phone) {
+      const phone = await this.teacherRepo.findOne({
+        where: { phone: data.phone },
+      });
+      phoneUsed = !!phone;
+    }
+    const valid = !emailUsed && !phoneUsed;
+    return { emailUsed, phoneUsed, valid };
   }
 }
