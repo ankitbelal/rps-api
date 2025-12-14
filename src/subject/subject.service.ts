@@ -30,9 +30,7 @@ export class SubjectService {
     return this.subjectRepo.save(subject);
   }
 
-  async findAll(
-    SubjectQueryDto: SubjectQueryDto,
-  ): Promise<{
+  async findAll(SubjectQueryDto: SubjectQueryDto): Promise<{
     data: Subject[];
     total: number;
     page: number;
@@ -87,5 +85,8 @@ export class SubjectService {
     if (!subject)
       throw new NotFoundException(`Subject with id ${id} doesnt't exists`);
     return await this.subjectRepo.remove(subject);
+  }
+  async getSubjectCount(): Promise<number> {
+    return await this.subjectRepo.count();
   }
 }

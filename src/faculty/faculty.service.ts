@@ -75,4 +75,8 @@ export class FacultyService {
     if (!faculty) return false;
     return true;
   }
+
+  async getFacultyCount(): Promise<number> {
+    return await this.facultyRepo.count();
+  }
 }

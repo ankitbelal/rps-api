@@ -7,5 +7,6 @@ import { UserModule } from 'src/user/user.module';
   controllers: [TeacherController],
   providers: [TeacherService],
   imports: [UserModule],
+  exports: [TeacherService],
 })
 export class TeacherModule {}

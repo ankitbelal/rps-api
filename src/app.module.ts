@@ -12,6 +12,7 @@ import { StudentModule } from './student/student.module';
 import { FacultyModule } from './faculty/faculty.module';
 import { MailingModule } from './mailing/mailing.module';
 import { LoggerModule } from './logging/logger.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { LoggerModule } from './logging/logger.module';
     StudentModule,
     FacultyModule,
     MailingModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],

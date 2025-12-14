@@ -97,4 +97,8 @@ export class ProgramService {
       throw new NotFoundException(`Program with id: ${id} doesn't exists.`);
     await this.programRepo.remove(program);
   }
+
+  async getProgramCount(): Promise<number> {
+    return await this.programRepo.count();
+  }
 }

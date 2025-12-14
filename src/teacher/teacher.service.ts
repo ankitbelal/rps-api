@@ -180,37 +180,6 @@ export class TeacherService {
     this.teacherRepo.remove(teacher);
   }
 
-  async getAllTeachersList(
-    searchTeacherListDto: SearchTeacherListDto,
-  ): Promise<{ teachersList: Teacher[] }> {
-    const query = this.teacherRepo
-      .createQueryBuilder('teacher')
-      .select('teacher.id', 'id')
-      .addSelect("CONCAT(teacher.first_name, ' ', teacher.last_name)", 'name');
-
-    if (searchTeacherListDto?.name) {
-      const parts = searchTeacherListDto.name.trim().split(/\s+/);
-
-      if (parts.length === 1) {
-        query.andWhere(
-          '(teacher.firstName LIKE :name OR teacher.lastName LIKE :name)',
-          { name: `%${parts[0]}%` },
-        );
-      } else {
-        query.andWhere(
-          '(teacher.firstName LIKE :first AND teacher.lastName LIKE :last)',
-          {
-            first: `%${parts[0]}%`,
-            last: `%${parts[1]}%`,
-          },
-        );
-      }
-    }
-
-    const teachersList = await query.getRawMany();
-    return { teachersList };
-  }
-
   async validateTeacherContact(data: {
     email?: string;
     phone?: string;
@@ -237,5 +206,38 @@ export class TeacherService {
     }
     const valid = !emailUsed && !phoneUsed;
     return { emailUsed, phoneUsed, valid };
+  }
+  async getAllTeachersList(
+    searchTeacherListDto: SearchTeacherListDto,
+  ): Promise<{ teachersList: Teacher[] }> {
+    const query = this.teacherRepo
+      .createQueryBuilder('teacher')
+      .select('teacher.id', 'id')
+      .addSelect("CONCAT(teacher.first_name, ' ', teacher.last_name)", 'name');
+
+    if (searchTeacherListDto?.name) {
+      const parts = searchTeacherListDto.name.trim().split(/\s+/);
+
+      if (parts.length === 1) {
+        query.andWhere(
+          '(teacher.firstName LIKE :name OR teacher.lastName LIKE :name)',
+          { name: `%${parts[0]}%` },
+        );
+      } else {
+        query.andWhere(
+          '(teacher.firstName LIKE :first AND teacher.lastName LIKE :last)',
+          {
+            first: `%${parts[0]}%`,
+            last: `%${parts[1]}%`,
+          },
+        );
+      }
+    }
+    const teachersList = await query.getRawMany();
+    return { teachersList };
+  }
+
+  async getTeachersCount(): Promise<number> {
+    return await this.teacherRepo.count();
   }
 }

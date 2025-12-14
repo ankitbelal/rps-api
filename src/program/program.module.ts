@@ -7,5 +7,6 @@ import { FacultyModule } from 'src/faculty/faculty.module';
   controllers: [ProgramController],
   providers: [ProgramService],
   imports: [FacultyModule],
+  exports: [ProgramService],
 })
 export class ProgramModule {}

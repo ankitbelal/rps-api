@@ -6,6 +6,7 @@ import {
   IsNumber,
   IsEnum,
   MaxDate,
+  IsOptional,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { Gender } from 'utils/enums/general-enums';
@@ -52,4 +53,9 @@ export class CreateStudentDto {
   @IsNumber({}, { message: 'Program Id must be a number.' })
   @Type(() => Number)
   programId: number;
+}
+
+export class SearchStudentListDto {
+  @IsOptional()
+  name?: string;
 }

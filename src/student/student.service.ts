@@ -3,7 +3,10 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateStudentDto } from './dto/create-student.dto';
+import {
+  CreateStudentDto,
+  SearchStudentListDto,
+} from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Student } from 'src/database/entities/student.entity';
@@ -138,5 +141,39 @@ export class StudentService {
     }
     const valid = !emailUsed && !phoneUsed;
     return { emailUsed, phoneUsed, valid };
+  }
+
+  async getAllStudentList(
+    searchStudentListDto: SearchStudentListDto,
+  ): Promise<{ studentList: Student[] }> {
+    const query = this.studentRepo
+      .createQueryBuilder('student')
+      .select('student.id', 'id')
+      .addSelect("CONCAT(student.first_name, ' ', student.last_name)", 'name');
+
+    if (searchStudentListDto.name) {
+      const parts = searchStudentListDto.name.trim().split(/\s+/);
+      if (parts.length === 1) {
+        query.andWhere(
+          '(student.first_name LIKE :name OR student.last_name LIKE :name)',
+          { name: `%${parts[0]}%` },
+        );
+      } else {
+        query.andWhere(
+          '(student.first_name LIKE :first and student.last_name LIKE :last)',
+          {
+            first: `%${parts[0]}$`,
+            last: `%${parts[1]}%`,
+          },
+        );
+      }
+    }
+
+    const studentList = await query.getRawMany();
+    return { studentList };
+  }
+
+  async getStudentsCount(): Promise<number> {
+    return await this.studentRepo.count();
   }
 }
