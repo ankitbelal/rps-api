@@ -41,4 +41,12 @@ export class ApiResponse<T extends object> {
     }
     return { success: false, statusCode, message };
   }
+
+  static successSingleData<T extends Object>(
+    data?: T,
+    message: string = 'success',
+    statusCode: number = 200,
+  ) {
+    return { success: true, statusCode, message, data: data };
+  }
 }

@@ -64,8 +64,8 @@ export class Student {
   @Column({ name: 'current_semester', default: 1, type: 'int' })
   currentSemester: Number;
 
-  @Column({name:'is_passsed',default:0,type:'int'})
-  isPassed:Number;
+  @Column({ name: 'is_passsed', default: 0, type: 'int' })
+  isPassed: Number;
 
   @Column({ name: 'program_id' })
   programId: number;
@@ -94,4 +94,27 @@ export class Student {
 
   @UpdateDateColumn({ type: 'timestamp', name: 'updated_at' })
   updatedAt: Date;
+
+  static readonly ALLOWED_FIELDS_LIST = [
+    'student.id',
+    'student.firstName',
+    'student.lastName',
+  ];
+  static readonly ALLOWED_DETAILS = [
+    'student.id',
+    'student.firstName',
+    'student.lastName',
+    'student.email',
+    'student.phone',
+    'student.gender',
+    'student.dob',
+    'student.address1',
+    'student.address2',
+    'student.currentSemester',
+    'student.status',
+    'student.rollNumber',
+    'student.registrationNumber',
+    'student.isPassed',
+    'student.createdAt',
+  ];
 }

@@ -25,15 +25,12 @@ export class TeacherController {
   @HttpCode(201)
   @Post()
   async create(@Body() createTeacherDto: CreateTeacherDto) {
-    const teacher = await this.teacherService.create(createTeacherDto);
-    return ApiResponse.successData(
-      teacher,
-      'Teacher registered successfully.',
-      201,
-    );
+    await this.teacherService.create(createTeacherDto);
+    return ApiResponse.success('Teacher registered successfully.', 201);
   }
-  @HttpCode(200)
+
   @Get()
+  @HttpCode(200)
   async findAll(@Query() teacherQueryDto: TeacherQueryDto) {
     const teachers = await this.teacherService.findAll(teacherQueryDto);
     return ApiResponse.successData(
@@ -44,13 +41,20 @@ export class TeacherController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTeacherDto: UpdateTeacherDto) {
-    return this.teacherService.update(+id, updateTeacherDto);
+  @HttpCode(200)
+  async update(
+    @Param('id') id: string,
+    @Body() updateTeacherDto: UpdateTeacherDto,
+  ) {
+    await this.teacherService.update(+id, updateTeacherDto);
+    return ApiResponse.success('Teacher updated successfully.', 200);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.teacherService.remove(+id);
+  @HttpCode(200)
+  async remove(@Param('id') id: string) {
+    await this.teacherService.remove(+id);
+    return ApiResponse.success('Teacher removed successfully.', 200);
   }
 
   @HttpCode(200)

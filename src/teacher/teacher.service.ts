@@ -24,7 +24,7 @@ export class TeacherService {
     private readonly teacherRepo: Repository<Teacher>,
     private readonly userService: UserService,
   ) {}
-  async create(createTeacherDto: CreateTeacherDto): Promise<Teacher> {
+  async create(createTeacherDto: CreateTeacherDto): Promise<Boolean> {
     const exists = await this.teacherRepo.findOne({
       where: [
         { email: createTeacherDto.email },
@@ -52,7 +52,7 @@ export class TeacherService {
     const teacher = await this.teacherRepo.save(
       this.teacherRepo.create(createTeacherDto),
     );
-    await this.userService.createUser(
+    this.userService.createUser(
       teacher.id,
       teacher.firstName + '' + teacher.lastName,
       createTeacherDto.email,
@@ -60,7 +60,7 @@ export class TeacherService {
       UserType.TEACHER,
       UserStatus.ACTIVE,
     );
-    return teacher;
+    return true;
   }
 
   async findAll(teacherQueryDto: TeacherQueryDto): Promise<{
@@ -166,7 +166,8 @@ export class TeacherService {
     }
 
     Object.assign(teacher, updateTeacherDto);
-    return await this.teacherRepo.save(teacher);
+    await this.teacherRepo.save(teacher);
+    return true;
   }
 
   async remove(id: number) {

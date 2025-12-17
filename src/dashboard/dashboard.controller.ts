@@ -1,5 +1,6 @@
 import { Controller, Get, HttpCode } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
+import { ApiResponse } from 'utils/api-response';
 
 @Controller('dashboard')
 export class DashboardController {
@@ -7,6 +8,11 @@ export class DashboardController {
   @HttpCode(200)
   @Get()
   async getDashboardData() {
-    return await this.dashboardService.getDashboardData();
+    const data = await this.dashboardService.getDashboardData();
+    return ApiResponse.successSingleData(
+      data,
+      'Data fetched successfully.',
+      200,
+    );
   }
 }

@@ -15,8 +15,8 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('should return "<h1>the rps api server is live</h1>!"', () => {
+      expect(appController.getHello()).toBe('<h1>the rps api server is live</h1>');
     });
   });
 });

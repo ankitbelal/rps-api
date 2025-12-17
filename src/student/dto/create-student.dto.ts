@@ -9,7 +9,7 @@ import {
   IsOptional,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { Gender } from 'utils/enums/general-enums';
+import { Gender, StudentStatus } from 'utils/enums/general-enums';
 
 export class CreateStudentDto {
   @IsNotEmpty({ message: 'First Name is required.' })
@@ -34,7 +34,10 @@ export class CreateStudentDto {
   enrollmentDate: Date;
 
   @IsNotEmpty({ message: 'Address is required.' })
-  address: string;
+  address1: string;
+
+  @IsOptional()
+  address2: string;
 
   @IsNotEmpty({ message: 'Registration Number is required.' })
   registrationNumber: string;
@@ -53,6 +56,48 @@ export class CreateStudentDto {
   @IsNumber({}, { message: 'Program Id must be a number.' })
   @Type(() => Number)
   programId: number;
+}
+
+export class StudentQueryDto {
+  @IsOptional()
+  @IsNumber()
+  id: number;
+
+  @IsOptional()
+  firstName?: string;
+
+  @IsOptional()
+  lastName?: string;
+
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @IsOptional()
+  phone: string;
+
+  @IsOptional()
+  @IsEnum(Gender, { message: 'Gender must be a valid.' })
+  gender?: Gender;
+
+  @IsOptional()
+  currentSemester?: number;
+
+  @IsOptional()
+  isPassed?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  page?: number = 1;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  limit?: number = 10;
+
+  @IsOptional()
+  search: string;
 }
 
 export class SearchStudentListDto {

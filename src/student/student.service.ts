@@ -6,6 +6,7 @@ import {
 import {
   CreateStudentDto,
   SearchStudentListDto,
+  StudentQueryDto,
 } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -13,6 +14,7 @@ import { Student } from 'src/database/entities/student.entity';
 import { Repository } from 'typeorm';
 import { UserService } from 'src/user/user.service';
 import { UserStatus, UserType } from 'utils/enums/general-enums';
+import { SelectQueryBuilder } from 'typeorm/browser';
 
 @Injectable()
 export class StudentService {
@@ -22,7 +24,7 @@ export class StudentService {
     private readonly userService: UserService,
   ) {}
 
-  async create(createStudentDto: CreateStudentDto): Promise<Student> {
+  async create(createStudentDto: CreateStudentDto): Promise<Boolean> {
     const exists = await this.studentRepo.findOne({
       where: [
         { email: createStudentDto.email },
@@ -30,15 +32,26 @@ export class StudentService {
       ],
     });
 
-    const { emailUsed, phoneUsed, valid } = await this.validateStudentContact({
+    const {
+      emailUsed,
+      phoneUsed,
+      rollNumberExists,
+      registrationNumberExists,
+      valid,
+    } = await this.validateStudentContact({
       email: createStudentDto.email,
       phone: createStudentDto.phone,
+      rollNumber: createStudentDto.rollNumber,
+      registrationNumber: createStudentDto.registrationNumber,
     });
 
     if (!valid) {
       const errors: any = {};
       if (emailUsed) errors.email = 'Already used.';
       if (phoneUsed) errors.phone = 'Alread used.';
+      if (rollNumberExists) errors.rollNumber = 'Already exists.';
+      if (registrationNumberExists)
+        errors.registrationNumber = 'Already exists,';
 
       throw new ConflictException({
         success: false,
@@ -50,7 +63,7 @@ export class StudentService {
     const student = await this.studentRepo.save(
       this.studentRepo.create(createStudentDto),
     );
-    await this.userService.createUser(
+    this.userService.createUser(
       student.id,
       student.firstName + '' + student.lastName,
       createStudentDto.email,
@@ -58,18 +71,77 @@ export class StudentService {
       UserType.STUDENT,
       UserStatus.ACTIVE,
     );
-    return student;
+    return true;
   }
 
-  findAll() {
-    return `This action returns all student`;
+  async findAll(studentQueryDto: StudentQueryDto) {
+    const { page = 1, limit = 10, ...filters } = studentQueryDto;
+    const query = this.studentRepo.createQueryBuilder('student');
+    if (filters?.id) {
+      query.andWhere('');
+      query.select(Student.ALLOWED_DETAILS);
+      const data = await query.getOne();
+      if (!data)
+        throw new NotFoundException({
+          statusCode: 404,
+          message: `Student with id: ${filters.id} does not exists`,
+        });
+      return { data: [data] };
+    }
+
+    const filteredquery = this.applyFilters(query, filters);
+    filteredquery.select(Student.ALLOWED_FIELDS_LIST);
+    filteredquery.skip((page - 1) * limit).take(limit);
+    filteredquery.orderBy('student.first_name', 'ASC');
+    const [data, total] = await filteredquery.getManyAndCount();
+    const lastPage = Math.ceil(total / limit);
+    return { data, total, page, lastPage };
+  }
+  private applyFilters(
+    query: SelectQueryBuilder<Student>,
+    filters: Partial<StudentQueryDto>,
+  ): SelectQueryBuilder<Student> {
+    if (filters?.firstName) {
+      query.andWhere('student.first_name = :firstName', {
+        firstName: filters.firstName,
+      });
+    }
+
+    if (filters?.lastName) {
+      query.andWhere('student.last_name = :lastName', {
+        lastName: filters.lastName,
+      });
+    }
+
+    if (filters?.email) {
+      query.andWhere('student.email = :email', { email: filters.email });
+    }
+
+    if (filters?.gender) {
+      query.andWhere('student.gender = :gender', { gender: filters.gender });
+    }
+    if (filters.phone) {
+      query.andWhere('student.phone = :phone', { phone: filters.phone });
+    }
+
+    if (filters?.search) {
+      query
+        .orWhere('student.first_name= :firstName', {
+          firstName: `%${filters.search}%`,
+        })
+        .orWhere('student.last_name = :lastName', {
+          lastName: `%${filters.lastName}%`,
+        })
+        .orWhere('student.email = :email', { email: filters.email })
+        .orWhere('student.phone = :phone', { phone: filters.phone });
+    }
+    return query;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} student`;
-  }
-
-  async update(id: number, updateStudentDto: UpdateStudentDto) {
+  async update(
+    id: number,
+    updateStudentDto: UpdateStudentDto,
+  ): Promise<Boolean> {
     const teacher = await this.studentRepo.findOne({ where: { id } });
     if (!teacher) {
       throw new NotFoundException({
@@ -101,7 +173,8 @@ export class StudentService {
       }
     }
     Object.assign(teacher, updateStudentDto);
-    return await this.studentRepo.save(teacher);
+    await this.studentRepo.save(teacher);
+    return true;
   }
 
   async remove(id: number) {
@@ -110,7 +183,7 @@ export class StudentService {
       throw new NotFoundException({
         status: 'false',
         statusCode: 404,
-        message: `Teacher with id: ${id} does not exists.`,
+        message: `Student with id: ${id} does not exists.`,
       });
     this.studentRepo.remove(student);
   }
@@ -118,13 +191,19 @@ export class StudentService {
   async validateStudentContact(data: {
     email?: string;
     phone?: string;
+    rollNumber?: string;
+    registrationNumber?: string;
   }): Promise<{
     emailUsed: boolean;
     phoneUsed: boolean;
+    rollNumberExists: boolean;
+    registrationNumberExists: boolean;
     valid: boolean;
   }> {
     let emailUsed = false;
     let phoneUsed = false;
+    let rollNumberExists = false;
+    let registrationNumberExists = false;
 
     if (data.email) {
       const email = await this.studentRepo.findOne({
@@ -139,8 +218,29 @@ export class StudentService {
       });
       phoneUsed = !!phone;
     }
+
+    if (data.rollNumber) {
+      const rollNumber = await this.studentRepo.findOne({
+        where: { rollNumber: data.rollNumber },
+      });
+
+      rollNumberExists = !!rollNumber;
+    }
+
+    if (data.registrationNumber) {
+      const registrationNumber = await this.studentRepo.findOne({
+        where: { registrationNumber: data.registrationNumber },
+      });
+      registrationNumberExists = !!registrationNumber;
+    }
     const valid = !emailUsed && !phoneUsed;
-    return { emailUsed, phoneUsed, valid };
+    return {
+      emailUsed,
+      phoneUsed,
+      rollNumberExists,
+      registrationNumberExists,
+      valid,
+    };
   }
 
   async getAllStudentList(
