@@ -19,13 +19,13 @@ export class FacultyService {
     private readonly facultyRepo: Repository<Faculty>,
   ) {}
 
-  async create(createFacultyDto: CreateFacultyDto): Promise<Faculty> {
+  async create(createFacultyDto: CreateFacultyDto): Promise<Boolean> {
     const exists = await this.facultyRepo.findOne({
       where: { name: createFacultyDto.name },
     });
     if (exists) throw new BadRequestException('Faculty already registered.');
     const faculties = this.facultyRepo.create(createFacultyDto);
-    return await this.facultyRepo.save(faculties);
+    return !!(await this.facultyRepo.save(faculties));
   }
 
   async findAll(facultyQueryDto: FacultyQueryDto): Promise<{
@@ -50,7 +50,7 @@ export class FacultyService {
   async update(
     id: number,
     UpdateFacultyDto: UpdateFacultyDto,
-  ): Promise<Faculty> {
+  ): Promise<Boolean> {
     const exists = await this.facultyRepo.findOne({
       where: { name: UpdateFacultyDto.name },
     });
@@ -60,20 +60,18 @@ export class FacultyService {
     if (!faculty)
       throw new NotFoundException(`Faculty with id: ${id} doesnt exists.`);
     Object.assign(faculty, UpdateFacultyDto);
-    return await this.facultyRepo.save(faculty);
+    return !!(await this.facultyRepo.save(faculty));
   }
 
-  async remove(id: number) {
+  async remove(id: number): Promise<Boolean> {
     const faculty = await this.facultyRepo.findOne({ where: { id } });
     if (!faculty)
       throw new NotFoundException(`Faculty with ${id} doesnt exists.`);
-    await this.facultyRepo.remove(faculty);
+    return !!(await this.facultyRepo.remove(faculty));
   }
 
   async findFacultyById(id: number): Promise<Boolean> {
-    const faculty = await this.facultyRepo.findOne({ where: { id } });
-    if (!faculty) return false;
-    return true;
+    return !!(await this.facultyRepo.findOne({ where: { id } }));
   }
 
   async getFacultyCount(): Promise<number> {

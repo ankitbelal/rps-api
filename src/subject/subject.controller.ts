@@ -22,8 +22,8 @@ export class SubjectController {
   @Post()
   @HttpCode(201)
   async create(@Body() createSubjectDto: CreateSubjectDto) {
-    const subject = await this.subjectService.create(createSubjectDto);
-    return ApiResponse.successData(subject, 'Subject Added Successfully', 201);
+    await this.subjectService.create(createSubjectDto);
+    return ApiResponse.success('Subject Added Successfully', 201);
   }
 
   @Get()
@@ -38,12 +38,8 @@ export class SubjectController {
     @Param('id') id: string,
     @Body() updateSubjectDto: UpdateSubjectDto,
   ) {
-    const subject = await this.subjectService.update(+id, updateSubjectDto);
-    return ApiResponse.successData(
-      subject,
-      'Subject Updated Successfully',
-      200,
-    );
+    await this.subjectService.update(+id, updateSubjectDto);
+    return ApiResponse.success('Subject Updated Successfully', 200);
   }
 
   @Delete(':id')

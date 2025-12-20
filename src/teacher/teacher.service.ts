@@ -133,7 +133,10 @@ export class TeacherService {
     return query;
   }
 
-  async update(id: number, updateTeacherDto: UpdateTeacherDto) {
+  async update(
+    id: number,
+    updateTeacherDto: UpdateTeacherDto,
+  ): Promise<Boolean> {
     const teacher = await this.teacherRepo.findOne({ where: { id } });
     if (!teacher) {
       throw new NotFoundException({
@@ -166,11 +169,10 @@ export class TeacherService {
     }
 
     Object.assign(teacher, updateTeacherDto);
-    await this.teacherRepo.save(teacher);
-    return true;
+    return !!(await this.teacherRepo.save(teacher));
   }
 
-  async remove(id: number) {
+  async remove(id: number): Promise<Boolean> {
     const teacher = await this.teacherRepo.findOne({ where: { id } });
     if (!teacher)
       throw new NotFoundException({
@@ -178,7 +180,7 @@ export class TeacherService {
         statusCode: 404,
         message: `Teacher with id: ${id} does not exists.`,
       });
-    this.teacherRepo.remove(teacher);
+    return !!(await this.teacherRepo.remove(teacher));
   }
 
   async validateTeacherContact(data: {

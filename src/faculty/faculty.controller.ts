@@ -24,12 +24,8 @@ export class FacultyController {
   @HttpCode(201)
   @Post()
   async create(@Body() createFacultyDto: CreateFacultyDto) {
-    const faculties = await this.facultyService.create(createFacultyDto);
-    return ApiResponse.successData(
-      faculties,
-      'Faculties registered successfully.',
-      201,
-    );
+    await this.facultyService.create(createFacultyDto);
+    return ApiResponse.success('Faculties registered successfully.', 201);
   }
 
   @HttpCode(200)
@@ -49,12 +45,8 @@ export class FacultyController {
     @Param('id') id: string,
     @Body() updateFacultyDto: UpdateFacultyDto,
   ) {
-    const faculty = await this.facultyService.update(+id, updateFacultyDto);
-    return ApiResponse.successData(
-      faculty,
-      'Faculty updated successfully.',
-      200,
-    );
+    await this.facultyService.update(+id, updateFacultyDto);
+    return ApiResponse.success('Faculty updated successfully.', 200);
   }
 
   @HttpCode(200)

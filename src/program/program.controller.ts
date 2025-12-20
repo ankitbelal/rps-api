@@ -24,8 +24,8 @@ export class ProgramController {
   @Post()
   @HttpCode(201)
   async create(@Body() createProgramDto: CreateProgramDto) {
-    const program = await this.programService.create(createProgramDto);
-    return ApiResponse.successData(program, 'Program added successfully.', 201);
+    await this.programService.create(createProgramDto);
+    return ApiResponse.success('Program added successfully.', 201);
   }
 
   @Get()
@@ -45,12 +45,8 @@ export class ProgramController {
     @Param('id') id: string,
     @Body() updateProgramDto: UpdateProgramDto,
   ) {
-    const program = await this.programService.update(+id, updateProgramDto);
-    return ApiResponse.successData(
-      program,
-      'Program updated successfully.',
-      200,
-    );
+    await this.programService.update(+id, updateProgramDto);
+    return ApiResponse.success('Program updated successfully.', 200);
   }
 
   @Delete(':id')

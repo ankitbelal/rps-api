@@ -17,7 +17,7 @@ export class SubjectService {
     private readonly subjectRepo: Repository<Subject>,
   ) {}
 
-  async create(createSubjectDto: CreateSubjectDto): Promise<Subject> {
+  async create(createSubjectDto: CreateSubjectDto): Promise<Boolean> {
     const exists = await this.subjectRepo.findOne({
       where: {
         code: createSubjectDto.code,
@@ -27,7 +27,7 @@ export class SubjectService {
     if (exists)
       throw new BadRequestException('Subject already exists for the program');
     const subject = this.subjectRepo.create(createSubjectDto);
-    return this.subjectRepo.save(subject);
+    return !!(await this.subjectRepo.save(subject));
   }
 
   async findAll(SubjectQueryDto: SubjectQueryDto): Promise<{
@@ -73,18 +73,18 @@ export class SubjectService {
   async update(
     id: number,
     updateSubjectDto: UpdateSubjectDto,
-  ): Promise<Subject> {
+  ): Promise<Boolean> {
     const subject = await this.subjectRepo.findOne({ where: { id } });
     if (!subject)
       throw new NotFoundException(`Subject with id${id} doesn't exists`);
-    return await this.subjectRepo.save(updateSubjectDto);
+    return !!(await this.subjectRepo.save(updateSubjectDto));
   }
 
-  async remove(id: number) {
+  async remove(id: number): Promise<Boolean> {
     const subject = await this.subjectRepo.findOne({ where: { id } });
     if (!subject)
       throw new NotFoundException(`Subject with id ${id} doesnt't exists`);
-    return await this.subjectRepo.remove(subject);
+    return !!(await this.subjectRepo.remove(subject));
   }
   async getSubjectCount(): Promise<number> {
     return await this.subjectRepo.count();

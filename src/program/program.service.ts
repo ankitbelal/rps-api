@@ -22,7 +22,7 @@ export class ProgramService {
     private readonly facultyService: FacultyService,
   ) {}
 
-  async create(createProgramDto: CreateProgramDto): Promise<Program> {
+  async create(createProgramDto: CreateProgramDto): Promise<Boolean> {
     const faculty = await this.facultyService.findFacultyById(
       createProgramDto.facultyId,
     );
@@ -39,7 +39,7 @@ export class ProgramService {
         `Program already exists for Code: ${createProgramDto.code}.`,
       );
     const program = this.programRepo.create(createProgramDto);
-    return await this.programRepo.save(program);
+    return !!(await this.programRepo.save(program));
   }
 
   async findAll(programQueryDto: ProgramQueryDto): Promise<{
@@ -83,19 +83,22 @@ export class ProgramService {
     return { data, total, page, lastPage };
   }
 
-  async update(id: number, updateProgramDto: UpdateProgramDto) {
+  async update(
+    id: number,
+    updateProgramDto: UpdateProgramDto,
+  ): Promise<Boolean> {
     const program = await this.programRepo.findOne({ where: { id } });
     if (!program)
       throw new NotFoundException(`Program with id: ${id} doesn't exists.`);
     Object.assign(program, updateProgramDto);
-    return await this.programRepo.save(program);
+    return !!(await this.programRepo.save(program));
   }
 
-  async remove(id: number) {
+  async remove(id: number): Promise<Boolean> {
     const program = await this.programRepo.findOne({ where: { id } });
     if (!program)
       throw new NotFoundException(`Program with id: ${id} doesn't exists.`);
-    await this.programRepo.remove(program);
+    return !!(await this.programRepo.remove(program));
   }
 
   async getProgramCount(): Promise<number> {
