@@ -13,6 +13,7 @@ import { ProgramService } from './program.service';
 import {
   CreateProgramDto,
   ProgramQueryDto,
+  SearchProgramsListDto,
   UpdateProgramDto,
 } from './dto/program.dto';
 
@@ -55,5 +56,20 @@ export class ProgramController {
   async remove(@Param('id') id: string) {
     await this.programService.remove(+id);
     return ApiResponse.success('Program deleted successfully.', 200);
+  }
+
+  @Get('program-list')
+  @HttpCode(200)
+  async getAllProgramssList(
+    @Query() searchProgramsListDto: SearchProgramsListDto,
+  ) {
+    const programList = await this.programService.getAllProgramssList(
+      searchProgramsListDto,
+    );
+    return ApiResponse.successData(
+      programList,
+      'Program list fetched successfully.',
+      200,
+    );
   }
 }

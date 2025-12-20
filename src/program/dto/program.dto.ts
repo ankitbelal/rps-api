@@ -62,3 +62,8 @@ export class ProgramQueryDto {
   @Type(() => Number)
   limit?: number = 10;
 }
+
+export class SearchProgramsListDto {
+  @IsOptional()
+  code?: string;
+}

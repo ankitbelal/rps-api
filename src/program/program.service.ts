@@ -7,6 +7,7 @@ import {
 import {
   CreateProgramDto,
   ProgramQueryDto,
+  SearchProgramsListDto,
   UpdateProgramDto,
 } from './dto/program.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -99,6 +100,23 @@ export class ProgramService {
     if (!program)
       throw new NotFoundException(`Program with id: ${id} doesn't exists.`);
     return !!(await this.programRepo.remove(program));
+  }
+
+  async getAllProgramssList(
+    searchProgramsListDto: SearchProgramsListDto,
+  ): Promise<{ programList: Program[] }> {
+    const query = this.programRepo
+      .createQueryBuilder('program')
+      .select(['program.id', 'program.code']);
+
+    if (searchProgramsListDto.code) {
+      query.andWhere('program.code LIKE :code', {
+        code: `%${searchProgramsListDto.code}%`,
+      });
+    }
+
+    const programList = await query.getRawMany();
+    return { programList };
   }
 
   async getProgramCount(): Promise<number> {
