@@ -12,12 +12,22 @@ export class MailingService {
     });
   }
 
-  async sendWelcomeEmail(to: string, name: string) {
-    await this.mailingService.sendMail({
-      to,
-      subject: 'Welcome!',
-      template: 'welcome', // points to welcome.hbs in this module
-      context: { name },
-    });
+  async sendWelcomeEmail(email: string, name: string) {
+    try {
+      await this.mailingService.sendMail({
+        to: email,
+        subject: 'Welcome to Our Service',
+        template: 'welcome', 
+        context: {
+          name: name,
+          year: new Date().getFullYear(),
+        },
+      });
+      console.log('Email sent successfully');
+      return true;
+    } catch (error) {
+      console.error('Error sending email:', error);
+      throw error;
+    }
   }
 }

@@ -27,7 +27,7 @@ const DEFAULT_MAIL_PORT = 587;
           from: config.get<string>('MAIL_FROM'),
         },
         template: {
-          dir: join(process.cwd(), 'src/mailing/templates'), // always points to src folder
+          dir: join(process.cwd(), 'src/mailing/templates'),
           adapter: new HandlebarsAdapter(),
           options: {
             strict: true,

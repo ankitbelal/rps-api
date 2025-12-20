@@ -212,7 +212,7 @@ export class TeacherService {
   }
   async getAllTeachersList(
     searchTeacherListDto: SearchTeacherListDto,
-  ): Promise<{ teachersList: Teacher[] }> {
+  ): Promise<{ data: Teacher[] }> {
     const query = this.teacherRepo
       .createQueryBuilder('teacher')
       .select('teacher.id', 'id')
@@ -236,8 +236,8 @@ export class TeacherService {
         );
       }
     }
-    const teachersList = await query.getRawMany();
-    return { teachersList };
+    const data = await query.getRawMany();
+    return { data };
   }
 
   async getTeachersCount(): Promise<number> {
