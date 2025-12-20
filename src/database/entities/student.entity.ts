@@ -101,6 +101,7 @@ export class Student {
     'student.lastName',
     'student.registrationNumber',
     'student.rollNumber',
+    'student.currentSemester',
     'student.gender',
     'student.email',
     'student.phone',
