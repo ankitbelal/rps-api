@@ -7,7 +7,6 @@ import {
   Param,
   Delete,
   HttpCode,
-  Query,
 } from '@nestjs/common';
 import { TeacherService } from './teacher.service';
 import {
@@ -31,7 +30,7 @@ export class TeacherController {
 
   @Get()
   @HttpCode(200)
-  async findAll(@Query() teacherQueryDto: TeacherQueryDto) {
+  async findAll(@Body() teacherQueryDto: TeacherQueryDto) {
     const teachers = await this.teacherService.findAll(teacherQueryDto);
     return ApiResponse.successData(
       teachers,

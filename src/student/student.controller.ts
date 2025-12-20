@@ -6,7 +6,6 @@ import {
   Patch,
   Param,
   Delete,
-  Query,
   HttpCode,
 } from '@nestjs/common';
 import { StudentService } from './student.service';
@@ -22,12 +21,12 @@ export class StudentController {
   @HttpCode(201)
   async create(@Body() createStudentDto: CreateStudentDto) {
     await this.studentService.create(createStudentDto);
-    ApiResponse.success('Student created successfully', 200);
+    return ApiResponse.success('Student created successfully', 200);
   }
 
   @Get()
   @HttpCode(200)
-  async findAll(@Query() studentQueryDto: StudentQueryDto) {
+  async findAll(@Body() studentQueryDto: StudentQueryDto) {
     const students = await this.studentService.findAll(studentQueryDto);
     return ApiResponse.successData(
       students,

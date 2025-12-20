@@ -13,7 +13,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Student } from 'src/database/entities/student.entity';
 import { Repository } from 'typeorm';
 import { UserService } from 'src/user/user.service';
-import { UserStatus, UserType } from 'utils/enums/general-enums';
+import { StudentStatus, UserStatus, UserType } from 'utils/enums/general-enums';
 import { SelectQueryBuilder } from 'typeorm/browser';
 
 @Injectable()
@@ -51,7 +51,7 @@ export class StudentService {
       if (phoneUsed) errors.phone = 'Alread used.';
       if (rollNumberExists) errors.rollNumber = 'Already exists.';
       if (registrationNumberExists)
-        errors.registrationNumber = 'Already exists,';
+        errors.registrationNumber = 'Already exists.';
 
       throw new ConflictException({
         success: false,
@@ -74,7 +74,13 @@ export class StudentService {
     return true;
   }
 
-  async findAll(studentQueryDto: StudentQueryDto) {
+  async findAll(studentQueryDto: StudentQueryDto): Promise<{
+    data: Student[];
+    total?: number;
+    page?: number;
+    lastPage?: number;
+    limit?: number;
+  }> {
     const { page = 1, limit = 10, ...filters } = studentQueryDto;
     const query = this.studentRepo.createQueryBuilder('student');
     if (filters?.id) {
@@ -95,7 +101,7 @@ export class StudentService {
     filteredquery.orderBy('student.first_name', 'ASC');
     const [data, total] = await filteredquery.getManyAndCount();
     const lastPage = Math.ceil(total / limit);
-    return { data, total, page, lastPage };
+    return { data, total, page, lastPage, limit };
   }
   private applyFilters(
     query: SelectQueryBuilder<Student>,
@@ -137,6 +143,30 @@ export class StudentService {
     }
     return query;
   }
+
+  //    async paginateRawData<T = any>(
+  //   queryBuilder: any,
+  //   page = 1,
+  //   limit = 10
+  // ): Promise<PaginationResult<T>> {
+  //   const total = await queryBuilder.getCount();
+
+  //   const skip = (page - 1) * limit;
+  //   const rawData = await queryBuilder
+  //     .offset(skip)
+  //     .limit(limit)
+  //     .getRawMany();
+
+  //   return {
+  //     data: rawData,
+  //     pagination: {
+  //       total,
+  //       page: parseInt(page.toString()),
+  //       limit: parseInt(limit.toString()),
+  //       totalPages: Math.ceil(total / limit),
+  //     },
+  //   };
+  // }
 
   async update(
     id: number,
@@ -233,7 +263,11 @@ export class StudentService {
       });
       registrationNumberExists = !!registrationNumber;
     }
-    const valid = !emailUsed && !phoneUsed;
+    const valid =
+      !emailUsed &&
+      !phoneUsed &&
+      !registrationNumberExists &&
+      !rollNumberExists;
     return {
       emailUsed,
       phoneUsed,
@@ -273,7 +307,35 @@ export class StudentService {
     return { studentList };
   }
 
-  async getStudentsCount(): Promise<number> {
-    return await this.studentRepo.count();
+  async getStudentsDashboardData() {
+    const [active, passed, suspended] = await Promise.all([
+      this.studentRepo.count({ where: { status: StudentStatus.ACTIVE } }),
+      this.studentRepo.count({ where: { status: StudentStatus.PASSED } }),
+      this.studentRepo.count({ where: { status: StudentStatus.SUSPENDED } }),
+    ]);
+
+    return {
+      active,
+      passed,
+      suspended,
+      total: active + passed + suspended,
+    };
+  }
+
+  async getStudentDistributionByProgram(): Promise<Record<string, number>> {
+    const result = await this.studentRepo
+      .createQueryBuilder('s')
+      .leftJoin('s.program', 'p')
+      .select('p.code', 'programCode')
+      .addSelect('COUNT(s.id)', 'count')
+      .groupBy('p.id')
+      .getRawMany();
+
+    const studentsDistributions: Record<string, number> = {};
+    result.forEach(
+      (r) => (studentsDistributions[r.programCode] = Number(r.count)),
+    );
+
+    return studentsDistributions;
   }
 }

@@ -7,7 +7,6 @@ import {
   Param,
   Delete,
   HttpCode,
-  Query,
 } from '@nestjs/common';
 import { ProgramService } from './program.service';
 import {
@@ -31,7 +30,7 @@ export class ProgramController {
 
   @Get()
   @HttpCode(200)
-  async findAll(@Query() ProgramQueryDto: ProgramQueryDto) {
+  async findAll(@Body() ProgramQueryDto: ProgramQueryDto) {
     const programs = await this.programService.findAll(ProgramQueryDto);
     return ApiResponse.successData(
       programs,

@@ -7,8 +7,8 @@ export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
   @HttpCode(200)
   @Get()
-  async getDashboardData() {
-    const data = await this.dashboardService.getDashboardData();
+  async getAdminDashboardData() {
+    const data = await this.dashboardService.getAdminDashboardData();
     return ApiResponse.successSingleData(
       data,
       'Data fetched successfully.',

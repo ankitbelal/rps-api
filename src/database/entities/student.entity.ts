@@ -99,6 +99,15 @@ export class Student {
     'student.id',
     'student.firstName',
     'student.lastName',
+    'student.registrationNumber',
+    'student.rollNumber',
+    'student.email',
+    'student.phone'
+    // reg no - roll-no
+    //status
+    //program
+    //contact
+    //
   ];
   static readonly ALLOWED_DETAILS = [
     'student.id',
