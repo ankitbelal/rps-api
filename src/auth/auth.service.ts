@@ -65,14 +65,14 @@ export class AuthService {
 
     res.cookie('access_token', accessToken, {
       httpOnly: true,
-      secure: true,
+      secure: this.isProd,
       sameSite: 'none',
       maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
 
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
-      secure: true,
+      secure: this.isProd,
       sameSite: 'none',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
@@ -114,7 +114,7 @@ export class AuthService {
 
       res.cookie('access_token', newAccessToken, {
         httpOnly: true,
-        secure: true,
+        secure: this.isProd,
         sameSite: 'none',
         maxAge: 15 * 60 * 1000,
       });
@@ -133,12 +133,12 @@ export class AuthService {
     await this.userService.logActivity(user.userId, ip, platform, action);
     res.clearCookie('access_token', {
       httpOnly: true,
-      secure: true,
+      secure: this.isProd,
       sameSite: this.isProd ? 'none' : 'lax',
     });
     res.clearCookie('refresh_token', {
       httpOnly: true,
-      secure: true,
+      secure: this.isProd,
       sameSite: this.isProd ? 'none' : 'lax',
     });
     return {
@@ -194,7 +194,7 @@ export class AuthService {
     if (otpSent) {
       res.cookie('device_id', deviceId, {
         httpOnly: true,
-        secure: true,
+        secure: this.isProd,
         sameSite: 'none',
       });
       return await this.userService.storeOTP(
@@ -227,7 +227,7 @@ export class AuthService {
     if (validOTP)
       res.cookie('otp_verified', true, {
         httpOnly: true,
-        secure: true,
+        secure: this.isProd,
         sameSite: 'none',
       });
     return validOTP;
@@ -244,12 +244,12 @@ export class AuthService {
     }
     res.clearCookie('access_token', {
       httpOnly: true,
-      secure: true,
+      secure: this.isProd,
       sameSite: 'none',
     });
     res.clearCookie('otp_verified', {
       httpOnly: true,
-      secure: true,
+      secure: this.isProd,
       sameSite: 'none',
     });
     return await this.userService.resetPassword(passwordResetDto);
