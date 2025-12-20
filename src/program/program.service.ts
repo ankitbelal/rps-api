@@ -104,7 +104,7 @@ export class ProgramService {
 
   async getAllProgramssList(
     searchProgramsListDto: SearchProgramsListDto,
-  ): Promise<{ programList: Program[] }> {
+  ): Promise<{ data: Program[] }> {
     const query = this.programRepo
       .createQueryBuilder('program')
       .select(['program.id', 'program.code']);
@@ -115,8 +115,8 @@ export class ProgramService {
       });
     }
 
-    const programList = await query.getMany();
-    return { programList };
+    const data = await query.getMany();
+    return { data };
   }
 
   async getProgramCount(): Promise<number> {
