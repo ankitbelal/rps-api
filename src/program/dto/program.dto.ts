@@ -38,6 +38,7 @@ export class UpdateProgramDto extends PartialType(CreateProgramDto) {}
 export class ProgramQueryDto {
   @IsOptional()
   @IsNumber()
+  @Type(() => Number)
   id: number;
 
   @IsOptional()

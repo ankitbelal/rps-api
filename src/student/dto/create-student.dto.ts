@@ -61,6 +61,7 @@ export class CreateStudentDto {
 export class StudentQueryDto {
   @IsOptional()
   @IsNumber()
+  @Type(() => Number)
   id: number;
 
   @IsOptional()

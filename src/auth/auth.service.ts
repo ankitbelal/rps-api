@@ -29,7 +29,7 @@ export class AuthService {
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    private readonly messaageCenterService: MailingService,
+    private readonly mailingService: MailingService,
   ) {
     this.isProd = this.configService.get<string>('NODE_ENV') === 'production';
   }
@@ -184,7 +184,7 @@ export class AuthService {
     const otp = await generateRandomNumbers(6);
     const message = `your confirmation code is ${otp}. if you didn't request this emai, you can safely ignore it.`;
     const subject = 'Reset Password';
-    const otpSent = await this.messaageCenterService.sendEmail(
+    const otpSent = await this.mailingService.sendEmail(
       verifyEmailDto.email,
       subject,
       message,

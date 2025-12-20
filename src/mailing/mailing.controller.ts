@@ -1,15 +1,24 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  HttpCode,
+} from '@nestjs/common';
 import { MailingService } from './mailing.service';
-import { Public } from 'src/auth/jwt/public.decorator';
-@Controller('message-center')
+@Controller('mail')
 export class MailingController {
-  constructor(private readonly messageCenterService: MailingService) {}
-  
-  // @Public()
-  // @HttpCode(200)
-  // @Post()
-  // async sendEmail(){
-  //   return await this.messageCenterService.sendEmail();
-  // }
+  constructor(private readonly mailingService: MailingService) {}
 
+  @HttpCode(200)
+  @Post()
+  async sendWelcomeEmail() {
+    return await this.mailingService.sendWelcomeEmail(
+      'aankitbelal@gmail.com',
+      'Ankit',
+    );
+  }
 }

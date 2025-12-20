@@ -49,6 +49,7 @@ export class UpdateTeacherDto extends PartialType(CreateTeacherDto) {}
 export class TeacherQueryDto {
   @IsOptional()
   @IsNumber()
+  @Type(() => Number)
   id: number;
 
   @IsOptional()
