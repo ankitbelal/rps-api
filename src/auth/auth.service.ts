@@ -19,7 +19,7 @@ import { generateRandomNumbers } from 'utils/general-utils';
 import { MailingService } from 'src/mailing/mailing.service';
 import { v4 as uuidv4 } from 'uuid';
 
-const ACCESS_TOKEN_EXPIRES_IN = '15m';
+const ACCESS_TOKEN_EXPIRES_IN = '1d';
 const REFRESH_TOKEN_EXPIRES_IN = '7d';
 
 @Injectable()
@@ -108,7 +108,7 @@ export class AuthService {
         { userId: payload.userId, email: payload.email },
         {
           secret: this.configService.get('ACCESS_TOKEN_SECRET'),
-          expiresIn: '15m',
+          expiresIn: ACCESS_TOKEN_EXPIRES_IN,
         },
       );
 
