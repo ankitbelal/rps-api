@@ -115,7 +115,7 @@ export class ProgramService {
       });
     }
 
-    const programList = await query.getRawMany();
+    const programList = await query.getMany();
     return { programList };
   }
 
