@@ -64,27 +64,14 @@ export class StudentQueryDto {
   id: number;
 
   @IsOptional()
-  firstName?: string;
-
-  @IsOptional()
-  lastName?: string;
-
-  @IsOptional()
-  @IsEmail()
-  email?: string;
-
-  @IsOptional()
-  phone: string;
-
-  @IsOptional()
-  @IsEnum(Gender, { message: 'Gender must be a valid.' })
-  gender?: Gender;
+  programId: string;
 
   @IsOptional()
   currentSemester?: number;
 
   @IsOptional()
-  isPassed?: number;
+  @IsEnum(StudentStatus, { message: 'Student status must be valid.' })
+  status?: StudentStatus;
 
   @IsOptional()
   @IsNumber()

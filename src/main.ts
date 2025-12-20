@@ -23,7 +23,7 @@ async function bootstrap() {
     }),
   );
   app.enableCors({
-    origin: ['http://localhost:5173', 'https://rps.yubrajdhungana.com.np'],
+    origin: ['http://localhost:5173', 'https://rps.yubrajdhungana.com.np'], //add in env
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],

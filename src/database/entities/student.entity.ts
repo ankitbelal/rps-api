@@ -101,8 +101,12 @@ export class Student {
     'student.lastName',
     'student.registrationNumber',
     'student.rollNumber',
+    'student.gender',
     'student.email',
-    'student.phone'
+    'student.phone',
+    'student.status',
+    'student.createdAt',
+    'program.name',
     // reg no - roll-no
     //status
     //program
@@ -123,7 +127,7 @@ export class Student {
     'student.status',
     'student.rollNumber',
     'student.registrationNumber',
-    'student.isPassed',
+    'program.name',
     'student.createdAt',
   ];
 }

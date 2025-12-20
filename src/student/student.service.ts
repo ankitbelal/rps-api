@@ -11,7 +11,7 @@ import {
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Student } from 'src/database/entities/student.entity';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 import { UserService } from 'src/user/user.service';
 import { StudentStatus, UserStatus, UserType } from 'utils/enums/general-enums';
 import { SelectQueryBuilder } from 'typeorm/browser';
@@ -82,9 +82,12 @@ export class StudentService {
     limit?: number;
   }> {
     const { page = 1, limit = 10, ...filters } = studentQueryDto;
-    const query = this.studentRepo.createQueryBuilder('student');
+    const query = this.studentRepo
+      .createQueryBuilder('student')
+      .innerJoin('student.program', 'program');
     if (filters?.id) {
-      query.andWhere('');
+      query.andWhere('student.id = :id', { id: filters.id });
+
       query.select(Student.ALLOWED_DETAILS);
       const data = await query.getOne();
       if (!data)
@@ -98,49 +101,49 @@ export class StudentService {
     const filteredquery = this.applyFilters(query, filters);
     filteredquery.select(Student.ALLOWED_FIELDS_LIST);
     filteredquery.skip((page - 1) * limit).take(limit);
-    filteredquery.orderBy('student.first_name', 'ASC');
+    filteredquery.orderBy('student.firstName', 'ASC');
     const [data, total] = await filteredquery.getManyAndCount();
     const lastPage = Math.ceil(total / limit);
     return { data, total, page, lastPage, limit };
   }
+
   private applyFilters(
     query: SelectQueryBuilder<Student>,
     filters: Partial<StudentQueryDto>,
   ): SelectQueryBuilder<Student> {
-    if (filters?.firstName) {
-      query.andWhere('student.first_name = :firstName', {
-        firstName: filters.firstName,
+    if (filters?.status) {
+      query.andWhere('student.status = :status', {
+        status: filters.status,
       });
     }
 
-    if (filters?.lastName) {
-      query.andWhere('student.last_name = :lastName', {
-        lastName: filters.lastName,
+    if (filters?.programId) {
+      query.andWhere('student.program_id = :programId', {
+        programId: filters.programId,
       });
     }
 
-    if (filters?.email) {
-      query.andWhere('student.email = :email', { email: filters.email });
-    }
-
-    if (filters?.gender) {
-      query.andWhere('student.gender = :gender', { gender: filters.gender });
-    }
-    if (filters.phone) {
-      query.andWhere('student.phone = :phone', { phone: filters.phone });
+    if (filters?.currentSemester) {
+      query.andWhere('student.current_semester = :currentSemester', {
+        currentSemester: filters.currentSemester,
+      });
     }
 
     if (filters?.search) {
-      query
-        .orWhere('student.first_name= :firstName', {
-          firstName: `%${filters.search}%`,
-        })
-        .orWhere('student.last_name = :lastName', {
-          lastName: `%${filters.lastName}%`,
-        })
-        .orWhere('student.email = :email', { email: filters.email })
-        .orWhere('student.phone = :phone', { phone: filters.phone });
+      query.andWhere(
+        new Brackets((qb) => {
+          qb.where('student.first_name LIKE :search', {
+            search: `%${filters.search}%`,
+          })
+            .orWhere('student.last_name LIKE :search', {
+              search: `%${filters.search}%`,
+            })
+            .orWhere('student.email = :search', { search: filters.search })
+            .orWhere('student.phone = :search', { search: filters.search });
+        }),
+      );
     }
+
     return query;
   }
 
@@ -308,27 +311,25 @@ export class StudentService {
   }
 
   async getStudentsDashboardData() {
-    const [active, passed, suspended] = await Promise.all([
+    const [active, passed] = await Promise.all([
       this.studentRepo.count({ where: { status: StudentStatus.ACTIVE } }),
       this.studentRepo.count({ where: { status: StudentStatus.PASSED } }),
-      this.studentRepo.count({ where: { status: StudentStatus.SUSPENDED } }),
     ]);
 
     return {
       active,
       passed,
-      suspended,
-      total: active + passed + suspended,
+      total: active + passed,
     };
   }
 
   async getStudentDistributionByProgram(): Promise<Record<string, number>> {
     const result = await this.studentRepo
-      .createQueryBuilder('s')
-      .leftJoin('s.program', 'p')
-      .select('p.code', 'programCode')
-      .addSelect('COUNT(s.id)', 'count')
-      .groupBy('p.id')
+      .createQueryBuilder('student')
+      .leftJoin('student.program', 'program')
+      .select('program.code', 'programCode')
+      .addSelect('COUNT(student.id)', 'count')
+      .groupBy('program.id')
       .getRawMany();
 
     const studentsDistributions: Record<string, number> = {};
