@@ -2,52 +2,100 @@
   {{#*inline "content"}}
   <table role='presentation' border='0' cellpadding='0' cellspacing='0' width='100%'>
     <tr>
-      <td class='content' style='padding: 40px 30px; background-color: #f8fff8;'>
+      <td class='content' style='padding: 40px 30px;'>
+        <h1 style='font-size: 24px; color: #333333; margin-bottom: 20px;'>
+          Welcome to {{company.name}}!
+        </h1>
 
-        <!-- Welcome Header -->
-        <div style='background-color: #2ebccc; padding: 30px; border-radius: 10px; text-align: center; margin-bottom: 30px;'>
-          <h1 style='font-size: 32px; color: #ffffff; margin: 0; font-weight: bold;'>
-            🎉 Welcome to {{company.name}}!
-          </h1>
-          <p style='font-size: 20px; color: #ffffff; margin-top: 10px; opacity: 0.9;'>
-            We're excited to have you on board
-          </p>
-        </div>
+        <p style='font-size: 16px; color: #555555; margin-bottom: 20px;'>
+          Hello
+          <strong>{{user.name}}</strong>,
+        </p>
 
-        <!-- Welcome Message -->
-        <div style='text-align: center; margin-bottom: 30px;'>
-          <h2 style='font-size: 28px; color: #27ae60; margin-bottom: 15px;'>
-            Hello <strong>{{user.name}}</strong> 👋
-          </h2>
-          <p style='font-size: 18px; color: #555555; line-height: 1.6;'>
-            Welcome to <strong>{{company.name}}</strong>. Your account has been successfully created and is ready to use!
-          </p>
-          <p style='font-size: 16px; color: #e74c3c; margin-top: 15px; font-weight: bold;'>
-            ⚠️ For extra security, kindly reset your password before your first login.
-          </p>
-        </div>
+        <p style='font-size: 16px; color: #555555; margin-bottom: 20px;'>
+          Welcome to {{company.name}}! Your account has been successfully created 
+          and is ready to use. Below are your login credentials:
+        </p>
 
-        <!-- Account Information Card -->
-        <div style='background-color: #ffffff; border: 2px solid #2ecc71; border-radius: 10px; padding: 25px; margin: 30px 0; text-align:center;'>
-          <p style='font-size: 16px; color: #555555; margin-bottom: 10px;'>
-            <strong>Email:</strong> {{user.email}}
-          </p>
-          <p style='font-size: 16px; color: #555555; margin-bottom: 10px;'>
-            <strong>Temporary Password:</strong> <code style='background-color: #f8f9fa; padding: 5px 10px; border-radius: 4px; font-family: monospace;'>{{user.password}}</code>
-          </p>
-          <!-- Reset Password Button -->
-          <a href='{{loginUrl}}' style='display:inline-block; background-color: #2ecc71; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; margin-top: 20px;'>
-            🔑 Login
+        <!-- Account Credentials Box -->
+        <table
+          role='presentation'
+          border='0'
+          cellpadding='0'
+          cellspacing='0'
+          width='100%'
+          style='background-color: #f8f9fa; border: 2px dashed #4a6fa5; border-radius: 8px; margin: 30px 0;'
+        >
+          <tr>
+            <td align='center' style='padding: 25px;'>
+              <p style='font-size: 16px; color: #666666; margin-bottom: 15px;'>
+                Your login credentials:
+              </p>
+              
+              <div style='text-align: left; display: inline-block; margin: 15px 0;'>
+                <p style='font-size: 16px; color: #555555; margin-bottom: 10px;'>
+                  <strong>Email:</strong> {{user.email}}
+                </p>
+                <p style='font-size: 16px; color: #555555; margin-bottom: 10px;'>
+                  <strong>Temporary Password:</strong>
+                </p>
+                <div
+                  class='password-code'
+                  style="font-size: 32px; font-weight: bold; letter-spacing: 4px; color: #2c3e50; margin: 10px 0; font-family: 'Courier New', monospace; background-color: #e9ecef; padding: 12px 20px; border-radius: 6px; display: inline-block;"
+                >
+                  {{user.password}}
+                </div>
+              </div>
+              
+              <p style='font-size: 14px; color: #e74c3c; margin-top: 15px;'>
+                ⚠️ For security, kindly reset your password before login.
+              </p>
+            </td>
+          </tr>
+        </table>
+
+        <p style='font-size: 16px; color: #555555; margin-bottom: 20px;'>
+          Use the temporary password above to log in to your account for the first time.
+        </p>
+
+        <!-- Login Button -->
+        <div style='text-align: center; margin: 30px 0;'>
+          <a
+            href='{{loginUrl}}'
+            style='display: inline-block; background-color: #4a6fa5; color: white; padding: 14px 35px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;'
+          >
+            Login to Your Account
           </a>
-        </div>
-
-        <!-- Footer / Support Links -->
-        <div style='text-align:center; margin-top:30px;'>
-          <p style='font-size:14px; color:#555555;'>
-            Need help? Contact us at <a href='mailto:{{company.supportEmail}}' style='color:#3498db;'>{{company.supportEmail}}</a>
+          <p style='font-size: 14px; color: #666; margin-top: 10px;'>
+            Or copy and paste this URL: <strong>{{loginUrl}}</strong>
           </p>
         </div>
 
+        <div
+          style='background-color: #ffeaa7; border: 1px solid #fdcb6e; border-radius: 5px; padding: 15px; margin: 20px 0;'
+        >
+          <p style='font-size: 14px; color: #856404; margin: 0;'>
+            <strong>🔐 Security Note:</strong>
+            For your security, please change your temporary password immediately 
+            after logging in. Never share your password with anyone.
+          </p>
+        </div>
+
+        <p style='font-size: 16px; color: #555555; margin-bottom: 20px;'>
+          After setting your new password, you'll have full access to all 
+          {{company.name}} features and services.
+        </p>
+
+        <p style='font-size: 16px; color: #555555; margin-bottom: 20px;'>
+          If you have any questions or need assistance, our support team is here to help.
+        </p>
+
+        <div style='text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;'>
+          <p style='font-size: 14px; color: #777;'>
+            Welcome aboard!<br>
+            The {{company.name}} Team
+          </p>
+        </div>
       </td>
     </tr>
   </table>
