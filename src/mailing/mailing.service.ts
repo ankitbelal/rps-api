@@ -102,13 +102,10 @@ export class MailingService {
         template: 'user-create',
         layout: 'layouts/main',
         context: {
-          user: {
-            name: user.name,
-          },
+          user: user,
           subject: 'Account Created - RPS Account',
           loginUrl: user.loginUrl || 'https://rps.yubrajdhungana.com.np',
           company: this.Company,
-          password: user.password,
           currentYear: new Date().getFullYear(),
         },
       } as any);
