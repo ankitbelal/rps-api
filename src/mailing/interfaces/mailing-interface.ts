@@ -5,3 +5,10 @@ export interface PasswordResetUser {
   verifyUrl: string;
   expiryMinutes: number;
 }
+
+export interface CreatedUser {
+  name: string;
+  email: string;
+  password: string;
+  loginUrl: string;
+}

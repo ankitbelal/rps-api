@@ -13,6 +13,7 @@ import { randomBytes } from 'crypto';
 import { UserOTP } from 'src/database/entities/user-otps.entity';
 import { UserStatus, UserType } from 'utils/enums/general-enums';
 import { MailingService } from 'src/mailing/mailing.service';
+import { CreatedUser } from 'src/mailing/interfaces/mailing-interface';
 
 @Injectable()
 export class UserService {
@@ -180,9 +181,13 @@ export class UserService {
     }
 
     const user = this.userRepo.create(userData);
-    const message: string =
-      'Hi !, Your Account created successfully. you can access your account with below link ';
-    await this.mailingService.sendEmail(user.email, 'User Account', message);
+    const createdUser: CreatedUser = {
+      email: email,
+      password: randomPass,
+      name: name,
+      loginUrl: 'https://rps.yubrajdhungana.com.np',
+    };
+    await this.mailingService.sendUserCreatedEmail(createdUser);
     return await this.userRepo.save(user);
   }
 }

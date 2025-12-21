@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import * as Handlebars from 'handlebars';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { PasswordResetUser } from './interfaces/mailing-interface';
+import { CreatedUser, PasswordResetUser } from './interfaces/mailing-interface';
 
 const isProd = process.env.NODE_ENV === 'production';
 const templatesDir = isProd
@@ -85,6 +85,31 @@ export class MailingService {
           company: this.Company,
           currentYear: new Date().getFullYear(),
           expiryMinutes: user.expiryMinutes,
+        },
+      } as any);
+      return true;
+    } catch (error) {
+      console.error('Error sending password reset email:', error);
+      throw error;
+    }
+  }
+
+  async sendUserCreatedEmail(user: CreatedUser): Promise<Boolean> {
+    try {
+      await this.mailingService.sendMail({
+        to: user.email,
+        subject: 'Account Created - RPS Account',
+        template: 'user-create',
+        layout: 'layouts/main',
+        context: {
+          user: {
+            name: user.name,
+          },
+          subject: 'Account Created - RPS Account',
+          loginUrl: user.loginUrl || 'https://rps.yubrajdhungana.com.np',
+          company: this.Company,
+          password: user.password,
+          currentYear: new Date().getFullYear(),
         },
       } as any);
       return true;
