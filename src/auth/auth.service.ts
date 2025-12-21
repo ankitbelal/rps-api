@@ -18,6 +18,7 @@ import type { Request, Response } from 'express';
 import { generateRandomNumbers } from 'utils/general-utils';
 import { MailingService } from 'src/mailing/mailing.service';
 import { v4 as uuidv4 } from 'uuid';
+import { PasswordResetUser } from 'src/mailing/interfaces/mailing-interface';
 
 const ACCESS_TOKEN_EXPIRES_IN = '1d';
 const REFRESH_TOKEN_EXPIRES_IN = '7d';
@@ -184,11 +185,15 @@ export class AuthService {
     const otp = await generateRandomNumbers(6);
     const message = `your confirmation code is ${otp}. if you didn't request this emai, you can safely ignore it.`;
     const subject = 'Reset Password';
-    const otpSent = await this.mailingService.sendEmail(
-      verifyEmailDto.email,
-      subject,
-      message,
-    );
+
+    const resetUser: PasswordResetUser = {
+      email: verifyEmailDto.email,
+      name: user.name,
+      otp: otp,
+      expiryMinutes: 10,
+      verifyUrl: 'https://rps.yubrajdhungana.com.np/',
+    };
+    const otpSent = await this.mailingService.sendPasswordResetEmail(resetUser);
 
     const expiresAt: Date = new Date(Date.now() + 10 * 60 * 1000); //5 minute expiry
     if (otpSent) {

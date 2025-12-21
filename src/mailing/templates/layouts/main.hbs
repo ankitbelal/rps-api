@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{subject}}</title>
+    <style type="text/css">
+        /* Reset styles */
+        body, table, td, div, p, a {
+            margin: 0;
+            padding: 0;
+            border: 0;
+            font-size: 100%;
+            font: inherit;
+            vertical-align: baseline;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100% !important;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            background-color: #f6f6f6;
+        }
+        
+        /* Email container */
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+        }
+        
+        /* Header - ALWAYS SAME */
+        .header {
+            background-color: #4a6fa5;
+            padding: 20px 0;
+            text-align: center;
+        }
+        
+        .logo {
+            color: #ffffff;
+            font-size: 24px;
+            font-weight: bold;
+            text-decoration: none;
+        }
+        
+        /* Content area - CHANGES PER TEMPLATE */
+        .content {
+            padding: 40px 30px;
+        }
+        
+        /* Footer - ALWAYS SAME */
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px 30px;
+            border-top: 1px solid #eeeeee;
+            font-size: 14px;
+            color: #666666;
+        }
+        
+        /* Responsive styles */
+        @media only screen and (max-width: 600px) {
+            .content {
+                padding: 30px 20px;
+            }
+            
+            .footer {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f6f6f6;">
+    <!--[if mso]>
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f6f6f6;">
+    <tr>
+    <td align="center">
+    <![endif]-->
+    
+    <div class="email-container" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+        
+        <!-- HEADER: ALWAYS SAME -->
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #4a6fa5;">
+            <tr>
+                <td align="center" style="padding: 20px 0;">
+                    <a href="{{company.website}}" class="logo" style="color: #ffffff; font-size: 24px; font-weight: bold; text-decoration: none;">
+                        {{company.name}}
+                    </a>
+                </td>
+            </tr>
+        </table>
+        
+        <!-- CONTENT: CHANGES PER TEMPLATE -->
+        {{> content}}
+        
+        <!-- FOOTER: ALWAYS SAME -->
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f8f9fa; border-top: 1px solid #eeeeee;">
+            <tr>
+                <td class="footer" style="padding: 20px 30px;">
+                    
+                    <!-- Security Tip - ALWAYS SAME -->
+                    <div style="background-color: #fff8e1; border-left: 4px solid #ffc107; padding: 15px; margin-bottom: 20px;">
+                        <p style="font-size: 14px; color: #856404; margin: 0;">
+                            <strong>⚠️ Security Tip:</strong> Never share your verification codes with anyone. {{company.name}} team will never ask for your OTP, password, or other sensitive information.
+                        </p>
+                    </div>
+                    
+                    <!-- Support Link - ALWAYS SAME -->
+                    <p style="font-size: 14px; color: #666666; margin-bottom: 15px;">
+                        Need help? <a href="mailto:{{company.supportEmail}}" style="color: #4a6fa5; font-weight: bold;">Contact our support team</a> 
+                        or visit our <a href="{{company.helpCenter}}" style="color: #4a6fa5;">Help Center</a>.
+                    </p>
+                    
+                    <!-- Best Regards - ALWAYS SAME -->
+                    <p style="font-size: 16px; color: #555555; margin: 25px 0 15px 0;">
+                        Best regards,<br>
+                        <strong>The {{company.name}} Team</strong>
+                    </p>
+                    
+                    <!-- Company Address - ALWAYS SAME -->
+                    <p style="font-size: 14px; color: #666666; margin-bottom: 10px;">
+                        {{company.name}}<br>
+                        {{company.address.street}}<br>
+                        {{company.address.city}}, {{company.address.state}} {{company.address.zip}}<br>
+                        {{company.address.country}}
+                    </p>
+                    
+                    <!-- Legal Links - ALWAYS SAME -->
+                    <p style="font-size: 12px; color: #999999; margin-top: 20px; padding-top: 15px; border-top: 1px solid #eeeeee;">
+                        © {{currentYear}} {{company.name}}. All rights reserved.<br>
+                        <a href="{{company.privacyPolicyUrl}}" style="color: #4a6fa5; text-decoration: none;">Privacy Policy</a> | 
+                        <a href="{{company.termsUrl}}" style="color: #4a6fa5; text-decoration: none;">Terms of Service</a> | 
+                        <a href="{{company.unsubscribeUrl}}" style="color: #4a6fa5; text-decoration: none;">Unsubscribe</a>
+                    </p>
+                    
+                    <p style="font-size: 11px; color: #999999; margin-top: 15px;">
+                        This is an automated message. Please do not reply to this email.
+                    </p>
+                    
+                </td>
+            </tr>
+        </table>
+        
+    </div>
+    
+    <!--[if mso]>
+    </td>
+    </tr>
+    </table>
+    <![endif]-->
+</body>
+</html>

@@ -32,9 +32,18 @@ const templateDir = isProd
         },
         template: {
           dir: templateDir,
-          adapter: new HandlebarsAdapter(),
+          adapter: new HandlebarsAdapter(undefined, {
+            inlineCssEnabled: true,
+          }),
           options: {
             strict: true,
+          },
+
+          partials: {
+            dir: join(__dirname, 'templates/layouts'),
+            options: {
+              strict: true,
+            },
           },
         },
       }),

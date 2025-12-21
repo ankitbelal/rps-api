@@ -1,0 +1,98 @@
+<!-- CONTENT BLOCK for Email Change -->
+<table
+  role='presentation'
+  border='0'
+  cellpadding='0'
+  cellspacing='0'
+  width='100%'
+>
+  <tr>
+    <td class='content' style='padding: 40px 30px;'>
+
+      <h1 style='font-size: 24px; color: #333333; margin-bottom: 20px;'>
+        Confirm Your New Email Address
+      </h1>
+
+      <p style='font-size: 16px; color: #555555; margin-bottom: 20px;'>
+        Hello
+        <strong>{{user.name}}</strong>,
+      </p>
+
+      <p style='font-size: 16px; color: #555555; margin-bottom: 20px;'>
+        You've requested to change your
+        {{company.name}}
+        account email address to
+        <strong>{{newEmail}}</strong>. To complete this change, please verify
+        your new email address using the One-Time Password (OTP) below.
+      </p>
+
+      <!-- OTP Box -->
+      <table
+        role='presentation'
+        border='0'
+        cellpadding='0'
+        cellspacing='0'
+        width='100%'
+        style='background-color: #f8f9fa; border: 2px dashed #4a6fa5; border-radius: 8px; margin: 30px 0;'
+      >
+        <tr>
+          <td align='center' style='padding: 25px;'>
+            <p
+              style='font-size: 16px; color: #666666; margin-bottom: 15px;'
+            >Your verification code is:</p>
+            <div
+              class='otp-code'
+              style="font-size: 42px; font-weight: bold; letter-spacing: 10px; color: #2c3e50; margin: 15px 0; font-family: 'Courier New', monospace;"
+            >
+              {{formatOtp otp}}
+            </div>
+            <p style='font-size: 14px; color: #e74c3c; margin-top: 15px;'>
+              ⏰ This code expires in
+              <strong>{{expiryMinutes}} minutes</strong>
+            </p>
+          </td>
+        </tr>
+      </table>
+
+      <p style='font-size: 16px; color: #555555; margin-bottom: 20px;'>
+        Enter this code on the email change verification page to confirm your
+        new email address.
+      </p>
+
+      <!-- Verify Button -->
+      <div style='text-align: center; margin: 30px 0;'>
+        <a
+          href='{{verifyUrl}}'
+          style='display: inline-block; background-color: #4a6fa5; color: white; padding: 14px 35px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;'
+        >
+          Confirm Email Change
+        </a>
+        <p style='font-size: 14px; color: #666; margin-top: 10px;'>
+          Or enter the code manually:
+          <strong>{{otp}}</strong>
+        </p>
+      </div>
+
+      <div
+        style='background-color: #ffeaa7; border: 1px solid #fdcb6e; border-radius: 5px; padding: 15px; margin: 20px 0;'
+      >
+        <p style='font-size: 14px; color: #856404; margin: 0;'>
+          <strong>⚠️ Important:</strong>
+          After confirming, your account login email will be updated to
+          <strong>{{newEmail}}</strong>. You'll receive future communications at
+          this new address.
+        </p>
+      </div>
+
+      <p style='font-size: 16px; color: #555555; margin-bottom: 20px;'>
+        If you didn't request this email change, please
+        <a
+          href='{{company.supportEmail}}'
+          style='color: #d63031; font-weight: bold;'
+        >contact support immediately</a>
+        to secure your account.
+      </p>
+
+    </td>
+  </tr>
+</table>
