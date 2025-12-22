@@ -68,6 +68,7 @@ export class TeacherService {
     total?: number;
     page?: number;
     lastPage?: number;
+    limit?: number;
   }> {
     const { page = 1, limit = 10, ...filters } = teacherQueryDto;
     const query = this.teacherRepo.createQueryBuilder('teacher');
@@ -89,7 +90,7 @@ export class TeacherService {
     filteredquery.orderBy('teacher.first_name', 'ASC');
     const [data, total] = await filteredquery.getManyAndCount();
     const lastPage = Math.ceil(total / limit);
-    return { data, total, page, lastPage };
+    return { data, total, page, lastPage, limit };
   }
 
   private applyFilters(
