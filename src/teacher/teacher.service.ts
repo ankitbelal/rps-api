@@ -97,29 +97,9 @@ export class TeacherService {
     query: SelectQueryBuilder<Teacher>,
     filters: Partial<TeacherQueryDto>,
   ): SelectQueryBuilder<Teacher> {
-    if (filters?.firstName) {
-      query.andWhere('teacher.first_name = :firstName', {
-        firstName: filters.firstName,
-      });
-    }
-
-    if (filters?.lastName) {
-      query.andWhere('teacher.last_name = :lastName', {
-        lastName: filters.lastName,
-      });
-    }
-
-    if (filters?.email) {
-      query.andWhere('teacher.email = :email', { email: filters.email });
-    }
-
     if (filters?.gender) {
       query.andWhere('teacher.gender = :gender', { gender: filters.gender });
     }
-    if (filters.phone) {
-      query.andWhere('teacher.phone = :phone', { phone: filters.phone });
-    }
-
     if (filters?.search) {
       query
         .orWhere('teacher.first_name= :firstName', {
