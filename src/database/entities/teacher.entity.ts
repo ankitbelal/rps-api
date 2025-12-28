@@ -63,7 +63,7 @@ export class Teacher {
     'teacher.gender',
     'teacher.createdAt',
     // 'teacher.dob',
-    // 'teacher.address1',
+    'teacher.address1',
     // 'teacher.address2',
   ];
   static readonly ALLOWED_DETAILS = [
