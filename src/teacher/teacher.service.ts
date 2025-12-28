@@ -12,7 +12,7 @@ import {
 } from './dto/teacher.dto';
 import { Teacher } from 'src/database/entities/teacher.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 import { UserService } from 'src/user/user.service';
 import { UserStatus, UserType } from 'utils/enums/general-enums';
 import { SelectQueryBuilder } from 'typeorm/browser';
@@ -83,7 +83,6 @@ export class TeacherService {
         });
       return { data: [data] };
     }
-
     const filteredquery = this.applyFilters(query, filters);
     filteredquery.select(Teacher.ALLOWED_FIELDS_LIST);
     filteredquery.skip((page - 1) * limit).take(limit);
@@ -101,15 +100,18 @@ export class TeacherService {
       query.andWhere('teacher.gender = :gender', { gender: filters.gender });
     }
     if (filters?.search) {
-      query
-        .orWhere('teacher.first_name= :firstName', {
-          firstName: `%${filters.search}%`,
-        })
-        .orWhere('teacher.last_name = :lastName', {
-          lastName: `%${filters.lastName}%`,
-        })
-        .orWhere('teacher.email = :email', { email: filters.email })
-        .orWhere('teacher.phone = :phone', { phone: filters.phone });
+      query.andWhere(
+        new Brackets((qb) => {
+          qb.where('teacher.first_name LIKE :search', {
+            search: `%${filters.search}%`,
+          })
+            .orWhere('teacher.last_name LIKE :search', {
+              search: `%${filters.search}%`,
+            })
+            .orWhere('teacher.email = :search', { search: filters.search })
+            .orWhere('teacher.phone = :search', { search: filters.search });
+        }),
+      );
     }
     return query;
   }
