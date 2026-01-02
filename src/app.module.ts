@@ -13,6 +13,7 @@ import { FacultyModule } from './faculty/faculty.module';
 import { MailingModule } from './mailing/mailing.module';
 import { LoggerModule } from './logging/logger.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { AuditTrailModule } from './audit-trail/audit-trail.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     FacultyModule,
     MailingModule,
     DashboardModule,
+    AuditTrailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

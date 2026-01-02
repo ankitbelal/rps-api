@@ -11,6 +11,7 @@ import { UserOTP } from './entities/user-otps.entity';
 import { EvaluationParameter } from './entities/evaliation-parameter.entity';
 import { SubjectsEvaluationParameter } from './entities/subject-evaluation-parameter.entity';
 import { ExtraParametersMarks } from './entities/extra-parameters-marks.entity';
+import { AuditTrails } from './entities/audit-trails.entity';
 export const entities = [
   User,
   UserActivity,
@@ -25,4 +26,5 @@ export const entities = [
   EvaluationParameter,
   SubjectsEvaluationParameter,
   ExtraParametersMarks,
+  AuditTrails,
 ];

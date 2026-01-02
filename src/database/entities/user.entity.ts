@@ -14,6 +14,7 @@ import {
 } from 'typeorm';
 import { UserOTP } from './user-otps.entity';
 import { UserStatus, UserType } from 'utils/enums/general-enums';
+import { AuditTrails } from './audit-trails.entity';
 
 @Entity('users')
 export class User {
@@ -74,4 +75,10 @@ export class User {
     onDelete: 'CASCADE',
   })
   userOtp: UserOTP;
+
+  @OneToMany(() => AuditTrails, (logs) => logs.user, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
+  auditTrails: AuditTrails;
 }
