@@ -13,11 +13,11 @@ export class EvaluationParameter {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ name: 'parameter_code', unique: true })
-  parameterCode: string;
+  @Column({ name: 'code', unique: true })
+  code: string;
 
-  @Column({ name: 'parameter_name', nullable: false })
-  parameterName: string;
+  @Column({ name: 'name', nullable: false })
+  name: string;
 
   @OneToMany(
     () => SubjectsEvaluationParameter,
@@ -36,7 +36,7 @@ export class EvaluationParameter {
 
   static readonly ALLOWED_FIELDS_LIST = [
     'parameter.id',
-    'parameter.parameterName',
-    'parameter.parameterCode',
+    'parameter.name',
+    'parameter.code',
   ];
 }

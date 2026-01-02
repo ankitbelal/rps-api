@@ -4,10 +4,10 @@ import { IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
 
 export class CreateEvaluationParamDto {
   @IsNotEmpty({ message: 'Parameter code is required.' })
-  parameterCode: string;
+  code: string;
 
   @IsNotEmpty({ message: 'Parameter name is required.' })
-  parameterName: string;
+  name: string;
 }
 
 export class UpdateEvaluationParamDto extends PartialType(
@@ -16,10 +16,10 @@ export class UpdateEvaluationParamDto extends PartialType(
 
 export class EvaluationParamQueryDto {
   @IsOptional()
-  parameterCode?: string;
+  code?: string;
 
   @IsOptional()
-  parameterName?: string;
+  name?: string;
 
   @IsOptional()
   @IsNumber()
@@ -30,4 +30,12 @@ export class EvaluationParamQueryDto {
   @IsNumber()
   @Type(() => Number)
   limit?: number = 10;
+}
+
+export class ParameterListingQuery {
+  @IsOptional()
+  name: string;
+
+  @IsOptional()
+  code: string;
 }

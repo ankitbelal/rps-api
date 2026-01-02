@@ -11,6 +11,7 @@ import { Repository } from 'typeorm';
 import {
   CreateEvaluationParamDto,
   EvaluationParamQueryDto,
+  ParameterListingQuery,
   UpdateEvaluationParamDto,
 } from './dto/evaluation-parameters.dto';
 
@@ -30,12 +31,12 @@ export class EvaluationParametersService {
   async createEvaluationParameters(
     createEvaluationParamDto: CreateEvaluationParamDto,
   ): Promise<Boolean> {
-    const exists = await this.evaluationParamRepository.findOne({
-      where: { parameterCode: createEvaluationParamDto.parameterCode },
-    });
+    const exists = await this.checkDuplicate(
+      createEvaluationParamDto.code,
+    );
     if (exists)
       throw new ConflictException(
-        `Parameter already exists for Code: ${createEvaluationParamDto.parameterCode}.`,
+        `Parameter already exists for Code: ${createEvaluationParamDto.code}.`,
       );
     const evaluationParam = this.evaluationParamRepository.create(
       createEvaluationParamDto,
@@ -63,19 +64,19 @@ export class EvaluationParametersService {
     const query =
       this.evaluationParamRepository.createQueryBuilder('parameter');
 
-    if (filters?.parameterName)
-      query.andWhere('parameter.parameter_name LIKE :name', {
-        name: `%${filters.parameterName}%`,
+    if (filters?.name)
+      query.andWhere('parameter.name LIKE :name', {
+        name: `%${filters.name}%`,
       });
 
-    if (filters?.parameterCode)
-      query.andWhere('parameter.parameter_code = :code', {
-        code: filters.parameterCode,
+    if (filters?.code)
+      query.andWhere('parameter.code = :code', {
+        code: filters.code,
       });
 
     query.select(EvaluationParameter.ALLOWED_FIELDS_LIST);
     query.skip((page - 1) * limit).take(limit);
-    query.orderBy('parameter.parameter_name', 'ASC');
+    query.orderBy('parameter.name', 'ASC');
     const [data, total] = await query.getManyAndCount();
     const lastPage = Math.ceil(total / limit);
 
@@ -93,14 +94,43 @@ export class EvaluationParametersService {
       throw new NotFoundException(`Parameter with id: ${id} doesn't exists.`);
 
     if (
-      id != parameter.id &&
-      parameter.parameterCode == updateEvaluationParamDto.parameterCode
+      updateEvaluationParamDto.code &&
+      updateEvaluationParamDto.code !== parameter.code
     ) {
-      throw new ConflictException(
-        `Program already exists for Code: ${updateEvaluationParamDto.parameterCode}.`,
+      const exists = await this.checkDuplicate(
+        updateEvaluationParamDto.code,
       );
+
+      if (exists) {
+        throw new ConflictException(
+          `Parameter with code: ${updateEvaluationParamDto.code} already exists.`,
+        );
+      }
     }
+
     Object.assign(parameter, updateEvaluationParamDto);
     return !!(await this.evaluationParamRepository.save(parameter));
+  }
+
+  async getAllParameterList(
+    parameterListingQuery: ParameterListingQuery,
+  ): Promise<{ data: EvaluationParameter[] }> {
+    const query = this.evaluationParamRepository
+      .createQueryBuilder('parameter')
+      .select(['parameter.id', 'parameter.name']);
+
+    if (parameterListingQuery.code) {
+      query.andWhere('program.code LIKE :code', {
+        code: `%${parameterListingQuery.code}%`,
+      });
+    }
+
+    const data = await query.getMany();
+    return { data };
+  }
+  async checkDuplicate(code: string): Promise<Boolean> {
+    return !!(await this.evaluationParamRepository.findOne({
+      where: { code },
+    }));
   }
 }

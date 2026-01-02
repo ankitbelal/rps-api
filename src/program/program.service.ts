@@ -32,9 +32,7 @@ export class ProgramService {
         `Faculty with ${createProgramDto.facultyId} does not exist`,
       );
 
-    const exists = await this.programRepo.findOne({
-      where: { code: createProgramDto.code },
-    });
+    const exists = await this.checkDuplicateProgram(createProgramDto.code);
     if (exists)
       throw new ConflictException(
         `Program already exists for Code: ${createProgramDto.code}.`,
@@ -92,8 +90,14 @@ export class ProgramService {
     const program = await this.programRepo.findOne({ where: { id } });
     if (!program)
       throw new NotFoundException(`Program with id: ${id} doesn't exists.`);
-    const isCodeChanged =
-      updateProgramDto.code && updateProgramDto.code !== program.code;
+    
+    if (updateProgramDto.code && updateProgramDto.code !== program.code) {
+      const exist = await this.checkDuplicateProgram(updateProgramDto.code);
+      if (exist)
+        throw new ConflictException(
+          `Program with code: ${updateProgramDto.code} already exists.`,
+        );
+    }
 
     Object.assign(program, updateProgramDto);
     return !!(await this.programRepo.save(program));
@@ -127,7 +131,7 @@ export class ProgramService {
     return await this.programRepo.count();
   }
 
-  async checkDuplicateProgram(code): Promise<Boolean> {
+  async checkDuplicateProgram(code: string): Promise<Boolean> {
     return !!(await this.programRepo.findOne({ where: { code } }));
   }
 }

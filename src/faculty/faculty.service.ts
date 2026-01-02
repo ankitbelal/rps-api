@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -20,9 +21,7 @@ export class FacultyService {
   ) {}
 
   async create(createFacultyDto: CreateFacultyDto): Promise<Boolean> {
-    const exists = await this.facultyRepo.findOne({
-      where: { name: createFacultyDto.name },
-    });
+    const exists = await this.checkDuplicate(createFacultyDto.name);
     if (exists) throw new BadRequestException('Faculty already registered.');
     const faculties = this.facultyRepo.create(createFacultyDto);
     return !!(await this.facultyRepo.save(faculties));
@@ -49,17 +48,16 @@ export class FacultyService {
 
   async update(
     id: number,
-    UpdateFacultyDto: UpdateFacultyDto,
+    updateFacultyDto: UpdateFacultyDto,
   ): Promise<Boolean> {
-    const exists = await this.facultyRepo.findOne({
-      where: { name: UpdateFacultyDto.name },
-    });
-    if (exists && exists.id != id)
-      throw new BadRequestException('Faculty already exists.');
     const faculty = await this.facultyRepo.findOne({ where: { id } });
     if (!faculty)
       throw new NotFoundException(`Faculty with id: ${id} doesnt exists.`);
-    Object.assign(faculty, UpdateFacultyDto);
+    if (updateFacultyDto.name && updateFacultyDto.name !== faculty.name) {
+      const exists = await this.checkDuplicate(updateFacultyDto.name);
+      if (exists) throw new ConflictException(`Faculty already exists.`);
+    }
+    Object.assign(faculty, updateFacultyDto);
     return !!(await this.facultyRepo.save(faculty));
   }
 
@@ -76,5 +74,9 @@ export class FacultyService {
 
   async getFacultyCount(): Promise<number> {
     return await this.facultyRepo.count();
+  }
+
+  async checkDuplicate(name: string): Promise<Boolean> {
+    return !!(await this.facultyRepo.findOne({ where: { name } }));
   }
 }

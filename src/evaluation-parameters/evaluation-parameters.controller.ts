@@ -10,6 +10,7 @@ import {
 import {
   CreateEvaluationParamDto,
   EvaluationParamQueryDto,
+  ParameterListingQuery,
 } from './dto/evaluation-parameters.dto';
 import { EvaluationParametersService } from './evaluation-parameters.service';
 import { ApiResponse } from 'utils/api-response';
@@ -40,6 +41,21 @@ export class EvaluationParametersController {
     return ApiResponse.successData(
       parameters,
       'Parameters fetched successfully.',
+      200,
+    );
+  }
+  @Get('parameter-list')
+  @HttpCode(200)
+  async getAllProgramssList(
+    @Query() parameterListingQuery: ParameterListingQuery,
+  ) {
+    const parameterList =
+      await this.evaluationParameterService.getAllParameterList(
+        parameterListingQuery,
+      );
+    return ApiResponse.successData(
+      parameterList,
+      'Program list fetched successfully.',
       200,
     );
   }

@@ -128,8 +128,13 @@ export class TeacherService {
         message: `Teacher with id: ${id} does not exists.`,
       });
     }
+    const isEmailChanged =
+      updateTeacherDto.email && updateTeacherDto.email == teacher.email;
 
-    if (updateTeacherDto.email || updateTeacherDto.phone) {
+    const isPhoneChanged =
+      updateTeacherDto.phone && updateTeacherDto.phone == teacher.phone;
+
+    if (isEmailChanged || isPhoneChanged) {
       const { emailUsed, phoneUsed, valid } =
         await this.validateTeacherContact(updateTeacherDto);
 
