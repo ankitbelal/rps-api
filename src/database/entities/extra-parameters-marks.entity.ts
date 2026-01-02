@@ -10,7 +10,7 @@ import {
 import { StudentSubjectMarks } from './student-marks.entity';
 import { SubjectsEvaluationParameter } from './subject-evaluation-parameter.entity';
 
-@Entity('extra-parameters-marks')
+@Entity('extra_parameters_marks')
 export class ExtraParametersMarks {
   @PrimaryGeneratedColumn()
   id: number;
@@ -19,9 +19,15 @@ export class ExtraParametersMarks {
   @JoinColumn({ name: 'student_subject_marks_id' })
   studentSubjectMarks: StudentSubjectMarks;
 
+  @Column({ name: 'student_subject_marks_id', nullable: true })
+  studentSubjectMarksId?: number;
+
   @ManyToOne(() => SubjectsEvaluationParameter, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'subject_evaluation_parameters_id' })
   subjectsEvaluationParameter: SubjectsEvaluationParameter;
+
+  @Column({ name: 'subject_evaluation_parameters_id', nullable: true })
+  subjectEvaluationParametersId?: number;
 
   @Column({ default: 0 })
   marks: number;

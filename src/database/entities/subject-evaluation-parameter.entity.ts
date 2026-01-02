@@ -8,7 +8,7 @@ import {
   JoinColumn,
   OneToMany,
 } from 'typeorm';
-import { EvaluationParameter } from './evaliation-parameter.entity';
+import { EvaluationParameter } from './evaluation-parameter.entity';
 import { Subject } from './subject.entity';
 import { ExtraParametersMarks } from './extra-parameters-marks.entity';
 
@@ -28,9 +28,16 @@ export class SubjectsEvaluationParameter {
   @JoinColumn({ name: 'subject_id' })
   subject: Subject;
 
-  @OneToMany(() => ExtraParametersMarks, (marks) => marks.subjectsEvaluationParameter, {
-    cascade: true,
-  })
+  @Column({ name: 'subject_id', nullable: true })
+  subjectId?: number;
+
+  @OneToMany(
+    () => ExtraParametersMarks,
+    (marks) => marks.subjectsEvaluationParameter,
+    {
+      cascade: true,
+    },
+  )
   extraParametersMarks: ExtraParametersMarks[];
 
   @Column()

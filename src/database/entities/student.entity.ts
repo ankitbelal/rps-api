@@ -121,7 +121,7 @@ export class Student {
     'student.email',
     'student.phone',
     'student.gender',
-    'student.dob',
+    'student.DOB',
     'student.address1',
     'student.address2',
     'student.currentSemester',
@@ -129,6 +129,7 @@ export class Student {
     'student.rollNumber',
     'student.registrationNumber',
     'program.name',
+    'program.id',
     'student.createdAt',
   ];
 }

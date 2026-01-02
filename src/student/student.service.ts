@@ -175,8 +175,8 @@ export class StudentService {
     id: number,
     updateStudentDto: UpdateStudentDto,
   ): Promise<Boolean> {
-    const teacher = await this.studentRepo.findOne({ where: { id } });
-    if (!teacher) {
+    const student = await this.studentRepo.findOne({ where: { id } });
+    if (!student) {
       throw new NotFoundException({
         status: 'false',
         statusCode: 404,
@@ -184,15 +184,22 @@ export class StudentService {
       });
     }
 
-    if (updateStudentDto.email || updateStudentDto.phone) {
+    const isEmailChanged =
+      updateStudentDto.email && updateStudentDto.email !== student.email;
+
+    const isPhoneChanged =
+      updateStudentDto.phone && updateStudentDto.phone !== student.phone;
+
+    if (isEmailChanged || isPhoneChanged) 
+      {
       const { emailUsed, phoneUsed, valid } =
         await this.validateStudentContact(updateStudentDto);
 
       if (!valid) {
         const errors: any = {};
-        if (emailUsed && updateStudentDto.email !== teacher.email)
+        if (emailUsed && updateStudentDto.email !== student.email)
           errors.email = 'Already used';
-        if (phoneUsed && updateStudentDto.phone !== teacher.phone)
+        if (phoneUsed && updateStudentDto.phone !== student.phone)
           errors.phone = 'Already used';
 
         if (Object.keys(errors).length > 0) {
@@ -205,12 +212,12 @@ export class StudentService {
         }
       }
     }
-    Object.assign(teacher, updateStudentDto);
-    await this.studentRepo.save(teacher);
+    Object.assign(student, updateStudentDto);
+    await this.studentRepo.save(student);
     return true;
   }
 
-  async remove(id: number) {
+  async remove(id: number): Promise<Boolean> {
     const student = await this.studentRepo.findOne({ where: { id } });
     if (!student)
       throw new NotFoundException({
@@ -218,7 +225,7 @@ export class StudentService {
         statusCode: 404,
         message: `Student with id: ${id} does not exists.`,
       });
-    this.studentRepo.remove(student);
+    return !!(await this.studentRepo.remove(student));
   }
 
   async validateStudentContact(data: {

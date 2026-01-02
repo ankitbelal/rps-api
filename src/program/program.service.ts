@@ -47,11 +47,12 @@ export class ProgramService {
     data: Program[];
     total?: number;
     page?: number;
+    limit?: number;
     lastPage?: number;
   }> {
     const { page = 1, limit = 10, ...filters } = programQueryDto;
     const query = this.programRepo.createQueryBuilder('program');
-    if (filters.name) {
+    if (filters?.name) {
       query.andWhere('program.name LIKE :name', { name: `%${filters.name}%` });
     }
     if (filters?.code) {
@@ -81,7 +82,7 @@ export class ProgramService {
     const [data, total] = await query.getManyAndCount();
     const lastPage = Math.ceil(total / limit);
 
-    return { data, total, page, lastPage };
+    return { data, total, page, limit, lastPage };
   }
 
   async update(
@@ -91,6 +92,9 @@ export class ProgramService {
     const program = await this.programRepo.findOne({ where: { id } });
     if (!program)
       throw new NotFoundException(`Program with id: ${id} doesn't exists.`);
+    const isCodeChanged =
+      updateProgramDto.code && updateProgramDto.code !== program.code;
+
     Object.assign(program, updateProgramDto);
     return !!(await this.programRepo.save(program));
   }
@@ -121,5 +125,9 @@ export class ProgramService {
 
   async getProgramCount(): Promise<number> {
     return await this.programRepo.count();
+  }
+
+  async checkDuplicateProgram(code): Promise<Boolean> {
+    return !!(await this.programRepo.findOne({ where: { code } }));
   }
 }

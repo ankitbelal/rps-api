@@ -8,7 +8,7 @@ import { Faculty } from 'src/database/entities/faculty.entity';
 import { StudentSubjectMarks } from './entities/student-marks.entity';
 import { StudentAttendance } from './entities/student-attendance.entity';
 import { UserOTP } from './entities/user-otps.entity';
-import { EvaluationParameter } from './entities/evaliation-parameter.entity';
+import { EvaluationParameter } from './entities/evaluation-parameter.entity';
 import { SubjectsEvaluationParameter } from './entities/subject-evaluation-parameter.entity';
 import { ExtraParametersMarks } from './entities/extra-parameters-marks.entity';
 import { AuditTrails } from './entities/audit-trails.entity';

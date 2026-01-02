@@ -11,7 +11,7 @@ export enum MailStatus {
   FAILED = 'F',
 }
 
-@Entity('student_attendance')
+@Entity('mailing_logs')
 export class MailingLogs {
   @PrimaryGeneratedColumn()
   id: Number;
