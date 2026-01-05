@@ -73,7 +73,7 @@ export class Teacher {
     'teacher.email',
     'teacher.phone',
     'teacher.gender',
-    'teacher.dob',
+    'teacher.DOB',
     'teacher.address1',
     'teacher.address2',
     'teacher.createdAt',

@@ -1,9 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
-  Injectable,
+  Param,
   Post,
   Query,
 } from '@nestjs/common';
@@ -44,6 +45,14 @@ export class EvaluationParametersController {
       200,
     );
   }
+
+  @HttpCode(200)
+  @Delete()
+  async remove(@Param('id') id: string) {
+    await this.evaluationParameterService.remove(+id);
+    return ApiResponse.success('Parameter removed successfully.', 200);
+  }
+
   @Get('parameter-list')
   @HttpCode(200)
   async getAllProgramssList(

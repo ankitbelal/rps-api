@@ -55,7 +55,7 @@ export class ProgramController {
   @HttpCode(200)
   async remove(@Param('id') id: string) {
     await this.programService.remove(+id);
-    return ApiResponse.success('Program deleted successfully.', 200);
+    return ApiResponse.success('Program removed successfully.', 200);
   }
 
   @Get('program-list')
