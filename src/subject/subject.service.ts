@@ -86,6 +86,7 @@ export class SubjectService {
       throw new NotFoundException(`Subject with id ${id} doesnt't exists`);
     return !!(await this.subjectRepo.remove(subject));
   }
+
   async getSubjectCount(): Promise<number> {
     return await this.subjectRepo.count();
   }

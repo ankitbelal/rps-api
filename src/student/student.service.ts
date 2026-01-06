@@ -138,8 +138,12 @@ export class StudentService {
             .orWhere('student.last_name LIKE :search', {
               search: `%${filters.search}%`,
             })
-            .orWhere('student.email = :search', { search: filters.search })
-            .orWhere('student.phone = :search', { search: filters.search });
+            .orWhere('student.email LIKE :search', {
+              search: `%${filters.search}%`,
+            })
+            .orWhere('student.phone LIKE :search', {
+              search: `%${filters.search}%`,
+            });
         }),
       );
     }
@@ -190,8 +194,7 @@ export class StudentService {
     const isPhoneChanged =
       updateStudentDto.phone && updateStudentDto.phone !== student.phone;
 
-    if (isEmailChanged || isPhoneChanged) 
-      {
+    if (isEmailChanged || isPhoneChanged) {
       const { emailUsed, phoneUsed, valid } =
         await this.validateStudentContact(updateStudentDto);
 
