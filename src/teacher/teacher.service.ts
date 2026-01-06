@@ -108,8 +108,12 @@ export class TeacherService {
             .orWhere('teacher.last_name LIKE :search', {
               search: `%${filters.search}%`,
             })
-            .orWhere('teacher.email = :search', { search: filters.search })
-            .orWhere('teacher.phone = :search', { search: filters.search });
+            .orWhere('teacher.email = :search', {
+              search: `%${filters.search}%`,
+            })
+            .orWhere('teacher.phone = :search', {
+              search: `%${filters.search}%`,
+            });
         }),
       );
     }
