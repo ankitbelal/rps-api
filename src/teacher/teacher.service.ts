@@ -133,11 +133,10 @@ export class TeacherService {
       });
     }
     const isEmailChanged =
-      updateTeacherDto.email && updateTeacherDto.email == teacher.email;
+      updateTeacherDto.email && updateTeacherDto.email !== teacher.email;
 
     const isPhoneChanged =
-      updateTeacherDto.phone && updateTeacherDto.phone == teacher.phone;
-
+      updateTeacherDto.phone && updateTeacherDto.phone !== teacher.phone;
     if (isEmailChanged || isPhoneChanged) {
       const { emailUsed, phoneUsed, valid } =
         await this.validateTeacherContact(updateTeacherDto);

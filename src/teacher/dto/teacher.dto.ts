@@ -23,8 +23,6 @@ export class CreateTeacherDto {
   email: string;
 
   @IsNotEmpty({ message: 'Phone is required.' })
-  @IsNumber({}, { message: 'Phone must be number.' })
-  @Type(() => Number)
   phone: string;
 
   @IsNotEmpty({ message: 'DOB is required.' })
