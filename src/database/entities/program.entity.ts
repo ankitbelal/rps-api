@@ -62,6 +62,7 @@ export class Program {
     'program.id',
     'program.name',
     'program.code',
+    'program.HOD',
     // 'program.totalSubjects',
     // 'program.totalSemesters',
     // 'program.totalCredits',
@@ -76,8 +77,8 @@ export class Program {
     'program.totalSemesters',
     'program.totalCredits',
     'program.durationInYears',
-    'program.facultyId',
+    'program.HOD',
+    'faculty.name',
     'program.createdAt',
-    // 'program.updated_at AS updatedAt',
   ];
 }

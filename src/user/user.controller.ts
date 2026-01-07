@@ -1,4 +1,20 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Get, HttpCode, Query } from '@nestjs/common';
+import { UserService } from './user.service';
+import { ApiResponse } from 'utils/api-response';
+import { AdminHeadQueryDto } from './dto/admin-head-query.dto';
 
 @Controller('user')
-export class UserController {}
+export class UserController {
+  constructor(private readonly userService: UserService) {}
+  @HttpCode(200)
+  @Get('admin-head')
+  async getAdminandHead(@Query() adminHeadQueryDto: AdminHeadQueryDto) {
+    const adminsAndHead =
+      await this.userService.getEligibleAdminsHeads(adminHeadQueryDto);
+    return ApiResponse.successSingleData(
+      adminsAndHead,
+      'Eligible admin fetched successfully.',
+      200,
+    );
+  }
+}

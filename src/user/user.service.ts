@@ -14,6 +14,7 @@ import { UserOTP } from 'src/database/entities/user-otps.entity';
 import { UserStatus, UserType } from 'utils/enums/general-enums';
 import { MailingService } from 'src/mailing/mailing.service';
 import { CreatedUser } from 'src/mailing/interfaces/mailing-interface';
+import { AdminHeadQueryDto } from './dto/admin-head-query.dto';
 
 @Injectable()
 export class UserService {
@@ -185,9 +186,50 @@ export class UserService {
       email: email,
       password: randomPass,
       name: name,
-      loginUrl: 'https://rps.yubrajdhungana.com.np',
+      loginUrl: process.env.RPS_URL ?? '',
     };
     await this.mailingService.sendUserCreatedEmail(createdUser);
     return await this.userRepo.save(user);
+  }
+
+  // async getEligibleAdminsHeads(name?: string) {
+  //   const qb = this.userRepo
+  //     .createQueryBuilder('user')
+  //     .select([
+  //       'user.id',
+  //       'user.name',
+  //     ])
+  //     .where('user.user_type IN (:...types)', {
+  //       types: ['A', 'T'],
+  //     });
+
+  //   if (name) {
+  //     qb.andWhere('LOWER(user.name) LIKE LOWER(:name)', {
+  //       name: `%${name}%`,
+  //     });
+  //   }
+
+  //   return await qb.getMany();
+  // }
+  async getEligibleAdminsHeads(adminHeadQueryDto: AdminHeadQueryDto) {
+    const query = this.userRepo.createQueryBuilder('user');
+
+    query.where('user.user_type IN (:...types)', {
+      types: [UserType.ADMIN, UserType.TEACHER],
+    });
+
+    query.andWhere('user.status IN (:...status)', {
+      status: [UserStatus.ACTIVE, UserStatus.PENDING],
+    });
+
+    if (adminHeadQueryDto.name) {
+      query.andWhere('user.name LIKE :name', {
+        name: `%${adminHeadQueryDto.name}%`,
+      });
+    }
+
+    query.select(['user.id', 'user.name']);
+
+    return await query.getMany();
   }
 }
