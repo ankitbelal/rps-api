@@ -36,6 +36,9 @@ export class Program {
   @Column({ type: 'int', default: 4, name: 'duration_in_years' })
   durationInYears: number;
 
+  @Column({ name: 'HOD', nullable: false })
+  HOD: string;
+
   @ManyToOne(() => Faculty, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'faculty_id' })
   faculty: Faculty;

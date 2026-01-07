@@ -31,6 +31,9 @@ export class CreateProgramDto {
   @IsNumber()
   @Type(() => Number)
   durationInYears: number;
+
+  @IsNotEmpty({ message: 'HOD is Required.' })
+  HOD: string;
 }
 
 export class UpdateProgramDto extends PartialType(CreateProgramDto) {}
