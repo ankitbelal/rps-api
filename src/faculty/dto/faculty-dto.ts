@@ -15,7 +15,7 @@ export class UpdateFacultyDto extends PartialType(CreateFacultyDto) {}
 export class FacultyQueryDto {
   @IsOptional()
   @IsString()
-  name?: string;
+  search?: string;
 
   @IsOptional()
   @IsNumber()

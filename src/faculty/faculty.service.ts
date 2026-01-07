@@ -38,8 +38,8 @@ export class FacultyService {
     const query = this.facultyRepo
       .createQueryBuilder('faculty')
       .leftJoinAndSelect('faculty.program', 'program');
-    if (filters.name) {
-      query.andWhere('faculty.name LIKE :name', { name: `%${filters.name}%` });
+    if (filters.search) {
+      query.andWhere('faculty.name LIKE :name', { name: `%${filters.search}%` });
     }
 
     query.select(Faculty.ALLOWED_FIELDS_LIST);
