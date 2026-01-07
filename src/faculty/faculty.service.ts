@@ -34,7 +34,9 @@ export class FacultyService {
     lastPage: number;
   }> {
     const { page = 1, limit = 10, ...filters } = facultyQueryDto;
-    const query = this.facultyRepo.createQueryBuilder('faculty');
+    const query = this.facultyRepo
+      .createQueryBuilder('faculty')
+      .leftJoinAndSelect('faculty.program', 'program');
     if (filters.name) {
       query.andWhere('faculty.name LIKE :name', { name: `%${filters.name}%` });
     }
