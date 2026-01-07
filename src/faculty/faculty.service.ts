@@ -31,6 +31,7 @@ export class FacultyService {
     data: Faculty[];
     total: number;
     page: number;
+    limit: number;
     lastPage: number;
   }> {
     const { page = 1, limit = 10, ...filters } = facultyQueryDto;
@@ -45,7 +46,7 @@ export class FacultyService {
     query.orderBy('faculty.name', 'ASC');
     const [data, total] = await query.getManyAndCount();
     const lastPage = Math.ceil(total / limit);
-    return { data, total, page, lastPage };
+    return { data, total, page, limit, lastPage };
   }
 
   async update(

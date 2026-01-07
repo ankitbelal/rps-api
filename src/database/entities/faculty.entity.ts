@@ -27,5 +27,11 @@ export class Faculty {
   @OneToMany(() => Program, (program) => program.faculty, { cascade: true })
   program: Program;
 
-  static readonly ALLOWED_FIELDS_LIST = ['faculty.id', 'faculty.name','program.id','program.code'];
+  static readonly ALLOWED_FIELDS_LIST = [
+    'faculty.id',
+    'faculty.name',
+    'faculty.description',
+    'program.id',
+    'program.code',
+  ];
 }
