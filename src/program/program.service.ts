@@ -60,9 +60,9 @@ export class ProgramService {
     if (filters?.code) {
       query.andWhere('program.code = :code', { code: filters.code });
     }
-    if (filters.faculty_id) {
+    if (filters.facultyId) {
       query.andWhere('program.facultyId = :facultyId', {
-        faculty_id: filters.faculty_id,
+        facultyId: filters.facultyId,
       });
     }
 

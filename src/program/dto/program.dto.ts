@@ -33,7 +33,7 @@ export class CreateProgramDto {
   durationInYears: number;
 
   @IsNotEmpty({ message: 'HOD is Required.' })
-  @Type(()=>Number)
+  @Type(() => Number)
   hodId: number;
 }
 
@@ -50,7 +50,8 @@ export class ProgramQueryDto {
 
   @IsOptional()
   @IsNumber()
-  faculty_id?: number;
+  @Type(() => Number)
+  facultyId?: number;
 
   @IsOptional()
   @IsString()
