@@ -15,4 +15,8 @@ export class AuditTrailService {
     const logs = this.auditRepository.create(auditLogs);
     await this.auditRepository.save(logs);
   }
+
+  // async getAllLogs(){
+  // cont [] =await Promise.all([]);
+  // }
 }

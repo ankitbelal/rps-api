@@ -65,7 +65,7 @@ export class StudentService {
     );
     this.userService.createUser(
       student.id,
-      student.firstName + '' + student.lastName,
+      student.firstName + ' ' + student.lastName,
       createStudentDto.email,
       createStudentDto.phone,
       UserType.STUDENT,

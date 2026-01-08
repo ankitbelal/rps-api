@@ -54,7 +54,7 @@ export class TeacherService {
     );
     this.userService.createUser(
       teacher.id,
-      teacher.firstName + '' + teacher.lastName,
+      teacher.firstName + ' ' + teacher.lastName,
       createTeacherDto.email,
       createTeacherDto.phone,
       UserType.TEACHER,

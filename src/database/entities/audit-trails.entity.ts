@@ -14,6 +14,9 @@ export class AuditTrails {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Column({ name: 'act_code', nullable: false })
+  actCode: string;
+
   @Column()
   action: string;
 

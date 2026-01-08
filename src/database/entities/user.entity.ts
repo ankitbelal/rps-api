@@ -10,7 +10,6 @@ import {
   OneToMany,
   OneToOne,
   JoinColumn,
-  PrimaryColumn,
 } from 'typeorm';
 import { UserOTP } from './user-otps.entity';
 import { UserStatus, UserType } from 'utils/enums/general-enums';
@@ -47,14 +46,14 @@ export class User {
   @Column({ name: 'student_id', nullable: true })
   studentId: number | null;
 
-  @OneToOne(() => Student, { onDelete: 'CASCADE' })
+  @OneToOne(() => Student, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'student_id' })
   student?: Student;
 
   @Column({ name: 'teacher_id', nullable: true })
   teacherId: number | null;
 
-  @OneToOne(() => Teacher, { onDelete: 'CASCADE' })
+  @OneToOne(() => Teacher, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'teacher_id' })
   teacher?: Teacher;
 

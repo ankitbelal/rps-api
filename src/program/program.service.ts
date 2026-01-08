@@ -49,7 +49,11 @@ export class ProgramService {
     lastPage?: number;
   }> {
     const { page = 1, limit = 10, ...filters } = programQueryDto;
-    const query = this.programRepo.createQueryBuilder('program');
+    const query = this.programRepo
+      .createQueryBuilder('program')
+      .innerJoinAndSelect('program.faculty', 'faculty')
+      .leftJoinAndSelect('program.hod', 'hod');
+
     if (filters?.name) {
       query.andWhere('program.name LIKE :name', { name: `%${filters.name}%` });
     }
@@ -57,7 +61,7 @@ export class ProgramService {
       query.andWhere('program.code = :code', { code: filters.code });
     }
     if (filters.faculty_id) {
-      query.andWhere('program.faculty_id = :faculty_id', {
+      query.andWhere('program.facultyId = :facultyId', {
         faculty_id: filters.faculty_id,
       });
     }
@@ -90,7 +94,7 @@ export class ProgramService {
     const program = await this.programRepo.findOne({ where: { id } });
     if (!program)
       throw new NotFoundException(`Program with id: ${id} doesn't exists.`);
-    
+
     if (updateProgramDto.code && updateProgramDto.code !== program.code) {
       const exist = await this.checkDuplicateProgram(updateProgramDto.code);
       if (exist)
