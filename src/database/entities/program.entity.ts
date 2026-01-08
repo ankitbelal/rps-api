@@ -72,6 +72,7 @@ export class Program {
     'program.totalSemesters',
     'program.totalCredits',
     'program.durationInYears',
+    'faculty.id',
     'faculty.name',
     'hod.id',
     'hod.name',
