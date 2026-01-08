@@ -27,3 +27,8 @@ export class FacultyQueryDto {
   @Type(() => Number)
   limit?: number = 10;
 }
+
+export class SearchFacultyListDto {
+  @IsOptional()
+  name?: string;
+}

@@ -10,6 +10,7 @@ import {
   CreateFacultyDto,
   UpdateFacultyDto,
   FacultyQueryDto,
+  SearchFacultyListDto,
 } from './dto/faculty-dto';
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -39,7 +40,9 @@ export class FacultyService {
       .createQueryBuilder('faculty')
       .leftJoinAndSelect('faculty.program', 'program');
     if (filters.search) {
-      query.andWhere('faculty.name LIKE :name', { name: `%${filters.search}%` });
+      query.andWhere('faculty.name LIKE :name', {
+        name: `%${filters.search}%`,
+      });
     }
 
     query.select(Faculty.ALLOWED_FIELDS_LIST);
@@ -81,5 +84,22 @@ export class FacultyService {
 
   async checkDuplicate(name: string): Promise<Boolean> {
     return !!(await this.facultyRepo.findOne({ where: { name } }));
+  }
+
+  async getAllFacultyList(
+    searchFacultyListDto: SearchFacultyListDto,
+  ): Promise<{ data: Faculty[] }> {
+    const query = this.facultyRepo
+      .createQueryBuilder('faculty')
+      .select(['faculty.id', 'faculty.name']);
+
+    if (searchFacultyListDto.name) {
+      query.andWhere('faculty.name LIKE :name', {
+        name: `%${searchFacultyListDto.name}%`,
+      });
+    }
+
+    const data = await query.getMany();
+    return { data };
   }
 }

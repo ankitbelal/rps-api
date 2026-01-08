@@ -15,6 +15,7 @@ import {
   CreateFacultyDto,
   UpdateFacultyDto,
   FacultyQueryDto,
+  SearchFacultyListDto,
 } from './dto/faculty-dto';
 
 @Controller('faculties')
@@ -54,5 +55,19 @@ export class FacultyController {
   async remove(@Param('id') id: string) {
     await this.facultyService.remove(+id);
     return ApiResponse.success('Faculty deleted successfully.', 200);
+  }
+
+  @Get('faculty-list')
+  @HttpCode(200)
+  async getAllProgramssList(
+    @Query() searchFacultyListDto: SearchFacultyListDto,
+  ) {
+    const programList =
+      await this.facultyService.getAllFacultyList(searchFacultyListDto);
+    return ApiResponse.successData(
+      programList,
+      'Faculty list fetched successfully.',
+      200,
+    );
   }
 }
