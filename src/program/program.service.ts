@@ -24,13 +24,13 @@ export class ProgramService {
   ) {}
 
   async create(createProgramDto: CreateProgramDto): Promise<Boolean> {
-    const faculty = await this.facultyService.findFacultyById(
-      createProgramDto.facultyId,
-    );
-    if (!faculty)
-      throw new NotFoundException(
-        `Faculty with ${createProgramDto.facultyId} does not exist`,
-      );
+    // const faculty = await this.facultyService.findFacultyById(
+    //   createProgramDto.facultyId,
+    // );
+    // if (!faculty)
+    //   throw new NotFoundException(
+    //     `Faculty with ${createProgramDto.facultyId} does not exist`,
+    //   );
 
     const exists = await this.checkDuplicateProgram(createProgramDto.code);
     if (exists)
@@ -53,20 +53,19 @@ export class ProgramService {
       .createQueryBuilder('program')
       .innerJoinAndSelect('program.faculty', 'faculty')
       .leftJoinAndSelect('program.hod', 'hod');
-      
-        if (filters?.search) {
-          query.andWhere(
-            new Brackets((qb) => {
-              qb.where('program.name LIKE :search', {
-                search: `%${filters.search}%`,
-              })
-                .orWhere('program.code LIKE :search', {
-                  search: `%${filters.search}%`,
-                })
-            }),
-          );
-        }
-      
+
+    if (filters?.search) {
+      query.andWhere(
+        new Brackets((qb) => {
+          qb.where('program.name LIKE :search', {
+            search: `%${filters.search}%`,
+          }).orWhere('program.code LIKE :search', {
+            search: `%${filters.search}%`,
+          });
+        }),
+      );
+    }
+
     if (filters.facultyId) {
       query.andWhere('program.facultyId = :facultyId', {
         facultyId: filters.facultyId,
@@ -144,5 +143,9 @@ export class ProgramService {
 
   async checkDuplicateProgram(code: string): Promise<Boolean> {
     return !!(await this.programRepo.findOne({ where: { code } }));
+  }
+
+  async findProgramById(id: number): Promise<Boolean> {
+    return !!(await this.programRepo.findOne({ where: { id } }));
   }
 }

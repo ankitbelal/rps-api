@@ -25,4 +25,9 @@ export class CreateSubjectDto {
   @IsNumber()
   @Type(() => Number)
   programId: number;
+
+  @IsNotEmpty({ message: 'Teacher Id is required.' })
+  @IsNumber()
+  @Type(() => Number)
+  teacherId: number;
 }

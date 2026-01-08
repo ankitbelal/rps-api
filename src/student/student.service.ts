@@ -85,6 +85,7 @@ export class StudentService {
     const query = this.studentRepo
       .createQueryBuilder('student')
       .innerJoin('student.program', 'program');
+      
     if (filters?.id) {
       query.andWhere('student.id = :id', { id: filters.id });
 

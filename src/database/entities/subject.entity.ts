@@ -70,4 +70,38 @@ export class Subject {
 
   @UpdateDateColumn({ type: 'timestamp', name: 'updated_at' })
   updatedAt: Date;
+
+  static readonly ALLOWED_FIELDS_LIST = [
+    'subject.id',
+    'subject.name',
+    'subject.code',
+    'subject.semester',
+    'subject.credits',
+    'subject.type',
+    'program.id',
+    'program.code',
+    'program.name',
+    'teacher.id',
+    'teacher.firstName',
+    'teacher.lastName',
+    'teacher.email',
+    'subject.createdAt',
+  ];
+
+  static readonly ALLOWED_DETAILS = [
+    'subject.id',
+    'subject.name',
+    'subject.code',
+    'subject.semester',
+    'subject.credits',
+    'subject.type',
+    'program.id',
+    'program.code',
+    'program.name',
+    'teacher.id',
+    'teacher.firstName',
+    'teacher.lastName',
+    'teacher.email',
+    'subject.createdAt',
+  ];
 }

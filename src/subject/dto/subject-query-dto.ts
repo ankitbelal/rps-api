@@ -1,7 +1,12 @@
 import { Type } from 'class-transformer';
-import { IsOptional, IsString, IsNumber} from 'class-validator';
+import { IsOptional, IsString, IsNumber } from 'class-validator';
 
 export class SubjectQueryDto {
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  id: number;
+
   @IsOptional()
   @IsString()
   name?: string;
@@ -21,8 +26,8 @@ export class SubjectQueryDto {
 
   @IsOptional()
   @IsNumber()
-  @Type(()=>Number)
-  programId?:number;
+  @Type(() => Number)
+  programId?: number;
 
   @IsOptional()
   @IsNumber()
@@ -33,4 +38,7 @@ export class SubjectQueryDto {
   @IsNumber()
   @Type(() => Number)
   limit?: number = 10;
+
+  @IsOptional()
+  search?: string;
 }

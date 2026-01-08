@@ -85,7 +85,7 @@ export class StudentQueryDto {
   limit?: number = 10;
 
   @IsOptional()
-  search: string;
+  search?: string;
 }
 
 export class SearchStudentListDto {

@@ -29,7 +29,12 @@ export class SubjectController {
   @Get()
   @HttpCode(200)
   async findAll(@Query() SubjectQueryDto: SubjectQueryDto) {
-    return this.subjectService.findAll(SubjectQueryDto);
+    const subjects = await this.subjectService.findAll(SubjectQueryDto);
+    return ApiResponse.successData(
+      subjects,
+      'Subjects fetched successfully.',
+      200,
+    );
   }
 
   @Patch(':id')
