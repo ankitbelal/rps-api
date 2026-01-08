@@ -46,16 +46,12 @@ export class ProgramQueryDto {
   id: number;
 
   @IsOptional()
-  name?: string;
+  search?: string;
 
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
   facultyId?: number;
-
-  @IsOptional()
-  @IsString()
-  code?: string;
 
   @IsOptional()
   @IsNumber()

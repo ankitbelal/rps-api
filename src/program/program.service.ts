@@ -12,7 +12,7 @@ import {
 } from './dto/program.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Program } from '../database/entities/program.entity';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 import { FacultyService } from 'src/faculty/faculty.service';
 
 @Injectable()
@@ -53,13 +53,20 @@ export class ProgramService {
       .createQueryBuilder('program')
       .innerJoinAndSelect('program.faculty', 'faculty')
       .leftJoinAndSelect('program.hod', 'hod');
-
-    if (filters?.name) {
-      query.andWhere('program.name LIKE :name', { name: `%${filters.name}%` });
-    }
-    if (filters?.code) {
-      query.andWhere('program.code = :code', { code: filters.code });
-    }
+      
+        if (filters?.search) {
+          query.andWhere(
+            new Brackets((qb) => {
+              qb.where('program.name LIKE :search', {
+                search: `%${filters.search}%`,
+              })
+                .orWhere('program.code LIKE :search', {
+                  search: `%${filters.search}%`,
+                })
+            }),
+          );
+        }
+      
     if (filters.facultyId) {
       query.andWhere('program.facultyId = :facultyId', {
         facultyId: filters.facultyId,

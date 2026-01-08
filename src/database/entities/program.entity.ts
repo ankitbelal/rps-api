@@ -73,7 +73,9 @@ export class Program {
     'program.totalCredits',
     'program.durationInYears',
     'faculty.name',
+    'hod.id',
     'hod.name',
+    'hod.email',
     'program.createdAt',
   ];
 
@@ -89,6 +91,7 @@ export class Program {
     'faculty.name',
     'hod.id',
     'hod.name',
+    'hod.email',
     'program.createdAt',
   ];
 }
