@@ -15,6 +15,7 @@ import { UserStatus, UserType } from 'utils/enums/general-enums';
 import { MailingService } from 'src/mailing/mailing.service';
 import { CreatedUser } from 'src/mailing/interfaces/mailing-interface';
 import { AdminHeadQueryDto } from './dto/admin-head-query.dto';
+import { UserSync } from './interfaces/user-interface';
 
 @Injectable()
 export class UserService {
@@ -65,7 +66,7 @@ export class UserService {
     return null;
   }
 
-  async resetPassword(passwordResetDto: PasswordResetDto): Promise<Boolean> {
+  async resetPassword(passwordResetDto: PasswordResetDto): Promise<boolean> {
     const user = await this.findUserByEmail(passwordResetDto.email);
     if (!user)
       throw new NotFoundException('User with this email does not exists');
@@ -81,7 +82,7 @@ export class UserService {
     type: string,
     expiresAt: Date,
     deviceId: string,
-  ): Promise<Boolean> {
+  ): Promise<boolean> {
     const hashedOTP = await bcrypt.hash(otp, 10);
     const saveOTP = this.userOTPRepo.create({
       userId,
@@ -231,5 +232,17 @@ export class UserService {
     query.select(['user.id', 'user.name']);
 
     return await query.getMany();
+  }
+
+  async syncUserInfo(userSync: UserSync): Promise<boolean> {
+    const user = await this.userRepo.findOne({
+      where: { id: userSync.id },
+    });
+
+    if (!user) return false;
+
+    Object.assign(user, userSync);
+
+    return !!(await this.userRepo.save(user));
   }
 }

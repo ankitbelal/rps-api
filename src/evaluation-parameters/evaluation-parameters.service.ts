@@ -14,6 +14,8 @@ import {
   ParameterListingQuery,
   UpdateEvaluationParamDto,
 } from './dto/evaluation-parameters.dto';
+import { AssignSubjectEvaluationParamsDto } from './dto/subject-evaluation-parameters.dto';
+import { duplicateEvaluationParametr } from './interfaces/evaluation-parameter.interface';
 
 @Injectable()
 export class EvaluationParametersService {
@@ -31,9 +33,7 @@ export class EvaluationParametersService {
   async createEvaluationParameters(
     createEvaluationParamDto: CreateEvaluationParamDto,
   ): Promise<Boolean> {
-    const exists = await this.checkDuplicate(
-      createEvaluationParamDto.code,
-    );
+    const exists = await this.checkDuplicate(createEvaluationParamDto.code);
     if (exists)
       throw new ConflictException(
         `Parameter already exists for Code: ${createEvaluationParamDto.code}.`,
@@ -97,9 +97,7 @@ export class EvaluationParametersService {
       updateEvaluationParamDto.code &&
       updateEvaluationParamDto.code !== parameter.code
     ) {
-      const exists = await this.checkDuplicate(
-        updateEvaluationParamDto.code,
-      );
+      const exists = await this.checkDuplicate(updateEvaluationParamDto.code);
 
       if (exists) {
         throw new ConflictException(
@@ -132,5 +130,40 @@ export class EvaluationParametersService {
     return !!(await this.evaluationParamRepository.findOne({
       where: { code },
     }));
+  }
+
+  async assignSubjectEvaluationParams(
+    assignDto: AssignSubjectEvaluationParamsDto,
+  ): Promise<boolean> {
+    const { subjectId, parameters } = assignDto;
+
+    const conflicts: duplicateEvaluationParametr[] = [];
+
+    for (const param of parameters) {
+      const { evaluationParameterId } = param;
+
+      const existing = await this.subjectParamRepository.findOne({
+        where: { subjectId, evaluationParameterId },
+      });
+
+      if (existing) {
+        conflicts.push({
+          field: param.evaluationParameterId,
+          message: `Evaluation parameter already exists for subject.`,
+        });
+      }
+    }
+
+    if (conflicts.length > 0) {
+      throw new ConflictException({ errors: conflicts });
+    }
+
+    const paramsToInsert = parameters.map((param) => ({
+      subjectId,
+      evaluationParameterId: param.evaluationParameterId,
+      weight: param.weight,
+    }));
+
+    return !!(await this.subjectParamRepository.save(paramsToInsert));
   }
 }

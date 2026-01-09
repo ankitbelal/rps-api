@@ -15,6 +15,7 @@ import {
 } from './dto/evaluation-parameters.dto';
 import { EvaluationParametersService } from './evaluation-parameters.service';
 import { ApiResponse } from 'utils/api-response';
+import { AssignSubjectEvaluationParamsDto } from './dto/subject-evaluation-parameters.dto';
 
 @Controller('evaluation-parameters')
 export class EvaluationParametersController {
@@ -66,6 +67,18 @@ export class EvaluationParametersController {
       parameterList,
       'Program list fetched successfully.',
       200,
+    );
+  }
+
+  @Post('assign')
+  @HttpCode(201)
+  async assignSubjectEvaluationParam(
+    @Body() assignSubjectEvaluationParamDto: AssignSubjectEvaluationParamsDto,
+  ) {
+    await this.assignSubjectEvaluationParam(assignSubjectEvaluationParamDto);
+    return ApiResponse.success(
+      'Evaluation parameter assigned successfully.',
+      201,
     );
   }
 }
