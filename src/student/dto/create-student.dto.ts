@@ -54,7 +54,7 @@ export class CreateStudentDto {
   @MaxDate(new Date(), { message: 'DOB cannot be a future date.' })
   DOB: Date;
 
-  @Optional()
+  @IsOptional()
   @IsNumber()
   @Type(() => Number)
   currentSemester: number;
@@ -68,7 +68,7 @@ export class CreateStudentDto {
   @IsEnum(StudentStatus, { message: 'Student status must be valid.' })
   status?: StudentStatus;
 
-  @Optional()
+  @IsOptional()
   @IsBoolean()
   createUser?: boolean = false; //by default dont create the user
 }
