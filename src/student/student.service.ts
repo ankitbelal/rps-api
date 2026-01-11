@@ -89,7 +89,7 @@ export class StudentService {
     }
 
     const filteredquery = this.applyFilters(query, filters);
-    filteredquery.where('student.deletedAt IS NULL');
+    filteredquery.andWhere('student.deletedAt IS NULL');
     filteredquery.select(Student.ALLOWED_FIELDS_LIST);
     filteredquery.skip((page - 1) * limit).take(limit);
     filteredquery.orderBy('student.firstName', 'ASC');

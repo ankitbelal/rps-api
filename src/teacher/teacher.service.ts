@@ -73,10 +73,10 @@ export class TeacherService {
       return { data: [data] };
     }
     const filteredquery = this.applyFilters(query, filters);
-    filteredquery.where('teacher.deletedAt IS NULL');
+    filteredquery.andWhere('teacher.deletedAt IS NULL');
     filteredquery.select(Teacher.ALLOWED_FIELDS_LIST);
     filteredquery.skip((page - 1) * limit).take(limit);
-    filteredquery.orderBy('teacher.first_name', 'ASC');
+    filteredquery.orderBy('teacher.firstName', 'ASC');
     const [data, total] = await filteredquery.getManyAndCount();
     const lastPage = Math.ceil(total / limit);
     return { data, total, page, lastPage, limit };
