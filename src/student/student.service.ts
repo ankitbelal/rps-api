@@ -16,6 +16,7 @@ import { UserService } from 'src/user/user.service';
 import { StudentStatus, UserStatus, UserType } from 'utils/enums/general-enums';
 import { SelectQueryBuilder } from 'typeorm/browser';
 import { UserSync } from 'src/user/interfaces/user-interface';
+import { User } from 'src/database/entities/user.entity';
 
 @Injectable()
 export class StudentService {
@@ -53,14 +54,7 @@ export class StudentService {
     const studentData: Partial<Student> = { ...createStudentDto };
 
     if (createStudentDto.createUser) {
-      const userSync: UserSync = {
-        name: createStudentDto.firstName + ' ' + createStudentDto.lastName,
-        email: createStudentDto.email,
-        userType: UserType.STUDENT,
-        status: UserStatus.ACTIVE,
-      };
-      const user = await this.userService.createUser(userSync);
-      studentData.userId = user.id;
+      studentData.userId = (await this.syncWithUser(createStudentDto)).id;
     }
 
     return !!(await this.studentRepo.save(
@@ -146,30 +140,6 @@ export class StudentService {
     return query;
   }
 
-  //    async paginateRawData<T = any>(
-  //   queryBuilder: any,
-  //   page = 1,
-  //   limit = 10
-  // ): Promise<PaginationResult<T>> {
-  //   const total = await queryBuilder.getCount();
-
-  //   const skip = (page - 1) * limit;
-  //   const rawData = await queryBuilder
-  //     .offset(skip)
-  //     .limit(limit)
-  //     .getRawMany();
-
-  //   return {
-  //     data: rawData,
-  //     pagination: {
-  //       total,
-  //       page: parseInt(page.toString()),
-  //       limit: parseInt(limit.toString()),
-  //       totalPages: Math.ceil(total / limit),
-  //     },
-  //   };
-  // }
-
   async update(
     id: number,
     updateStudentDto: UpdateStudentDto,
@@ -210,6 +180,8 @@ export class StudentService {
         }
       }
     }
+
+    await this.syncWithUser(updateStudentDto, student);
     Object.assign(student, updateStudentDto);
     await this.studentRepo.save(student);
     return true;
@@ -343,5 +315,34 @@ export class StudentService {
     );
 
     return studentsDistributions;
+  }
+
+  async syncWithUser(
+    dto: CreateStudentDto | UpdateStudentDto,
+    student?: Student | null,
+  ): Promise<User> {
+    const userSync: UserSync = {};
+    if (student) {
+      userSync.id = student?.userId;
+
+      if (
+        (dto.firstName || dto.lastName) &&
+        (dto.firstName !== student?.firstName ||
+          dto.lastName !== student?.lastName)
+      ) {
+        userSync.name = dto.firstName + ' ' + dto.lastName;
+      }
+
+      if (dto.email && dto.email !== student?.email) {
+        userSync.email = dto.email;
+      }
+    } else {
+      userSync.email = dto.email;
+      userSync.name = dto.firstName + ' ' + dto.lastName;
+      userSync.status = UserStatus.ACTIVE;
+      userSync.userType = UserType.ADMIN;
+    }
+
+    return await this.userService.createUser(userSync);
   }
 }

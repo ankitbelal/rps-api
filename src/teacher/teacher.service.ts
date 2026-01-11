@@ -17,6 +17,7 @@ import { UserService } from 'src/user/user.service';
 import { UserStatus, UserType } from 'utils/enums/general-enums';
 import { SelectQueryBuilder } from 'typeorm/browser';
 import { UserSync } from 'src/user/interfaces/user-interface';
+import { User } from 'src/database/entities/user.entity';
 
 @Injectable()
 export class TeacherService {
@@ -44,14 +45,7 @@ export class TeacherService {
     const teacherData: Partial<Teacher> = { ...createTeacherDto };
 
     if (createTeacherDto.createUser) {
-      const userSync: UserSync = {
-        name: createTeacherDto.firstName + ' ' + createTeacherDto.lastName,
-        email: createTeacherDto.email,
-        userType: UserType.TEACHER,
-        status: UserStatus.ACTIVE,
-      };
-      const user = await this.userService.createUser(userSync);
-      teacherData.userId = user.id;
+      teacherData.userId = (await this.syncWithUser(createTeacherDto)).id;
     }
     return !!(await this.teacherRepo.save(
       this.teacherRepo.create(teacherData),
@@ -153,7 +147,7 @@ export class TeacherService {
         }
       }
     }
-
+    await this.syncWithUser(updateTeacherDto, teacher);
     Object.assign(teacher, updateTeacherDto);
     return !!(await this.teacherRepo.save(teacher));
   }
@@ -228,5 +222,34 @@ export class TeacherService {
 
   async getTeachersCount(): Promise<number> {
     return await this.teacherRepo.count();
+  }
+
+  async syncWithUser(
+    dto: CreateTeacherDto | UpdateTeacherDto,
+    teacher?: Teacher | null,
+  ): Promise<User> {
+    const userSync: UserSync = {};
+    if (teacher) {
+      userSync.id = teacher?.userId;
+
+      if (
+        (dto.firstName || dto.lastName) &&
+        (dto.firstName !== teacher?.firstName ||
+          dto.lastName !== teacher?.lastName)
+      ) {
+        userSync.name = dto.firstName + ' ' + dto.lastName;
+      }
+
+      if (dto.email && dto.email !== teacher?.email) {
+        userSync.email = dto.email;
+      }
+    } else {
+      userSync.email = dto.email;
+      userSync.name = dto.firstName + ' ' + dto.lastName;
+      userSync.status = UserStatus.ACTIVE;
+      userSync.userType = UserType.ADMIN;
+    }
+
+    return await this.userService.createUser(userSync);
   }
 }
