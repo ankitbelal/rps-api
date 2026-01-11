@@ -54,6 +54,11 @@ export class CreateStudentDto {
   @MaxDate(new Date(), { message: 'DOB cannot be a future date.' })
   DOB: Date;
 
+  @Optional()
+  @IsNumber()
+  @Type(() => Number)
+  currentSemester: number;
+
   @IsNotEmpty({ message: 'Program Id is required.' })
   @IsNumber({}, { message: 'Program Id must be a number.' })
   @Type(() => Number)

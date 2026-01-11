@@ -38,7 +38,7 @@ export class Student {
   @Column({ name: 'enrollment_date', type: 'date' })
   enrollmentDate: Date;
 
-  @Column({ type: 'enum', enum: StudentStatus })
+  @Column({ type: 'enum', enum: StudentStatus, default: StudentStatus.ACTIVE })
   status: StudentStatus;
 
   @Column({

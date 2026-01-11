@@ -26,10 +26,8 @@ export class TeacherService {
     private readonly userService: UserService,
   ) {}
   async create(createTeacherDto: CreateTeacherDto): Promise<Boolean> {
-    const { emailUsed, phoneUsed, valid } = await this.validateTeacherContact({
-      email: createTeacherDto.email,
-      phone: createTeacherDto.phone,
-    });
+    const { emailUsed, phoneUsed, valid } =
+      await this.validateTeacherContact(createTeacherDto);
 
     if (!valid) {
       const errors: any = {};

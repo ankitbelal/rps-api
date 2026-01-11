@@ -1,7 +1,7 @@
 import { Controller, Get, HttpCode, Query } from '@nestjs/common';
 import { UserService } from './user.service';
 import { ApiResponse } from 'utils/api-response';
-import { AdminHeadQueryDto } from './dto/admin-head-query.dto';
+import { AdminHeadQueryDto } from './dto/admin.dto';
 
 @Controller('user')
 export class UserController {

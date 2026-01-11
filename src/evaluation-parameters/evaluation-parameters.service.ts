@@ -15,7 +15,7 @@ import {
   UpdateEvaluationParamDto,
 } from './dto/evaluation-parameters.dto';
 import { AssignSubjectEvaluationParamsDto } from './dto/subject-evaluation-parameters.dto';
-import { duplicateEvaluationParametr } from './interfaces/evaluation-parameter.interface';
+import { duplicateEvaluationParameter } from './interfaces/evaluation-parameter.interface';
 
 @Injectable()
 export class EvaluationParametersService {
@@ -122,10 +122,15 @@ export class EvaluationParametersService {
         code: `%${parameterListingQuery.code}%`,
       });
     }
+    // if(parameterListingQuery.subjectId){
+    // const assignedParameters=
 
+    // }
     const data = await query.getMany();
     return { data };
   }
+
+
   async checkDuplicate(code: string): Promise<Boolean> {
     return !!(await this.evaluationParamRepository.findOne({
       where: { code },
@@ -137,7 +142,7 @@ export class EvaluationParametersService {
   ): Promise<boolean> {
     const { subjectId, parameters } = assignDto;
 
-    const conflicts: duplicateEvaluationParametr[] = [];
+    const conflicts: duplicateEvaluationParameter[] = [];
 
     for (const param of parameters) {
       const { evaluationParameterId } = param;

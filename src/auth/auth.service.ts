@@ -182,8 +182,6 @@ export class AuthService {
       });
 
     const otp = await generateRandomNumbers(6);
-    const message = `your confirmation code is ${otp}. if you didn't request this emai, you can safely ignore it.`;
-    const subject = 'Reset Password';
 
     const resetUser: PasswordResetUser = {
       email: verifyEmailDto.email,

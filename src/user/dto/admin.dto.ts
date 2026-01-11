@@ -1,19 +1,20 @@
-import { Optional } from '@nestjs/common';
 import { PartialType } from '@nestjs/mapped-types';
 import { Type } from 'class-transformer';
 import {
   IsEmail,
-  IsNotEmpty,
-  IsOptional,
-  IsNumber,
-  IsDate,
-  MaxDate,
   IsEnum,
-  IsBoolean,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
 } from 'class-validator';
-import { Gender } from 'utils/enums/general-enums';
+import { Gender, UserStatus } from 'utils/enums/general-enums';
 
-export class CreateTeacherDto {
+export class AdminHeadQueryDto {
+  @IsOptional()
+  name: string;
+}
+
+export class CreateAdminDto {
   @IsNotEmpty({ message: 'First Name is required.' })
   firstName: string;
 
@@ -27,14 +28,8 @@ export class CreateTeacherDto {
   @IsNotEmpty({ message: 'Phone is required.' })
   phone: string;
 
-  @IsNotEmpty({ message: 'DOB is required.' })
-  @Type(() => Date)
-  @IsDate({ message: 'DOB must be a valid date.' })
-  @MaxDate(new Date(), { message: 'DOB cannot be a future date.' })
-  DOB: Date;
-
   @IsNotEmpty({ message: 'Gender is required.' })
-  @IsEnum(Gender, { message: 'Gender must be a valid.' })
+  @IsEnum(Gender, { message: 'Gender must be valid.' })
   gender: Gender;
 
   @IsNotEmpty({ message: 'Address is required.' })
@@ -43,14 +38,11 @@ export class CreateTeacherDto {
   @IsOptional()
   address2: string;
 
-  @Optional()
-  @IsBoolean()
-  createUser?: boolean = true; //by default create the user
+  @IsOptional()
+  @IsEnum(UserStatus, { message: 'Status must be valid.' })
+  status: UserStatus;
 }
-
-export class UpdateTeacherDto extends PartialType(CreateTeacherDto) {}
-
-export class TeacherQueryDto {
+export class AdminQueryDto {
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
@@ -85,9 +77,10 @@ export class TeacherQueryDto {
 
   @IsOptional()
   search: string;
+
+  @IsOptional()
+  @IsEnum(UserStatus, { message: 'Status must be valid.' })
+  status: UserStatus;
 }
 
-export class SearchTeacherListDto {
-  @IsOptional()
-  name?: string;
-}
+export class UpdateAdminDto extends PartialType(CreateAdminDto) {}

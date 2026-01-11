@@ -1,4 +1,4 @@
-export interface duplicateEvaluationParametr {
+export interface duplicateEvaluationParameter {
   field: number;
   message: string;
 }

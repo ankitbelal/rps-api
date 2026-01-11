@@ -15,7 +15,7 @@ import { UserOTP } from 'src/database/entities/user-otps.entity';
 import { UserStatus, UserType } from 'utils/enums/general-enums';
 import { MailingService } from 'src/mailing/mailing.service';
 import { CreatedUser } from 'src/mailing/interfaces/mailing-interface';
-import { AdminHeadQueryDto } from './dto/admin-head-query.dto';
+import { AdminHeadQueryDto } from './dto/admin.dto';
 import { UserSync } from './interfaces/user-interface';
 
 @Injectable()
@@ -154,6 +154,8 @@ export class UserService {
   }
 
   async createUser(userSync: UserSync): Promise<User> {
+    if (userSync.id) {
+    }
     const exists = await this.userRepo.findOne({
       where: { email: userSync.email },
     });

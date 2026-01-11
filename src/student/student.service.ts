@@ -32,12 +32,7 @@ export class StudentService {
       rollNumberExists,
       registrationNumberExists,
       valid,
-    } = await this.validateStudentContact({
-      email: createStudentDto.email,
-      phone: createStudentDto.phone,
-      rollNumber: createStudentDto.rollNumber,
-      registrationNumber: createStudentDto.registrationNumber,
-    });
+    } = await this.validateStudentContact(createStudentDto);
 
     if (!valid) {
       const errors: any = {};
