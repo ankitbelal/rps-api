@@ -227,4 +227,8 @@ export class UserService {
   async checkDuplicate(email: string): Promise<boolean> {
     return !!(await this.userRepo.findOne({ where: { email } }));
   }
+
+  async removeUser(id: number): Promise<boolean> {
+    return !!(await this.userRepo.delete(id));
+  }
 }

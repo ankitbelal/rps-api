@@ -89,6 +89,7 @@ export class StudentService {
     }
 
     const filteredquery = this.applyFilters(query, filters);
+    filteredquery.where('student.deletedAt IS NULL');
     filteredquery.select(Student.ALLOWED_FIELDS_LIST);
     filteredquery.skip((page - 1) * limit).take(limit);
     filteredquery.orderBy('student.firstName', 'ASC');
@@ -195,7 +196,11 @@ export class StudentService {
         statusCode: 404,
         message: `Student with id: ${id} does not exists.`,
       });
-    return !!(await this.studentRepo.remove(student));
+
+    if (student.userId) {
+      await this.userService.removeUser(student.userId);
+    }
+    return !!(await this.studentRepo.softRemove(student));
   }
 
   async validateStudentContact(data: {

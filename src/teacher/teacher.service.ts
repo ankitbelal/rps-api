@@ -73,6 +73,7 @@ export class TeacherService {
       return { data: [data] };
     }
     const filteredquery = this.applyFilters(query, filters);
+    filteredquery.where('teacher.deletedAt IS NULL');
     filteredquery.select(Teacher.ALLOWED_FIELDS_LIST);
     filteredquery.skip((page - 1) * limit).take(limit);
     filteredquery.orderBy('teacher.first_name', 'ASC');
@@ -160,7 +161,7 @@ export class TeacherService {
         statusCode: 404,
         message: `Teacher with id: ${id} does not exists.`,
       });
-    return !!(await this.teacherRepo.remove(teacher));
+    return !!(await this.teacherRepo.softRemove(teacher));
   }
 
   async validateTeacherContact(data: {

@@ -10,10 +10,12 @@ import {
   OneToOne,
   OneToMany,
   JoinColumn,
+  DeleteDateColumn,
 } from 'typeorm';
 import { StudentSubjectMarks } from './student-marks.entity';
 import { Status, StudentAttendance } from './student-attendance.entity';
 import { Gender, StudentStatus } from 'utils/enums/general-enums';
+import { timestamp } from 'rxjs';
 
 @Entity('students')
 export class Student {
@@ -98,6 +100,9 @@ export class Student {
 
   @UpdateDateColumn({ type: 'timestamp', name: 'updated_at' })
   updatedAt: Date;
+
+  @DeleteDateColumn({ type: 'timestamp', name: 'deleted_at' })
+  deletedAt: Date;
 
   static readonly ALLOWED_FIELDS_LIST = [
     'student.id',

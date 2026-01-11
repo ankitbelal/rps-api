@@ -9,6 +9,7 @@ import {
   UpdateDateColumn,
   OneToMany,
   JoinColumn,
+  DeleteDateColumn,
 } from 'typeorm';
 import { Gender } from 'utils/enums/general-enums';
 @Entity('teachers')
@@ -55,6 +56,9 @@ export class Teacher {
 
   @UpdateDateColumn({ type: 'timestamp', name: 'updated_at' })
   updatedAt: Date;
+
+  @DeleteDateColumn({ type: 'timestamp', name: 'deleted_at' })
+  deletedAt: Date;
 
   static readonly ALLOWED_FIELDS_LIST = [
     'teacher.id',
