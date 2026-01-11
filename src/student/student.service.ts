@@ -55,7 +55,7 @@ export class StudentService {
     const studentData: Partial<Student> = { ...createStudentDto };
 
     if (createStudentDto.createUser) {
-      studentData.userId = (await this.syncWithUser(createStudentDto)).id;
+      studentData.userId = (await this.createUser(createStudentDto)).id;
     }
 
     return !!(await this.studentRepo.save(
@@ -318,34 +318,39 @@ export class StudentService {
   }
 
   async syncWithUser(
-    dto: CreateStudentDto | UpdateStudentDto,
+    dto: UpdateStudentDto,
     student?: Student | null,
-  ): Promise<User> {
+  ): Promise<boolean> {
     const userSync: UserSync = {};
-    if (student) {
-      userSync.id = student?.userId;
+    userSync.id = student?.userId;
 
-      if (
-        (dto.firstName || dto.lastName) &&
-        (dto.firstName !== student?.firstName ||
-          dto.lastName !== student?.lastName)
-      ) {
-        userSync.name = dto.firstName + ' ' + dto.lastName;
-      }
-
-      if (dto.email && dto.email !== student?.email) {
-        userSync.email = dto.email;
-      }
-      if (dto.status && dto.status !== student?.status) {
-        userSync.status = await mapStudentUserStatus(dto.status);
-      }
-    } else {
-      userSync.email = dto.email;
+    if (
+      (dto.firstName || dto.lastName) &&
+      (dto.firstName !== student?.firstName ||
+        dto.lastName !== student?.lastName)
+    ) {
       userSync.name = dto.firstName + ' ' + dto.lastName;
-      userSync.status = UserStatus.ACTIVE;
-      userSync.userType = UserType.ADMIN;
     }
 
+    if (dto.email && dto.email !== student?.email) {
+      userSync.email = dto.email;
+    }
+    if (dto.status && dto.status !== student?.status) {
+      userSync.status = await mapStudentUserStatus(dto.status);
+    }
+
+    if (Object.keys(userSync).length > 1)
+      return !!(await this.userService.createUser(userSync));
+    return true;
+  }
+
+  async createUser(dto: CreateStudentDto): Promise<User> {
+    const userSync: UserSync = {
+      name: dto.firstName + ' ' + dto.lastName,
+      email: dto.email,
+      userType: UserType.ADMIN,
+      status: UserStatus.ACTIVE,
+    };
     return await this.userService.createUser(userSync);
   }
 }

@@ -154,7 +154,7 @@ export class UserService {
   }
 
   async createUser(userSync: UserSync): Promise<User> {
-    if (userSync.id && Object.keys(userSync).length > 1) {
+    if (userSync.id) {
       return await this.updateUser(userSync);
     }
     const exists = await this.userRepo.findOne({

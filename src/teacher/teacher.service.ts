@@ -45,7 +45,7 @@ export class TeacherService {
     const teacherData: Partial<Teacher> = { ...createTeacherDto };
 
     if (createTeacherDto.createUser) {
-      teacherData.userId = (await this.syncWithUser(createTeacherDto)).id;
+      teacherData.userId = (await this.createUser(createTeacherDto)).id;
     }
     return !!(await this.teacherRepo.save(
       this.teacherRepo.create(teacherData),
@@ -225,31 +225,35 @@ export class TeacherService {
   }
 
   async syncWithUser(
-    dto: CreateTeacherDto | UpdateTeacherDto,
+    dto: UpdateTeacherDto,
     teacher?: Teacher | null,
-  ): Promise<User> {
+  ): Promise<boolean> {
     const userSync: UserSync = {};
-    if (teacher) {
-      userSync.id = teacher?.userId;
+    userSync.id = teacher?.userId;
 
-      if (
-        (dto.firstName || dto.lastName) &&
-        (dto.firstName !== teacher?.firstName ||
-          dto.lastName !== teacher?.lastName)
-      ) {
-        userSync.name = dto.firstName + ' ' + dto.lastName;
-      }
-
-      if (dto.email && dto.email !== teacher?.email) {
-        userSync.email = dto.email;
-      }
-    } else {
-      userSync.email = dto.email;
+    if (
+      (dto.firstName || dto.lastName) &&
+      (dto.firstName !== teacher?.firstName ||
+        dto.lastName !== teacher?.lastName)
+    ) {
       userSync.name = dto.firstName + ' ' + dto.lastName;
-      userSync.status = UserStatus.ACTIVE;
-      userSync.userType = UserType.ADMIN;
     }
 
+    if (dto.email && dto.email !== teacher?.email) {
+      userSync.email = dto.email;
+    }
+    if (Object.keys(userSync).length > 1)
+      return !!(await this.userService.createUser(userSync));
+    return true;
+  }
+
+  async createUser(dto: CreateTeacherDto): Promise<User> {
+    const userSync: UserSync = {
+      name: dto.firstName + ' ' + dto.lastName,
+      email: dto.email,
+      userType: UserType.ADMIN,
+      status: UserStatus.ACTIVE,
+    };
     return await this.userService.createUser(userSync);
   }
 }
