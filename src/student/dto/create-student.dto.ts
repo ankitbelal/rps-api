@@ -64,6 +64,10 @@ export class CreateStudentDto {
   @Type(() => Number)
   programId: number;
 
+  @IsOptional()
+  @IsEnum(StudentStatus, { message: 'Student status must be valid.' })
+  status?: StudentStatus;
+
   @Optional()
   @IsBoolean()
   createUser?: boolean = false; //by default dont create the user

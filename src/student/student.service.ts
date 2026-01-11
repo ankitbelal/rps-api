@@ -17,6 +17,7 @@ import { StudentStatus, UserStatus, UserType } from 'utils/enums/general-enums';
 import { SelectQueryBuilder } from 'typeorm/browser';
 import { UserSync } from 'src/user/interfaces/user-interface';
 import { User } from 'src/database/entities/user.entity';
+import { mapStudentUserStatus } from 'utils/general-utils';
 
 @Injectable()
 export class StudentService {
@@ -335,6 +336,9 @@ export class StudentService {
 
       if (dto.email && dto.email !== student?.email) {
         userSync.email = dto.email;
+      }
+      if (dto.status && dto.status !== student?.status) {
+        userSync.status = await mapStudentUserStatus(dto.status);
       }
     } else {
       userSync.email = dto.email;
