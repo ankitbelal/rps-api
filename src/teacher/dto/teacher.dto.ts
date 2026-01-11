@@ -1,4 +1,3 @@
-import { Optional } from '@nestjs/common';
 import { PartialType } from '@nestjs/mapped-types';
 import { Type } from 'class-transformer';
 import {
@@ -43,7 +42,7 @@ export class CreateTeacherDto {
   @IsOptional()
   address2: string;
 
-  @Optional()
+  @IsOptional()
   @IsBoolean()
   createUser?: boolean = true; //by default create the user
 }
