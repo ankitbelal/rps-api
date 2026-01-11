@@ -2,6 +2,7 @@ import { Program } from 'src/database/entities/program.entity';
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -26,6 +27,9 @@ export class Faculty {
 
   @OneToMany(() => Program, (program) => program.faculty, { cascade: true })
   program: Program;
+
+  @DeleteDateColumn({ type: 'timestamp', name: 'deleted_at' })
+  deletedAt: Date;
 
   static readonly ALLOWED_FIELDS_LIST = [
     'faculty.id',

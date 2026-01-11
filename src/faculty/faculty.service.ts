@@ -44,7 +44,7 @@ export class FacultyService {
         name: `%${filters.search}%`,
       });
     }
-
+    query.andWhere('faculty.deletedAt IS NULL');
     query.select(Faculty.ALLOWED_FIELDS_LIST);
     query.orderBy('faculty.name', 'ASC');
     const [data, total] = await query.getManyAndCount();
@@ -71,7 +71,7 @@ export class FacultyService {
     const faculty = await this.facultyRepo.findOne({ where: { id } });
     if (!faculty)
       throw new NotFoundException(`Faculty with ${id} doesnt exists.`);
-    return !!(await this.facultyRepo.remove(faculty));
+    return !!(await this.facultyRepo.softRemove(faculty));
   }
 
   async findFacultyById(id: number): Promise<Boolean> {

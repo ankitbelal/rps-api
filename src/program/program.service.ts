@@ -75,6 +75,7 @@ export class ProgramService {
         );
       return { data: [data] };
     }
+    query.andWhere('program.deletedAt IS NULL');
     query.select(Program.ALLOWED_FIELDS_LIST);
 
     query.skip((page - 1) * limit).take(limit);
@@ -109,7 +110,7 @@ export class ProgramService {
     const program = await this.programRepo.findOne({ where: { id } });
     if (!program)
       throw new NotFoundException(`Program with id: ${id} doesn't exists.`);
-    return !!(await this.programRepo.remove(program));
+    return !!(await this.programRepo.softRemove(program));
   }
 
   async getAllProgramssList(

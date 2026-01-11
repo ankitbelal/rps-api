@@ -8,6 +8,7 @@ import {
   ManyToOne,
   JoinColumn,
   OneToOne,
+  DeleteDateColumn,
 } from 'typeorm';
 
 import { Subject } from 'src/database/entities/subject.entity';
@@ -63,6 +64,9 @@ export class Program {
 
   @UpdateDateColumn({ type: 'timestamp', name: 'updated_at' })
   updatedAt: Date;
+
+  @DeleteDateColumn({ type: 'timestamp', name: 'deleted_at' })
+  deletedAt: Date;
 
   static readonly ALLOWED_FIELDS_LIST = [
     'program.id',
