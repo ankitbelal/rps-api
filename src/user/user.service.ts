@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -152,66 +153,34 @@ export class UserService {
     });
   }
 
-  async createUser(
-    id: number,
-    name: string,
-    email: string,
-    contact: string,
-    userType: UserType,
-    status: UserStatus,
-  ): Promise<User> {
+  async createUser(userSync: UserSync): Promise<User> {
+    const exists = await this.userRepo.findOne({
+      where: { email: userSync.email },
+    });
+    if (exists)
+      throw new ConflictException(
+        `The user with email: ${userSync.email} already exists.`,
+      );
+
     const randomPass = randomBytes(10).toString('hex');
     const hashedPassword = await bcrypt.hash(randomPass, 10);
 
     const userData: Partial<User> = {
-      email,
       password: hashedPassword,
-      name,
-      contact,
-      userType,
-      status,
-      studentId: null,
-      teacherId: null,
+      ...userSync,
     };
-
-    if (userType === UserType.TEACHER) {
-      userData.teacherId = id;
-    }
-
-    if (userType === UserType.STUDENT) {
-      userData.studentId = id;
-    }
 
     const user = this.userRepo.create(userData);
     const createdUser: CreatedUser = {
-      email: email,
+      email: user.email,
       password: randomPass,
-      name: name,
+      name: user.name,
       loginUrl: process.env.RPS_URL ?? '',
     };
-    await this.mailingService.sendUserCreatedEmail(createdUser);
+    this.mailingService.sendUserCreatedEmail(createdUser);
     return await this.userRepo.save(user);
   }
 
-  // async getEligibleAdminsHeads(name?: string) {
-  //   const qb = this.userRepo
-  //     .createQueryBuilder('user')
-  //     .select([
-  //       'user.id',
-  //       'user.name',
-  //     ])
-  //     .where('user.user_type IN (:...types)', {
-  //       types: ['A', 'T'],
-  //     });
-
-  //   if (name) {
-  //     qb.andWhere('LOWER(user.name) LIKE LOWER(:name)', {
-  //       name: `%${name}%`,
-  //     });
-  //   }
-
-  //   return await qb.getMany();
-  // }
   async getEligibleAdminsHeads(adminHeadQueryDto: AdminHeadQueryDto) {
     const query = this.userRepo.createQueryBuilder('user');
 
@@ -232,17 +201,5 @@ export class UserService {
     query.select(['user.id', 'user.name']);
 
     return await query.getMany();
-  }
-
-  async syncUserInfo(userSync: UserSync): Promise<boolean> {
-    const user = await this.userRepo.findOne({
-      where: { id: userSync.id },
-    });
-
-    if (!user) return false;
-
-    Object.assign(user, userSync);
-
-    return !!(await this.userRepo.save(user));
   }
 }

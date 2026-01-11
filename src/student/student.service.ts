@@ -15,6 +15,7 @@ import { Brackets, Repository } from 'typeorm';
 import { UserService } from 'src/user/user.service';
 import { StudentStatus, UserStatus, UserType } from 'utils/enums/general-enums';
 import { SelectQueryBuilder } from 'typeorm/browser';
+import { UserSync } from 'src/user/interfaces/user-interface';
 
 @Injectable()
 export class StudentService {
@@ -25,13 +26,6 @@ export class StudentService {
   ) {}
 
   async create(createStudentDto: CreateStudentDto): Promise<Boolean> {
-    const exists = await this.studentRepo.findOne({
-      where: [
-        { email: createStudentDto.email },
-        { phone: createStudentDto.phone },
-      ],
-    });
-
     const {
       emailUsed,
       phoneUsed,
@@ -60,18 +54,23 @@ export class StudentService {
         errors,
       });
     }
-    const student = await this.studentRepo.save(
-      this.studentRepo.create(createStudentDto),
-    );
-    this.userService.createUser(
-      student.id,
-      student.firstName + ' ' + student.lastName,
-      createStudentDto.email,
-      createStudentDto.phone,
-      UserType.STUDENT,
-      UserStatus.ACTIVE,
-    );
-    return true;
+
+    const studentData: Partial<Student> = { ...createStudentDto };
+
+    if (createStudentDto.createUser) {
+      const userSync: UserSync = {
+        name: createStudentDto.firstName + ' ' + createStudentDto.lastName,
+        email: createStudentDto.email,
+        userType: UserType.STUDENT,
+        status: UserStatus.ACTIVE,
+      };
+      const user = await this.userService.createUser(userSync);
+      studentData.userId = user.id;
+    }
+
+    return !!(await this.studentRepo.save(
+      this.studentRepo.create(studentData),
+    ));
   }
 
   async findAll(studentQueryDto: StudentQueryDto): Promise<{
@@ -85,7 +84,7 @@ export class StudentService {
     const query = this.studentRepo
       .createQueryBuilder('student')
       .innerJoin('student.program', 'program');
-      
+
     if (filters?.id) {
       query.andWhere('student.id = :id', { id: filters.id });
 

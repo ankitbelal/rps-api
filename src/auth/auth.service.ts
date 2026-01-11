@@ -86,7 +86,6 @@ export class AuthService {
         id: user.id,
         name: user.name,
         email: user.email,
-        contact: user.contact,
         UserType: user.userType,
         status: user.status,
       },

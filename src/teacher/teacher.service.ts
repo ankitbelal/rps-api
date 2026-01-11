@@ -16,6 +16,7 @@ import { Brackets, Repository } from 'typeorm';
 import { UserService } from 'src/user/user.service';
 import { UserStatus, UserType } from 'utils/enums/general-enums';
 import { SelectQueryBuilder } from 'typeorm/browser';
+import { UserSync } from 'src/user/interfaces/user-interface';
 
 @Injectable()
 export class TeacherService {
@@ -25,13 +26,6 @@ export class TeacherService {
     private readonly userService: UserService,
   ) {}
   async create(createTeacherDto: CreateTeacherDto): Promise<Boolean> {
-    const exists = await this.teacherRepo.findOne({
-      where: [
-        { email: createTeacherDto.email },
-        { phone: createTeacherDto.phone },
-      ],
-    });
-
     const { emailUsed, phoneUsed, valid } = await this.validateTeacherContact({
       email: createTeacherDto.email,
       phone: createTeacherDto.phone,
@@ -40,7 +34,7 @@ export class TeacherService {
     if (!valid) {
       const errors: any = {};
       if (emailUsed) errors.email = 'Already used.';
-      if (phoneUsed) errors.phone = 'Alread used.';
+      if (phoneUsed) errors.phone = 'Already used.';
 
       throw new ConflictException({
         success: false,
@@ -49,18 +43,21 @@ export class TeacherService {
         errors,
       });
     }
-    const teacher = await this.teacherRepo.save(
-      this.teacherRepo.create(createTeacherDto),
-    );
-    this.userService.createUser(
-      teacher.id,
-      teacher.firstName + ' ' + teacher.lastName,
-      createTeacherDto.email,
-      createTeacherDto.phone,
-      UserType.TEACHER,
-      UserStatus.ACTIVE,
-    );
-    return true;
+    const teacherData: Partial<Teacher> = { ...createTeacherDto };
+
+    if (createTeacherDto.createUser) {
+      const userSync: UserSync = {
+        name: createTeacherDto.firstName + ' ' + createTeacherDto.lastName,
+        email: createTeacherDto.email,
+        userType: UserType.TEACHER,
+        status: UserStatus.ACTIVE,
+      };
+      const user = await this.userService.createUser(userSync);
+      teacherData.userId = user.id;
+    }
+    return !!(await this.teacherRepo.save(
+      this.teacherRepo.create(teacherData),
+    ));
   }
 
   async findAll(teacherQueryDto: TeacherQueryDto): Promise<{

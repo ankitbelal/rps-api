@@ -7,9 +7,11 @@ import {
   IsEnum,
   MaxDate,
   IsOptional,
+  IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { Gender, StudentStatus } from 'utils/enums/general-enums';
+import { Optional } from '@nestjs/common';
 
 export class CreateStudentDto {
   @IsNotEmpty({ message: 'First Name is required.' })
@@ -56,6 +58,10 @@ export class CreateStudentDto {
   @IsNumber({}, { message: 'Program Id must be a number.' })
   @Type(() => Number)
   programId: number;
+
+  @Optional()
+  @IsBoolean()
+  createUser?: boolean = false; //by default dont create the user
 }
 
 export class StudentQueryDto {

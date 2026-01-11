@@ -24,14 +24,6 @@ export class ProgramService {
   ) {}
 
   async create(createProgramDto: CreateProgramDto): Promise<Boolean> {
-    // const faculty = await this.facultyService.findFacultyById(
-    //   createProgramDto.facultyId,
-    // );
-    // if (!faculty)
-    //   throw new NotFoundException(
-    //     `Faculty with ${createProgramDto.facultyId} does not exist`,
-    //   );
-
     const exists = await this.checkDuplicateProgram(createProgramDto.code);
     if (exists)
       throw new ConflictException(

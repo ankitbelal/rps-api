@@ -10,10 +10,12 @@ import {
   OneToMany,
   OneToOne,
   JoinColumn,
+  Admin,
 } from 'typeorm';
 import { UserOTP } from './user-otps.entity';
 import { UserStatus, UserType } from 'utils/enums/general-enums';
 import { AuditTrails } from './audit-trails.entity';
+import { AdminUsers } from './admin-users.entity';
 
 @Entity('users')
 export class User {
@@ -29,9 +31,6 @@ export class User {
   @Column()
   password: string;
 
-  @Column({ type: 'varchar', length: 10 })
-  contact: string;
-
   @Column({
     name: 'user_type',
     type: 'enum',
@@ -43,19 +42,14 @@ export class User {
   @Column({ type: 'enum', enum: UserStatus, default: UserStatus.PENDING })
   status: UserStatus;
 
-  @Column({ name: 'student_id', nullable: true })
-  studentId: number | null;
+  @OneToOne(() => Teacher, (teacher) => teacher.user)
+  teacher: Teacher;
 
-  @OneToOne(() => Student, { onDelete: 'CASCADE', nullable: true })
-  @JoinColumn({ name: 'student_id' })
-  student?: Student;
+  @OneToOne(() => Student, (student) => student.user)
+  student: Student;
 
-  @Column({ name: 'teacher_id', nullable: true })
-  teacherId: number | null;
-
-  @OneToOne(() => Teacher, { onDelete: 'CASCADE', nullable: true })
-  @JoinColumn({ name: 'teacher_id' })
-  teacher?: Teacher;
+  @OneToOne(() => AdminUsers, (admin) => admin.user)
+  admin: Admin;
 
   @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
   createdAt: Date;

@@ -1,3 +1,4 @@
+import { Optional } from '@nestjs/common';
 import { PartialType } from '@nestjs/mapped-types';
 import { Type } from 'class-transformer';
 import {
@@ -8,6 +9,7 @@ import {
   IsDate,
   MaxDate,
   IsEnum,
+  IsBoolean,
 } from 'class-validator';
 import { Gender } from 'utils/enums/general-enums';
 
@@ -40,6 +42,10 @@ export class CreateTeacherDto {
 
   @IsOptional()
   address2: string;
+
+  @Optional()
+  @IsBoolean()
+  createUser?: boolean = false; //by default dont create the user
 }
 
 export class UpdateTeacherDto extends PartialType(CreateTeacherDto) {}

@@ -76,7 +76,11 @@ export class Student {
   @JoinColumn({ name: 'program_id' })
   program: Program;
 
-  @OneToOne(() => User, (user) => user.student)
+  @Column({ name: 'user_id', nullable: true })
+  userId: number;
+
+  @OneToOne(() => User, (user) => user.student, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'user_id' })
   user: User;
 
   @OneToMany(() => StudentSubjectMarks, (marks) => marks.student, {
