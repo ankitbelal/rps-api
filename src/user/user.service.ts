@@ -155,6 +155,7 @@ export class UserService {
 
   async createUser(userSync: UserSync): Promise<User> {
     if (userSync.id) {
+      return await this.updateUser(userSync);
     }
     const exists = await this.userRepo.findOne({
       where: { email: userSync.email },
@@ -183,6 +184,24 @@ export class UserService {
     return await this.userRepo.save(user);
   }
 
+  async updateUser(userSync: UserSync) {
+    const user = await this.userRepo.findOne({ where: { id: userSync.id } });
+    if (!user)
+      throw new NotFoundException({
+        message: 'Failed to update login details.',
+        error: 'User not found.',
+      });
+
+    if (userSync.email && (await this.checkDuplicate(userSync.email)))
+      throw new NotFoundException({
+        message: 'Failed to update login details.',
+        error: 'Email already used.',
+      });
+
+    Object.assign(user, userSync);
+    return await this.userRepo.save(user);
+  }
+
   async getEligibleAdminsHeads(adminHeadQueryDto: AdminHeadQueryDto) {
     const query = this.userRepo.createQueryBuilder('user');
 
@@ -203,5 +222,9 @@ export class UserService {
     query.select(['user.id', 'user.name']);
 
     return await query.getMany();
+  }
+
+  async checkDuplicate(email: string): Promise<boolean> {
+    return !!(await this.userRepo.findOne({ where: { email } }));
   }
 }

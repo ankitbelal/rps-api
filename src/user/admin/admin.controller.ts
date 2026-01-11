@@ -17,7 +17,7 @@ import {
 } from '../dto/admin.dto';
 import { ApiResponse } from 'utils/api-response';
 
-@Controller('admin')
+@Controller('admins')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 

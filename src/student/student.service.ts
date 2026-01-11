@@ -181,8 +181,7 @@ export class StudentService {
         }
       }
     }
-
-    await this.syncWithUser(updateStudentDto, student);
+    if (student.userId) await this.syncWithUser(updateStudentDto, student);
     Object.assign(student, updateStudentDto);
     await this.studentRepo.save(student);
     return true;
