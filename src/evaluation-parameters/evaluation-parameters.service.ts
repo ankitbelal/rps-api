@@ -190,84 +190,51 @@ export class EvaluationParametersService {
   ): Promise<boolean> {
     const { subjectId, parameters } = assignDto;
 
-    const conflicts: duplicateEvaluationParameter[] = [];
+    const toDelete: number[] = [];
+    const toInsertOrUpdate: SubjectsEvaluationParameter[] = [];
 
     for (const param of parameters) {
-      const { evaluationParameterId } = param;
+      const { evaluationParameterId, weight, assigned } = param;
 
-      const existing = await this.subjectParamRepository.findOne({
-        where: { subjectId, evaluationParameterId },
-      });
-
-      if (existing) {
-        conflicts.push({
-          field: param.evaluationParameterId,
-          message: `Evaluation parameter already exists for subject.`,
-        });
+      const existing = await this.checkSubjectParamExists(
+        subjectId,
+        evaluationParameterId,
+      );
+      if (assigned === 0) {
+        if (existing) {
+          toDelete.push(existing?.id);
+        }
+      } else {
+        if (!existing) {
+          toInsertOrUpdate.push(
+            this.subjectParamRepository.create({
+              subjectId,
+              evaluationParameterId,
+              weight,
+            }),
+          );
+        } else if (existing.weight !== weight) {
+          existing.weight = weight;
+          toInsertOrUpdate.push(existing);
+        }
       }
     }
 
-    if (conflicts.length > 0) {
-      throw new ConflictException({ errors: conflicts });
+    if (toDelete.length > 0) {
+      return !!(await this.subjectParamRepository.delete(toDelete));
     }
-
-    const paramsToInsert = parameters.map((param) => ({
-      subjectId,
-      evaluationParameterId: param.evaluationParameterId,
-      weight: param.weight,
-    }));
-
-    return !!(await this.subjectParamRepository.save(paramsToInsert));
+    if (toInsertOrUpdate.length > 0) {
+      return !!(await this.subjectParamRepository.save(toInsertOrUpdate));
+    }
+    return true;
   }
 
-  // async assignSubjectEvaluationParams(
-  //   assignDto: AssignSubjectEvaluationParamsDto,
-  // ): Promise<boolean> {
-  //   const { subjectId, parameters } = assignDto;
-
-  //   const existing = await this.subjectParamRepository.find({
-  //     where: { subjectId },
-  //   });
-
-  //   const existingMap = new Map(
-  //     existing.map((e) => [e.evaluationParameterId, e]),
-  //   );
-
-  //   const toInsert = [];
-  //   const toDeleteIds = [];
-
-  //   for (const param of parameters) {
-  //     const { evaluationParameterId, weight, assigned } = param;
-  //     const alreadyExists = existingMap.get(evaluationParameterId);
-
-  //     if (assigned === 1) {
-  //       if (!alreadyExists) {
-  //         toInsert.push({
-  //           subjectId,
-  //           evaluationParameterId,
-  //           weight,
-  //         });
-  //       } else if (alreadyExists.weight !== weight) {
-  //         alreadyExists.weight = weight;
-  //         toInsert.push(alreadyExists);
-  //       }
-  //     }
-
-  //     // ❌ assign = false → ensure removed
-  //     if (assign === false && alreadyExists) {
-  //       toDeleteIds.push(alreadyExists.id);
-  //     }
-  //   }
-
-  //   // 2️⃣ Apply DB changes
-  //   if (toDeleteIds.length > 0) {
-  //     await this.subjectParamRepository.delete(toDeleteIds);
-  //   }
-
-  //   if (toInsert.length > 0) {
-  //     await this.subjectParamRepository.save(toInsert);
-  //   }
-
-  //   return true;
-  // }
+  async checkSubjectParamExists(
+    subjectId: number,
+    evaluationParameterId: number,
+  ): Promise<SubjectsEvaluationParameter | null> {
+    return await this.subjectParamRepository.findOne({
+      where: { subjectId, evaluationParameterId },
+    });
+  }
 }
