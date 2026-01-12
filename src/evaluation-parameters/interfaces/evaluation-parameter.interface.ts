@@ -6,5 +6,7 @@ export interface duplicateEvaluationParameter {
 export interface EvaluationParameterListing {
   id: number;
   name: string;
-  assigned?: boolean;
+  code: string;
+  weight: number;
+  assigned?: number;
 }

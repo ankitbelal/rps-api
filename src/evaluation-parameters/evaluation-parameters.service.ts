@@ -7,7 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EvaluationParameter } from 'src/database/entities/evaluation-parameter.entity';
 import { ExtraParametersMarks } from 'src/database/entities/extra-parameters-marks.entity';
 import { SubjectsEvaluationParameter } from 'src/database/entities/subject-evaluation-parameter.entity';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 import {
   CreateEvaluationParamDto,
   EvaluationParamQueryDto,
@@ -118,15 +118,26 @@ export class EvaluationParametersService {
   ): Promise<{ data: EvaluationParameterListing[] }> {
     const query = this.evaluationParamRepository
       .createQueryBuilder('parameter')
-      .select(['parameter.id AS id', 'parameter.name AS name']);
+      .select([
+        'parameter.id AS id',
+        'parameter.code AS code',
+        'parameter.name AS name',
+      ]);
 
-    if (parameterListingQuery.code) {
-      query.andWhere('parameter.code LIKE :code', {
-        code: `%${parameterListingQuery.code}%`,
-      });
+    if (parameterListingQuery?.search) {
+      query.andWhere(
+        new Brackets((qb) => {
+          qb.where('parameter.name LIKE :search', {
+            search: `%${parameterListingQuery.search}%`,
+          }).orWhere('parameter.code LIKE :search', {
+            search: `%${parameterListingQuery.search}%`,
+          });
+        }),
+      );
     }
+    const isSubjectProvided = !!parameterListingQuery.subjectId;
 
-    if (parameterListingQuery.subjectId) {
+    if (isSubjectProvided) {
       query
         .leftJoin(
           'subjects_evaluation_parameters',
@@ -140,10 +151,30 @@ export class EvaluationParametersService {
           ELSE 0 
         END`,
           'assigned',
-        );
+        )
+        .addSelect('sp.weight', 'weight');
     }
 
-    const data = await query.getRawMany();
+    const rawData = await query.getRawMany();
+
+    const data = rawData.map((row) => {
+      if (isSubjectProvided) {
+        return {
+          ...row,
+          assigned: Number(row.assigned),
+          weight:
+            row.weight !== null && row.weight !== undefined
+              ? Number(row.weight)
+              : 0,
+        };
+      }
+
+      return {
+        id: row.id,
+        code: row.code,
+        name: row.name,
+      };
+    });
 
     return { data };
   }
@@ -188,4 +219,55 @@ export class EvaluationParametersService {
 
     return !!(await this.subjectParamRepository.save(paramsToInsert));
   }
+
+  // async assignSubjectEvaluationParams(
+  //   assignDto: AssignSubjectEvaluationParamsDto,
+  // ): Promise<boolean> {
+  //   const { subjectId, parameters } = assignDto;
+
+  //   const existing = await this.subjectParamRepository.find({
+  //     where: { subjectId },
+  //   });
+
+  //   const existingMap = new Map(
+  //     existing.map((e) => [e.evaluationParameterId, e]),
+  //   );
+
+  //   const toInsert = [];
+  //   const toDeleteIds = [];
+
+  //   for (const param of parameters) {
+  //     const { evaluationParameterId, weight, assigned } = param;
+  //     const alreadyExists = existingMap.get(evaluationParameterId);
+
+  //     if (assigned === 1) {
+  //       if (!alreadyExists) {
+  //         toInsert.push({
+  //           subjectId,
+  //           evaluationParameterId,
+  //           weight,
+  //         });
+  //       } else if (alreadyExists.weight !== weight) {
+  //         alreadyExists.weight = weight;
+  //         toInsert.push(alreadyExists);
+  //       }
+  //     }
+
+  //     // ❌ assign = false → ensure removed
+  //     if (assign === false && alreadyExists) {
+  //       toDeleteIds.push(alreadyExists.id);
+  //     }
+  //   }
+
+  //   // 2️⃣ Apply DB changes
+  //   if (toDeleteIds.length > 0) {
+  //     await this.subjectParamRepository.delete(toDeleteIds);
+  //   }
+
+  //   if (toInsert.length > 0) {
+  //     await this.subjectParamRepository.save(toInsert);
+  //   }
+
+  //   return true;
+  // }
 }

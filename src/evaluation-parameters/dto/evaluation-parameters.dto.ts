@@ -34,10 +34,7 @@ export class EvaluationParamQueryDto {
 
 export class ParameterListingQuery {
   @IsOptional()
-  name: string;
-
-  @IsOptional()
-  code: string;
+  search: string;
 
   @IsOptional()
   subjectId: number;

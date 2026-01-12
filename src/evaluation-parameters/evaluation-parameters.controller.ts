@@ -79,7 +79,7 @@ export class EvaluationParametersController {
       assignSubjectEvaluationParamDto,
     );
     return ApiResponse.success(
-      'Evaluation parameter assigned successfully.',
+      'Evaluation parameter configured successfully.',
       201,
     );
   }
