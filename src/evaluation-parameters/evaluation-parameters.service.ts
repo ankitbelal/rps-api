@@ -15,7 +15,10 @@ import {
   UpdateEvaluationParamDto,
 } from './dto/evaluation-parameters.dto';
 import { AssignSubjectEvaluationParamsDto } from './dto/subject-evaluation-parameters.dto';
-import { duplicateEvaluationParameter } from './interfaces/evaluation-parameter.interface';
+import {
+  duplicateEvaluationParameter,
+  EvaluationParameterListing,
+} from './interfaces/evaluation-parameter.interface';
 
 @Injectable()
 export class EvaluationParametersService {
@@ -112,24 +115,38 @@ export class EvaluationParametersService {
 
   async getAllParameterList(
     parameterListingQuery: ParameterListingQuery,
-  ): Promise<{ data: EvaluationParameter[] }> {
+  ): Promise<{ data: EvaluationParameterListing[] }> {
     const query = this.evaluationParamRepository
       .createQueryBuilder('parameter')
-      .select(['parameter.id', 'parameter.name']);
+      .select(['parameter.id AS id', 'parameter.name AS name']);
 
     if (parameterListingQuery.code) {
-      query.andWhere('program.code LIKE :code', {
+      query.andWhere('parameter.code LIKE :code', {
         code: `%${parameterListingQuery.code}%`,
       });
     }
-    // if(parameterListingQuery.subjectId){
-    // const assignedParameters=
 
-    // }
-    const data = await query.getMany();
+    if (parameterListingQuery.subjectId) {
+      query
+        .leftJoin(
+          'subjects_evaluation_parameters',
+          'sp',
+          'sp.evaluation_parameter_id = parameter.id AND sp.subject_id = :subjectId',
+          { subjectId: parameterListingQuery.subjectId },
+        )
+        .addSelect(
+          `CASE 
+          WHEN sp.id IS NOT NULL THEN 1 
+          ELSE 0 
+        END`,
+          'assigned',
+        );
+    }
+
+    const data = await query.getRawMany();
+
     return { data };
   }
-
 
   async checkDuplicate(code: string): Promise<Boolean> {
     return !!(await this.evaluationParamRepository.findOne({

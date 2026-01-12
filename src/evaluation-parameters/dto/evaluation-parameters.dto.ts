@@ -39,6 +39,6 @@ export class ParameterListingQuery {
   @IsOptional()
   code: string;
 
-  // @IsOptional()
-  // subjectId:string;
+  @IsOptional()
+  subjectId: number;
 }

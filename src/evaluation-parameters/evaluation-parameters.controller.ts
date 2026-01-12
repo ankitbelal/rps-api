@@ -75,7 +75,9 @@ export class EvaluationParametersController {
   async assignSubjectEvaluationParam(
     @Body() assignSubjectEvaluationParamDto: AssignSubjectEvaluationParamsDto,
   ) {
-    await this.assignSubjectEvaluationParam(assignSubjectEvaluationParamDto);
+    await this.evaluationParameterService.assignSubjectEvaluationParams(
+      assignSubjectEvaluationParamDto,
+    );
     return ApiResponse.success(
       'Evaluation parameter assigned successfully.',
       201,
