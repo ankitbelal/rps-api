@@ -38,4 +38,7 @@ export class ParameterListingQuery {
 
   @IsOptional()
   subjectId: number;
+
+  @IsOptional()
+  type: string;
 }

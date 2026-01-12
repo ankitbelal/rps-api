@@ -65,7 +65,7 @@ export class EvaluationParametersController {
       );
     return ApiResponse.successData(
       parameterList,
-      'Program list fetched successfully.',
+      'Evaluation Parameter list fetched successfully.',
       200,
     );
   }

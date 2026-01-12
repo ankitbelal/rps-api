@@ -153,6 +153,14 @@ export class EvaluationParametersService {
           'assigned',
         )
         .addSelect('sp.weight', 'weight');
+
+      if (parameterListingQuery.type) {
+        if (parameterListingQuery.type === 'assigned') {
+          query.andWhere('sp.id IS NOT NULL');
+        } else if (parameterListingQuery.type === 'unassigned') {
+          query.andWhere('sp.id IS NULL');
+        }
+      }
     }
 
     const rawData = await query.getRawMany();
