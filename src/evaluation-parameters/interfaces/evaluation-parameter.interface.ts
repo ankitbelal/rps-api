@@ -7,6 +7,6 @@ export interface EvaluationParameterListing {
   id: number;
   name: string;
   code: string;
-  weight: number;
+  weight?: number;
   assigned?: number;
 }
