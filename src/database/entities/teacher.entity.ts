@@ -1,5 +1,4 @@
 import { User } from 'src/database/entities/user.entity';
-import { Subject } from 'src/database/entities/subject.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -12,6 +11,7 @@ import {
   DeleteDateColumn,
 } from 'typeorm';
 import { Gender } from 'utils/enums/general-enums';
+import { SubjectTeachers } from './subject-teacher.entity';
 @Entity('teachers')
 export class Teacher {
   @PrimaryGeneratedColumn()
@@ -48,8 +48,8 @@ export class Teacher {
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @OneToMany(() => Subject, (subject) => subject.teacher, { cascade: true })
-  subjects: Subject[];
+  @OneToMany(() => SubjectTeachers, (st) => st.teacher, { cascade: true })
+  subjectTeacher: SubjectTeachers[];
 
   @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
   createdAt: Date;

@@ -25,7 +25,7 @@ export class Program {
   name: string;
 
   @Column({ type: 'varchar', length: 10 })
-  code: string;
+  code: string; //unique make sir.
 
   @Column({ type: 'int', nullable: true, name: 'total_subjects' })
   totalSubjects: number;

@@ -13,6 +13,7 @@ import { SubjectsEvaluationParameter } from './entities/subject-evaluation-param
 import { ExtraParametersMarks } from './entities/extra-parameters-marks.entity';
 import { AuditTrails } from './entities/audit-trails.entity';
 import { AdminUsers } from './entities/admin-users.entity';
+import { SubjectTeachers } from './entities/subject-teacher.entity';
 export const entities = [
   User,
   UserActivity,
@@ -20,6 +21,7 @@ export const entities = [
   Subject,
   Student,
   Teacher,
+  SubjectTeachers,
   Faculty,
   StudentSubjectMarks,
   StudentAttendance,

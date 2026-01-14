@@ -14,6 +14,7 @@ import {
 } from 'typeorm';
 import { StudentAttendance } from './student-attendance.entity';
 import { SubjectsEvaluationParameter } from './subject-evaluation-parameter.entity';
+import { SubjectTeachers } from './subject-teacher.entity';
 
 @Entity('subjects')
 @Unique(['programId', 'code']) //duplicacy of subject should be considered when program and subject are same
@@ -24,7 +25,7 @@ export class Subject {
   @Column()
   name: string;
 
-  @Column({ type: 'varchar', length: 10 })
+  @Column({ type: 'varchar', length: 10 }) //add unique constraints
   code: string;
 
   @Column({ type: 'int' })
@@ -43,12 +44,8 @@ export class Subject {
   @JoinColumn({ name: 'program_id' })
   program: Program;
 
-  @Column({ name: 'teacher_id' })
-  teacherId: number;
-
-  @ManyToOne(() => Teacher, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'teacher_id' })
-  teacher: Teacher;
+  @OneToMany(() => SubjectTeachers, (st) => st.subject, { cascade: true })
+  subjectTeacher: SubjectTeachers[];
 
   @OneToMany(() => StudentSubjectMarks, (marks) => marks.subject, {
     cascade: true,

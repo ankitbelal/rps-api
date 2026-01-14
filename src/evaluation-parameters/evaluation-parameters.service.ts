@@ -16,7 +16,6 @@ import {
 } from './dto/evaluation-parameters.dto';
 import { AssignSubjectEvaluationParamsDto } from './dto/subject-evaluation-parameters.dto';
 import {
-  duplicateEvaluationParameter,
   EvaluationParameterListing,
 } from './interfaces/evaluation-parameter.interface';
 

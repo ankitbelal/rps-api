@@ -22,14 +22,6 @@ export class SubjectService {
   ) {}
 
   async create(createSubjectDto: CreateSubjectDto): Promise<Boolean> {
-    // const program = await this.porgramService.findProgramById(
-    //   createSubjectDto.programId,
-    // );
-    // if (!program)
-    //   throw new NotFoundException(
-    //     `Program with ${createSubjectDto.programId} does not exist`,
-    //   );
-
     const exists = await this.checkDuplicateSubjects(createSubjectDto.code);
     if (exists)
       throw new ConflictException(
@@ -50,7 +42,17 @@ export class SubjectService {
     const query = this.subjectRepo
       .createQueryBuilder('subject')
       .innerJoin('subject.program', 'program')
-      .innerJoin('subject.teacher', 'teacher');
+      .leftJoinAndSelect(
+        'subject.subjectTeacher',
+        'st',
+        `st.id = (
+        SELECT st2.id FROM subject_teachers st2
+        WHERE st2.subject_id = subject.id
+        ORDER BY st2.created_at DESC
+        LIMIT 1
+      )`,
+      )
+      .leftJoinAndSelect('st.teacher', 'teacher');
 
     if (filters?.id) {
       query.andWhere('subject.id = :id', { id: filters.id });
