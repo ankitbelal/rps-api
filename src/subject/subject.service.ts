@@ -115,7 +115,7 @@ export class SubjectService {
         new Brackets((qb) => {
           qb.where('subject.name LIKE :search', {
             search: `%${filters.search}%`,
-          }).orWhere('student.code LIKE :search', {
+          }).orWhere('subject.code LIKE :search', {
             search: `%${filters.search}%`,
           });
         }),
