@@ -253,7 +253,7 @@ export class TeacherService {
     const userSync: UserSync = {
       name: dto.firstName + ' ' + dto.lastName,
       email: dto.email,
-      userType: UserType.ADMIN,
+      userType: UserType.TEACHER,
       status: UserStatus.ACTIVE,
     };
     return await this.userService.createUser(userSync);

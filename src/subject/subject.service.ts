@@ -12,12 +12,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { SubjectQueryDto } from './dto/subject-query-dto';
 import { SelectQueryBuilder } from 'typeorm/browser';
 import { SubjectResponse } from './interfaces/subject.interface';
+import { SubjectTeachers } from 'src/database/entities/subject-teacher.entity';
 
 @Injectable()
 export class SubjectService {
   constructor(
     @InjectRepository(Subject)
     private readonly subjectRepo: Repository<Subject>,
+
+    @InjectRepository(SubjectTeachers)
+    private readonly subjectTeacherRepo: Repository<SubjectTeachers>,
   ) {}
 
   async create(createSubjectDto: CreateSubjectDto): Promise<Boolean> {
