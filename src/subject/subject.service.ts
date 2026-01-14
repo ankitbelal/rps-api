@@ -12,13 +12,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { SubjectQueryDto } from './dto/subject-query-dto';
 import { SelectQueryBuilder } from 'typeorm/browser';
 import { ProgramService } from 'src/program/program.service';
+import { SubjectResponse } from './interfaces/subject.interface';
 
 @Injectable()
 export class SubjectService {
   constructor(
     @InjectRepository(Subject)
     private readonly subjectRepo: Repository<Subject>,
-    private readonly porgramService: ProgramService,
   ) {}
 
   async create(createSubjectDto: CreateSubjectDto): Promise<Boolean> {
@@ -32,7 +32,7 @@ export class SubjectService {
   }
 
   async findAll(SubjectQueryDto: SubjectQueryDto): Promise<{
-    data: Subject[];
+    data: SubjectResponse[];
     total?: number;
     page?: number;
     lastPage?: number;
@@ -42,7 +42,7 @@ export class SubjectService {
     const query = this.subjectRepo
       .createQueryBuilder('subject')
       .innerJoin('subject.program', 'program')
-      .leftJoinAndSelect(
+      .leftJoin(
         'subject.subjectTeacher',
         'st',
         `st.id = (
@@ -52,7 +52,7 @@ export class SubjectService {
         LIMIT 1
       )`,
       )
-      .leftJoinAndSelect('st.teacher', 'teacher');
+      .leftJoin('st.teacher', 'teacher');
 
     if (filters?.id) {
       query.andWhere('subject.id = :id', { id: filters.id });
@@ -64,7 +64,7 @@ export class SubjectService {
           statusCode: 404,
           message: `Subject with id: ${filters.id} does not exists`,
         });
-      return { data: [data] };
+      return { data: this.denormalizeSubjects(data) };
     }
 
     const filteredquery = this.applyFilters(query, filters);
@@ -73,9 +73,16 @@ export class SubjectService {
     query.skip((page - 1) * limit).take(limit);
     query.orderBy('subject.name', 'ASC');
     const [data, total] = await query.getManyAndCount();
+
     const lastPage = Math.ceil(total / limit);
 
-    return { data, total, page, lastPage, limit };
+    return {
+      data: this.denormalizeSubjects(data),
+      total,
+      page,
+      lastPage,
+      limit,
+    };
   }
 
   private applyFilters(
@@ -147,5 +154,16 @@ export class SubjectService {
 
   async checkDuplicateSubjects(code: string): Promise<Boolean> {
     return !!(await this.subjectRepo.findOne({ where: { code } }));
+  }
+
+  private denormalizeSubjects(data: Subject | Subject[]): SubjectResponse[] {
+    const subjects = Array.isArray(data) ? data : [data];
+
+    return subjects.map((subject) => ({
+      ...subject,
+      subjectTeacher: subject.subjectTeacher.map((st) => ({
+        ...st.teacher,
+      })),
+    }));
   }
 }
