@@ -127,6 +127,7 @@ export class TeacherService {
 
     const isPhoneChanged =
       updateTeacherDto.phone && updateTeacherDto.phone !== teacher.phone;
+
     if (isEmailChanged || isPhoneChanged) {
       const { emailUsed, phoneUsed, valid } =
         await this.validateTeacherContact(updateTeacherDto);

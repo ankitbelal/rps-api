@@ -11,7 +11,6 @@ import { Subject } from '../database/entities/subject.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SubjectQueryDto } from './dto/subject-query-dto';
 import { SelectQueryBuilder } from 'typeorm/browser';
-import { ProgramService } from 'src/program/program.service';
 import { SubjectResponse } from './interfaces/subject.interface';
 
 @Injectable()
@@ -159,11 +158,13 @@ export class SubjectService {
   private denormalizeSubjects(data: Subject | Subject[]): SubjectResponse[] {
     const subjects = Array.isArray(data) ? data : [data];
 
-    return subjects.map((subject) => ({
-      ...subject,
-      subjectTeacher: subject.subjectTeacher.map((st) => ({
-        ...st.teacher,
-      })),
-    }));
+    return subjects.map((subject) => {
+      const latestTeacher = subject.subjectTeacher[0]?.teacher;
+
+      return {
+        ...subject,
+        subjectTeacher: latestTeacher || null,
+      };
+    });
   }
 }

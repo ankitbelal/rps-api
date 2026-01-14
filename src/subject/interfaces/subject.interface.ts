@@ -17,6 +17,6 @@ export interface SubjectResponse {
     name: string;
     code: string;
   };
-  subjectTeacher: Teacher[];
+  subjectTeacher: Teacher;
   createdAt: Date;
 }

@@ -52,13 +52,13 @@ export class UserService {
     platform: string,
     action: string,
   ) {
-    const activity = await this.activityRepo.create({
+    const activity = this.activityRepo.create({
       userId,
       ipAddress: ip,
       platform,
       action: action,
     });
-    await this.activityRepo.save(activity);
+    this.activityRepo.save(activity);
   }
 
   async findUserByEmail(email: string): Promise<User | null> {
