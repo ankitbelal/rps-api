@@ -15,9 +15,7 @@ import {
   UpdateEvaluationParamDto,
 } from './dto/evaluation-parameters.dto';
 import { AssignSubjectEvaluationParamsDto } from './dto/subject-evaluation-parameters.dto';
-import {
-  EvaluationParameterListing,
-} from './interfaces/evaluation-parameter.interface';
+import { EvaluationParameterListing } from './interfaces/evaluation-parameter.interface';
 
 @Injectable()
 export class EvaluationParametersService {
@@ -200,33 +198,35 @@ export class EvaluationParametersService {
     const toDelete: number[] = [];
     const toInsertOrUpdate: SubjectsEvaluationParameter[] = [];
 
+    const existing = await this.subjectParamRepository.find({
+      where: { subjectId },
+    });
+
+    const existingMap = new Map(
+      existing.map((e) => [e.evaluationParameterId, e]),
+    );
+
     for (const param of parameters) {
-      const { evaluationParameterId, weight, assigned } = param;
+      const { evaluationParameterId, weight } = param;
 
-      const existing = await this.checkSubjectParamExists(
-        subjectId,
-        evaluationParameterId,
-      );
-      if (assigned === 0) {
-        if (existing) {
-          toDelete.push(existing?.id);
-        }
-      } else {
-        if (!existing) {
-          toInsertOrUpdate.push(
-            this.subjectParamRepository.create({
-              subjectId,
-              evaluationParameterId,
-              weight,
-            }),
-          );
-        } else if (existing.weight !== weight) {
-          existing.weight = weight;
-          toInsertOrUpdate.push(existing);
-        }
+      const found = existingMap.get(evaluationParameterId);
+      if (!found) {
+        toInsertOrUpdate.push(
+          this.subjectParamRepository.create({
+            subjectId,
+            evaluationParameterId,
+            weight,
+          }),
+        );
+      } else if (found.weight! - weight) {
+        found.weight = weight;
+        toInsertOrUpdate.push(found);
       }
+      existingMap.delete(evaluationParameterId);
     }
-
+    for (const leftover of existingMap.values()) {
+      toDelete.push(leftover.id);
+    }
     if (toDelete.length > 0) {
       return !!(await this.subjectParamRepository.delete(toDelete));
     }

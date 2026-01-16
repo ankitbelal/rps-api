@@ -14,7 +14,6 @@ export class MailingController {
   constructor(private readonly mailingService: MailingService) {}
 
   @HttpCode(200)
-  @Post()
   @Post('welcome')
   async sendWelcomeEmail() {
     return await this.mailingService.sendWelcomeEmail(

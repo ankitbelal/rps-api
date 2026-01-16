@@ -24,7 +24,4 @@ export class ParameterDto {
 
   @IsNotEmpty({ message: 'Weight is required.' })
   weight: number;
-
-  @IsOptional()
-  assigned: number;
 }
