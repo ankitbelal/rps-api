@@ -9,6 +9,8 @@ import {
   MaxDate,
   IsEnum,
   IsBoolean,
+  IsArray,
+  IsInt,
 } from 'class-validator';
 import { Gender } from 'utils/enums/general-enums';
 
@@ -89,4 +91,14 @@ export class TeacherQueryDto {
 export class SearchTeacherListDto {
   @IsOptional()
   name?: string;
+} 
+
+export class AssignSubjectDto {
+  @IsNotEmpty({ message: 'Teacher is required.' })
+  teacherId: number;
+
+  @IsArray()
+  @Type(() => Number)
+  @IsInt({ each: true })
+  subjects: number[];
 }

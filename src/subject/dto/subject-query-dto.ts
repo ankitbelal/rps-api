@@ -42,3 +42,29 @@ export class SubjectQueryDto {
   @IsOptional()
   search?: string;
 }
+
+export class SubjectListingQueryDto {
+  @IsOptional()
+  teacherId: number;
+
+  @IsOptional()
+  search?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  semester?: number;
+
+  @IsOptional()
+  @IsString()
+  type?: string;
+
+  @IsOptional()
+  @IsString()
+  assignmentType?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  programId?: number;
+}

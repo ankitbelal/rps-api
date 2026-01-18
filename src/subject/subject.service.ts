@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -9,10 +8,14 @@ import { UpdateSubjectDto } from './dto/update-subject.dto';
 import { Brackets, Repository } from 'typeorm';
 import { Subject } from '../database/entities/subject.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { SubjectQueryDto } from './dto/subject-query-dto';
+import {
+  SubjectListingQueryDto,
+  SubjectQueryDto,
+} from './dto/subject-query-dto';
 import { SelectQueryBuilder } from 'typeorm/browser';
 import { SubjectResponse } from './interfaces/subject.interface';
 import { SubjectTeachers } from 'src/database/entities/subject-teacher.entity';
+import { SubjectTeacherStatus } from 'utils/enums/general-enums';
 
 @Injectable()
 export class SubjectService {
@@ -93,7 +96,7 @@ export class SubjectService {
     filters: Partial<SubjectQueryDto>,
   ): SelectQueryBuilder<Subject> {
     if (filters?.type) {
-      query.andWhere('student.status = :type', {
+      query.andWhere('subject.type = :type', {
         type: filters.type,
       });
     }
@@ -170,5 +173,64 @@ export class SubjectService {
         subjectTeacher: latestTeacher || null,
       };
     });
+  }
+
+  async getAllSubjectList(
+    subjectListingQueryDto: SubjectListingQueryDto,
+  ): Promise<{ data: SubjectResponse[] }> {
+    const { teacherId, assignmentType } = subjectListingQueryDto;
+
+    const query = this.subjectRepo
+      .createQueryBuilder('subject')
+      .innerJoin('subject.program', 'program')
+      .leftJoin('subject.subjectTeacher', 'st', 'st.status = :status', {
+        status: SubjectTeacherStatus.ACTIVE,
+      })
+      .leftJoin('st.teacher', 'teacher')
+      .select([
+        'subject.id',
+        'subject.code',
+        'subject.name',
+        'subject.semester',
+        'subject.type',
+        'program.id',
+        'program.name',
+        'program.code',
+        'st.id',
+        'teacher.id',
+        'teacher.firstName',
+        'teacher.lastName',
+      ]);
+
+    if (teacherId) {
+      query
+        .addSelect(
+          `
+      CASE
+        WHEN st.id IS NULL THEN 0
+        WHEN st.teacherId = :teacherId THEN 1
+        ELSE 2
+      END
+      `,
+          'assigned',
+        )
+        .setParameter('teacherId', teacherId);
+
+      if (assignmentType === 'assigned') {
+        query.andWhere('st.teacherId = :teacherId', { teacherId });
+      } else if (assignmentType === 'unassigned') {
+        query.andWhere(
+          new Brackets((qb) => {
+            qb.where('st.id IS NULL').orWhere('st.teacherId != :teacherId', {
+              teacherId,
+            });
+          }),
+        );
+      }
+    }
+
+    this.applyFilters(query, subjectListingQueryDto);
+    const data = await query.getMany();
+    return { data: this.denormalizeSubjects(data) };
   }
 }

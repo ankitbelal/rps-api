@@ -52,4 +52,4 @@ export class StudentController {
     await this.studentService.remove(+id);
     return ApiResponse.success('Student removed successfully.', 200);
   }
-}
+} 

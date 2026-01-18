@@ -2,10 +2,7 @@ import { Type } from 'class-transformer';
 import {
   IsNotEmpty,
   IsNumber,
-  IsOptional,
-  ValidateNested,
 } from 'class-validator';
-import { SubjectsEvaluationParameter } from 'src/database/entities/subject-evaluation-parameter.entity';
 
 export class CreateSubjectDto {
   @IsNotEmpty({ message: 'Subject Name is required.' })

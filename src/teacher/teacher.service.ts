@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  AssignSubjectDto,
   CreateTeacherDto,
   SearchTeacherListDto,
   TeacherQueryDto,
@@ -257,5 +258,10 @@ export class TeacherService {
       status: UserStatus.ACTIVE,
     };
     return await this.userService.createUser(userSync);
+  }
+
+
+  async assignSubjects(assignSubjectDto:AssignSubjectDto){
+    const teacher=await this.teacherRepo.findOne({where:{id:assignSubjectDto.teacherId}})
   }
 }

@@ -13,7 +13,10 @@ import { SubjectService } from './subject.service';
 import { CreateSubjectDto } from './dto/create-subject.dto';
 import { UpdateSubjectDto } from './dto/update-subject.dto';
 import { ApiResponse } from 'utils/api-response';
-import { SubjectQueryDto } from './dto/subject-query-dto';
+import {
+  SubjectListingQueryDto,
+  SubjectQueryDto,
+} from './dto/subject-query-dto';
 
 @Controller('subject')
 export class SubjectController {
@@ -55,6 +58,18 @@ export class SubjectController {
   }
 
   @HttpCode(200)
-  @Get('get-assigned-subjects')
-  async getAssignedSubjects() {}
+  @Get('subject-list')
+  async getAssignedSubjects(
+    @Query() subjectListingQueryDto: SubjectListingQueryDto,
+  ) {
+    const subjectList = await this.subjectService.getAllSubjectList(
+      subjectListingQueryDto,
+    );
+
+    return ApiResponse.successData(
+      subjectList,
+      'Subject list fetched successfully.',
+      200,
+    );
+  }
 }

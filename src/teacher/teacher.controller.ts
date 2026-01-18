@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { TeacherService } from './teacher.service';
 import {
+  AssignSubjectDto,
   CreateTeacherDto,
   SearchTeacherListDto,
   TeacherQueryDto,
@@ -67,5 +68,11 @@ export class TeacherController {
       'Teacher list fetched successfully.',
       200,
     );
+  }
+
+  @HttpCode(201)
+  @Post('assign-subject')
+  async assignSubjects(@Body() assignSubjectDto: AssignSubjectDto) {
+    await this.teacherService.assignSubjects(assignSubjectDto);
   }
 }

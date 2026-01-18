@@ -21,3 +21,8 @@ export enum StudentStatus {
   PASSED = 'P',
   SUSPENDED = 'S',
 }
+
+export enum SubjectTeacherStatus {
+  ACTIVE = 'A',
+  OLD = 'O',
+}
