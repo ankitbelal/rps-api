@@ -74,5 +74,6 @@ export class TeacherController {
   @Post('assign-subject')
   async assignSubjects(@Body() assignSubjectDto: AssignSubjectDto) {
     await this.teacherService.assignSubjects(assignSubjectDto);
+    return ApiResponse.success('Subject assigned successfully.', 201);
   }
 }

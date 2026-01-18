@@ -19,6 +19,7 @@ import { UserStatus, UserType } from 'utils/enums/general-enums';
 import { SelectQueryBuilder } from 'typeorm/browser';
 import { UserSync } from 'src/user/interfaces/user-interface';
 import { User } from 'src/database/entities/user.entity';
+import { SubjectService } from 'src/subject/subject.service';
 
 @Injectable()
 export class TeacherService {
@@ -26,6 +27,7 @@ export class TeacherService {
     @InjectRepository(Teacher)
     private readonly teacherRepo: Repository<Teacher>,
     private readonly userService: UserService,
+    private readonly subjectService: SubjectService,
   ) {}
   async create(createTeacherDto: CreateTeacherDto): Promise<Boolean> {
     const { emailUsed, phoneUsed, valid } =
@@ -260,8 +262,12 @@ export class TeacherService {
     return await this.userService.createUser(userSync);
   }
 
+  async assignSubjects(assignSubjectDto: AssignSubjectDto) {
+    const teacher = await this.teacherRepo.findOne({
+      where: { id: assignSubjectDto.teacherId },
+    });
+    if (!teacher) return new NotFoundException('Teacher does not exists.');
 
-  async assignSubjects(assignSubjectDto:AssignSubjectDto){
-    const teacher=await this.teacherRepo.findOne({where:{id:assignSubjectDto.teacherId}})
+    return await this.subjectService.assignSubjectTeacher(assignSubjectDto);
   }
 }

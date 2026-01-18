@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { CreateSubjectDto } from './dto/create-subject.dto';
 import { UpdateSubjectDto } from './dto/update-subject.dto';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, In, Repository } from 'typeorm';
 import { Subject } from '../database/entities/subject.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
@@ -16,6 +16,7 @@ import { SelectQueryBuilder } from 'typeorm/browser';
 import { SubjectResponse } from './interfaces/subject.interface';
 import { SubjectTeachers } from 'src/database/entities/subject-teacher.entity';
 import { SubjectTeacherStatus } from 'utils/enums/general-enums';
+import { AssignSubjectDto } from 'src/teacher/dto/teacher.dto';
 
 @Injectable()
 export class SubjectService {
@@ -233,5 +234,79 @@ export class SubjectService {
     this.applyFilters(query, subjectListingQueryDto);
     const data = await query.getMany();
     return { data: this.denormalizeSubjects(data) };
+  }
+
+  async assignSubjectTeacher(
+    assignSubjectDto: AssignSubjectDto,
+  ): Promise<boolean> {
+    const { teacherId, subjects } = assignSubjectDto;
+    const toAssign = subjects || [];
+
+    if (toAssign.length === 0) {
+      await this.subjectTeacherRepo
+        .createQueryBuilder()
+        .update(SubjectTeachers)
+        .set({ status: SubjectTeacherStatus.OLD })
+        .where('teacher_id = :teacherId', { teacherId })
+        .andWhere('status = :status', { status: SubjectTeacherStatus.ACTIVE })
+        .execute();
+
+      return true;
+    }
+
+    const [currentAssignments, teacherCurrentAssignments] = await Promise.all([
+      this.subjectTeacherRepo.find({
+        where: {
+          subjectId: In(toAssign),
+          status: SubjectTeacherStatus.ACTIVE,
+        },
+      }),
+
+      this.subjectTeacherRepo.find({
+        where: { teacherId, status: SubjectTeacherStatus.ACTIVE },
+      }),
+    ]);
+    const toUpdate: SubjectTeachers[] = [];
+    const toInsert: Partial<SubjectTeachers>[] = [];
+
+    for (const assignment of teacherCurrentAssignments) {
+      if (!toAssign.includes(assignment.subjectId)) {
+        assignment.status = SubjectTeacherStatus.OLD;
+        toUpdate.push(assignment);
+      }
+    }
+
+    for (const subjectId of toAssign) {
+      const activeAssignment = currentAssignments.find(
+        (st) => st.subjectId === subjectId,
+      );
+
+      if (activeAssignment) {
+        if (activeAssignment.teacherId === teacherId) {
+          continue;
+        } else {
+          activeAssignment.status = SubjectTeacherStatus.OLD;
+          toUpdate.push(activeAssignment);
+        }
+      }
+
+      toInsert.push({
+        subjectId,
+        teacherId,
+        status: SubjectTeacherStatus.ACTIVE,
+      });
+    }
+
+    if (toUpdate.length > 0) {
+      await this.subjectTeacherRepo.save(toUpdate);
+    }
+
+    if (toInsert.length > 0) {
+      await this.subjectTeacherRepo.save(
+        this.subjectTeacherRepo.create(toInsert),
+      );
+    }
+
+    return true;
   }
 }
