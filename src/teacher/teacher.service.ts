@@ -201,7 +201,8 @@ export class TeacherService {
     const query = this.teacherRepo
       .createQueryBuilder('teacher')
       .select('teacher.id', 'id')
-      .addSelect("CONCAT(teacher.first_name, ' ', teacher.last_name)", 'name');
+      .addSelect("CONCAT(teacher.first_name, ' ', teacher.last_name)", 'name')
+      .andWhere('teacher.deletedAt IS NULL');
 
     if (searchTeacherListDto?.name) {
       const parts = searchTeacherListDto.name.trim().split(/\s+/);
