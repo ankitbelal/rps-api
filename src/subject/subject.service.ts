@@ -34,7 +34,10 @@ export class SubjectService {
       throw new ConflictException(
         `Subject already exists for Code: ${createSubjectDto.code}.`,
       );
-    const subject = this.subjectRepo.create(createSubjectDto);
+    const subject = await this.subjectRepo.save(
+      this.subjectRepo.create(createSubjectDto),
+    );
+
     if (createSubjectDto.teacherId) {
       const teacherAsignmentData = {
         teacherId: createSubjectDto.teacherId,
@@ -45,7 +48,7 @@ export class SubjectService {
         this.subjectTeacherRepo.create(teacherAsignmentData),
       );
     }
-    return !!(await this.subjectRepo.save(subject));
+    return true;
   }
 
   async findAll(SubjectQueryDto: SubjectQueryDto): Promise<{
