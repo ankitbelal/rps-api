@@ -80,7 +80,7 @@ export class AuthService {
 
     const responseBody: any = {
       statusCode: 200,
-      status: 'success',
+      success: true,
       message: 'Logged in successfully.',
       userDetails: {
         id: user.id,
@@ -143,7 +143,7 @@ export class AuthService {
     });
     return {
       statusCode: 200,
-      status: 'success',
+      success: true,
       message: 'Logged out successfully.',
     };
   }
