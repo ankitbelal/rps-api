@@ -60,7 +60,9 @@ export class TeacherController {
 
   @HttpCode(200)
   @Get('teacher-list')
-  async getAllTeachersList(@Body() searchTeacherListDto: SearchTeacherListDto) {
+  async getAllTeachersList(
+    @Query() searchTeacherListDto: SearchTeacherListDto,
+  ) {
     const teachersList =
       await this.teacherService.getAllTeachersList(searchTeacherListDto);
     return ApiResponse.successData(
