@@ -13,7 +13,10 @@ import {
   SubjectQueryDto,
 } from './dto/subject-query-dto';
 import { SelectQueryBuilder } from 'typeorm/browser';
-import { SubjectResponse } from './interfaces/subject.interface';
+import {
+  SubjectResponse,
+  SubjectTeacher,
+} from './interfaces/subject.interface';
 import { SubjectTeachers } from 'src/database/entities/subject-teacher.entity';
 import { SubjectTeacherStatus } from 'utils/enums/general-enums';
 import { AssignSubjectDto } from 'src/teacher/dto/teacher.dto';
@@ -39,14 +42,12 @@ export class SubjectService {
     );
 
     if (createSubjectDto.teacherId) {
-      const teacherAsignmentData = {
+      const subjectTeacher: SubjectTeacher = {
         teacherId: createSubjectDto.teacherId,
         subjectId: subject.id,
         status: SubjectTeacherStatus.ACTIVE,
       };
-      await this.subjectTeacherRepo.save(
-        this.subjectTeacherRepo.create(teacherAsignmentData),
-      );
+      await this.createSubjectTeacher(subjectTeacher);
     }
     return true;
   }
@@ -157,6 +158,14 @@ export class SubjectService {
         throw new ConflictException(
           `Subject with code: ${updateSubjectDto.code} already exists.`,
         );
+    }
+    if (updateSubjectDto.teacherId) {
+      const subjectTeacher: SubjectTeacher = {
+        subjectId: subject.id,
+        teacherId: updateSubjectDto.teacherId,
+        status: SubjectTeacherStatus.ACTIVE,
+      };
+      await this.createSubjectTeacher(subjectTeacher);
     }
     Object.assign(subject, updateSubjectDto);
     return !!(await this.subjectRepo.save(subject));
@@ -321,5 +330,24 @@ export class SubjectService {
     }
 
     return true;
+  }
+
+  async createSubjectTeacher(subjectTeacher: SubjectTeacher): Promise<boolean> {
+    const existing = await this.subjectTeacherRepo.findOne({
+      where: {
+        subjectId: subjectTeacher.subjectId,
+        status: SubjectTeacherStatus.ACTIVE,
+      },
+    });
+    if (existing?.teacherId === subjectTeacher.teacherId) return true;
+
+    if (existing && existing.teacherId !== subjectTeacher.teacherId) {
+      existing.status = SubjectTeacherStatus.OLD;
+      await this.subjectTeacherRepo.save(existing);
+    }
+
+    return !!(await this.subjectTeacherRepo.save(
+      this.subjectTeacherRepo.create(subjectTeacher),
+    ));
   }
 }

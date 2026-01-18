@@ -1,3 +1,5 @@
+import { SubjectTeacherStatus } from 'utils/enums/general-enums';
+
 interface Teacher {
   id: number;
   firstName: string;
@@ -19,4 +21,10 @@ export interface SubjectResponse {
   };
   subjectTeacher: Teacher;
   createdAt: Date;
+}
+
+export interface SubjectTeacher {
+  teacherId?: number;
+  subjectId?: number;
+  status?: SubjectTeacherStatus;
 }
