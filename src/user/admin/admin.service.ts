@@ -48,7 +48,10 @@ export class AdminService {
     return !!(await this.adminRepo.save(this.adminRepo.create(adminData)));
   }
 
-  async findAll(adminQueryDto: AdminQueryDto): Promise<{
+  async findAll(
+    adminQueryDto: AdminQueryDto,
+    userId: number,
+  ): Promise<{
     data: AdminUsers[];
     total?: number;
     page?: number;
@@ -58,8 +61,9 @@ export class AdminService {
     const { page = 1, limit = 10, ...filters } = adminQueryDto;
     const query = this.adminRepo.createQueryBuilder('admin');
     if (filters?.id) {
-      query.andWhere('admin.id = :id', { id: filters.id });
-      query.select(AdminUsers.ALLOWED_DETAILS);
+      query
+        .andWhere('admin.id = :id', { id: filters.id })
+        .select(AdminUsers.ALLOWED_DETAILS);
       const data = await query.getOne();
       if (!data)
         throw new NotFoundException({
@@ -68,6 +72,7 @@ export class AdminService {
         });
       return { data: [data] };
     }
+    query.andWhere('admin.user_id != :userId', { userId });
     const filteredquery = this.applyFilters(query, filters);
     filteredquery.select(AdminUsers.ALLOWED_FIELDS_LIST);
     filteredquery.skip((page - 1) * limit).take(limit);

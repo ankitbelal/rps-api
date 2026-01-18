@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
 } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import {
@@ -30,8 +31,11 @@ export class AdminController {
 
   @Get()
   @HttpCode(200)
-  async findAll(@Query() adminQueryDto: AdminQueryDto) {
-    const admins = await this.adminService.findAll(adminQueryDto);
+  async findAll(@Query() adminQueryDto: AdminQueryDto, @Req() req) {
+    const admins = await this.adminService.findAll(
+      adminQueryDto,
+      req.user.userId,
+    );
     return ApiResponse.successData(admins, 'Admins fetched successfully.', 200);
   }
 
