@@ -35,6 +35,16 @@ export class SubjectService {
         `Subject already exists for Code: ${createSubjectDto.code}.`,
       );
     const subject = this.subjectRepo.create(createSubjectDto);
+    if (createSubjectDto.teacherId) {
+      const teacherAsignmentData = {
+        teacherId: createSubjectDto.teacherId,
+        subjectId: subject.id,
+        status: SubjectTeacherStatus.ACTIVE,
+      };
+      await this.subjectTeacherRepo.save(
+        this.subjectTeacherRepo.create(teacherAsignmentData),
+      );
+    }
     return !!(await this.subjectRepo.save(subject));
   }
 

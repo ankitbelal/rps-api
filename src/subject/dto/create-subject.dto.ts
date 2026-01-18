@@ -1,8 +1,5 @@
 import { Type } from 'class-transformer';
-import {
-  IsNotEmpty,
-  IsNumber,
-} from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
 
 export class CreateSubjectDto {
   @IsNotEmpty({ message: 'Subject Name is required.' })
@@ -28,4 +25,9 @@ export class CreateSubjectDto {
   @IsNumber()
   @Type(() => Number)
   programId: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  teacherId: number;
 }
