@@ -53,10 +53,11 @@ export class SubjectService {
         'st',
         `st.id = (
         SELECT st2.id FROM subject_teachers st2
-        WHERE st2.subject_id = subject.id
+        WHERE st2.subject_id = subject.id and st2.status =:status
         ORDER BY st2.created_at DESC
         LIMIT 1
       )`,
+        { status: SubjectTeacherStatus.ACTIVE },
       )
       .leftJoin('st.teacher', 'teacher');
 
