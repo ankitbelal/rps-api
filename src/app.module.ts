@@ -15,6 +15,7 @@ import { LoggerModule } from './logging/logger.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { AuditTrailModule } from './audit-trail/audit-trail.module';
 import { EvaluationParametersModule } from './evaluation-parameters/evaluation-parameters.module';
+import { ResultModule } from './result/result.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { EvaluationParametersModule } from './evaluation-parameters/evaluation-p
     DashboardModule,
     AuditTrailModule,
     EvaluationParametersModule,
+    ResultModule,
   ],
   controllers: [AppController],
   providers: [AppService],

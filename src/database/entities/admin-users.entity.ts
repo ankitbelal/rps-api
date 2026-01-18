@@ -30,6 +30,9 @@ export class AdminUsers {
   @Column({ type: 'enum', enum: Gender })
   gender: Gender;
 
+  @Column({ type: 'date', name: 'dob' })
+  DOB: Date;
+
   @Column()
   address1: string;
 
@@ -61,6 +64,7 @@ export class AdminUsers {
     'admin.gender',
     'admin.createdAt',
     'admin.address1',
+    'admin.dob',
     // 'admin.address2',
   ];
   static readonly ALLOWED_DETAILS = [
@@ -73,5 +77,6 @@ export class AdminUsers {
     'admin.address1',
     'admin.address2',
     'admin.createdAt',
+    'admin.dob',
   ];
 }

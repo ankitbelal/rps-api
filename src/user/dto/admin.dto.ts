@@ -1,11 +1,13 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { Type } from 'class-transformer';
 import {
+  IsDate,
   IsEmail,
   IsEnum,
   IsNotEmpty,
   IsNumber,
   IsOptional,
+  MaxDate,
 } from 'class-validator';
 import { Gender, UserStatus } from 'utils/enums/general-enums';
 
@@ -41,6 +43,12 @@ export class CreateAdminDto {
   @IsOptional()
   @IsEnum(UserStatus, { message: 'Status must be valid.' })
   status: UserStatus;
+
+  @IsNotEmpty({ message: 'DOB is required.' })
+  @Type(() => Date)
+  @IsDate({ message: 'DOB must be a valid date.' })
+  @MaxDate(new Date(), { message: 'DOB cannot be a future date.' })
+  DOB: Date;
 }
 export class AdminQueryDto {
   @IsOptional()
