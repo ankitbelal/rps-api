@@ -60,10 +60,12 @@ export class AdminService {
   }> {
     const { page = 1, limit = 10, ...filters } = adminQueryDto;
     const query = this.adminRepo.createQueryBuilder('admin');
-    if (filters?.id) {
-      query
-        .andWhere('admin.id = :id', { id: filters.id })
-        .select(AdminUsers.ALLOWED_DETAILS);
+    if (filters?.id || filters?.self) {
+      if (filters.id) query.andWhere('admin.id = :id', { id: filters.id });
+
+      if (filters.self) query.andWhere('admin.user_id = :userId', { userId });
+
+      query.select(AdminUsers.ALLOWED_DETAILS);
       const data = await query.getOne();
       if (!data)
         throw new NotFoundException({

@@ -1,6 +1,7 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { Type } from 'class-transformer';
 import {
+  IsBoolean,
   IsDate,
   IsEmail,
   IsEnum,
@@ -55,6 +56,11 @@ export class AdminQueryDto {
   @IsNumber()
   @Type(() => Number)
   id: number;
+
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
+  self: boolean;
 
   @IsOptional()
   firstName?: string;
