@@ -9,7 +9,6 @@ import { Brackets, In, Repository } from 'typeorm';
 import { Subject } from '../database/entities/subject.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
-  SubjectEvaluationMarksQueryDto,
   SubjectListingQueryDto,
   SubjectQueryDto,
 } from './dto/subject-query-dto';
@@ -22,9 +21,6 @@ import { SubjectTeachers } from 'src/database/entities/subject-teacher.entity';
 import { SubjectTeacherStatus } from 'utils/enums/general-enums';
 import { AssignSubjectDto } from 'src/teacher/dto/teacher.dto';
 import { EvaluationParametersService } from 'src/evaluation-parameters/evaluation-parameters.service';
-import { markFetchData } from 'src/result/interfaces/marks.interface';
-import { ResultService } from 'src/result/result.service';
-import { StudentSubjectMarks } from 'src/database/entities/student-marks.entity';
 
 @Injectable()
 export class SubjectService {
@@ -36,7 +32,7 @@ export class SubjectService {
     private readonly subjectTeacherRepo: Repository<SubjectTeachers>,
 
     private readonly evaluationParameterService: EvaluationParametersService,
-    private readonly resultService: ResultService,
+    // private readonly resultService: ResultService,
   ) {}
 
   async create(createSubjectDto: CreateSubjectDto): Promise<Boolean> {
@@ -360,7 +356,7 @@ export class SubjectService {
   }
 
   async getAllSubjectListWithEvalParams(
-    subjectEvaluationMarksQueryDto: SubjectEvaluationMarksQueryDto,
+    subjectEvaluationMarksQueryDto: SubjectListingQueryDto,
   ): Promise<{
     data: SubjectResponse[];
   }> {
@@ -400,17 +396,6 @@ export class SubjectService {
         };
       }),
     );
-
-    // const markFetchData: markFetchData = {
-    //   studentId: subjectEvaluationMarksQueryDto.studentId,
-    //   semester: subjectEvaluationMarksQueryDto.semester,
-    //   examTerm: subjectEvaluationMarksQueryDto.examTerm,
-    //   subjectId: subjectsWithParams.map((subject) => subject.id),
-    // };
-    // const subjectMarks =
-    //   subjects.length > 0
-    //     ? await this.resultService.getMarks(markFetchData)
-    //     : [];
 
     return {
       data: subjectsWithParams,

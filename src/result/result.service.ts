@@ -7,6 +7,7 @@ import {
 } from 'src/database/entities/student-marks.entity';
 import { Repository } from 'typeorm';
 import { markFetchData } from './interfaces/marks.interface';
+import { MarkFetchQueryDto } from './dto/marks.dto';
 
 @Injectable()
 export class ResultService {
@@ -18,13 +19,14 @@ export class ResultService {
     private readonly extraParametersMarks: Repository<ExtraParametersMarks>,
   ) {}
 
-  async getMarks(markFetchData: markFetchData) {
-    const { studentId, semester, subjectId, examTerm } = markFetchData;
+  async getMarks(
+    markFetchQueryDto: MarkFetchQueryDto,
+  ): Promise<{ data: StudentSubjectMarks[] }> {
+    const { studentId, semester, examTerm } = markFetchQueryDto;
     const query = this.studentSubjectMarks
       .createQueryBuilder('sm')
       .where('sm.student_id = :studentId ', { studentId: studentId })
       .andWhere('sm.semester = :semester', { semester: semester })
-      .andWhere('sm.subject_id IN(:...ids)', { ids: subjectId })
       .andWhere('sm.exam_term = :examTerm', { examTerm: examTerm })
       .leftJoin('sm.extraParametersMarks', 'ep')
       .select([
@@ -39,6 +41,7 @@ export class ResultService {
         'ep.subjectEvaluationParametersId',
         'ep.marks',
       ]);
-    return await query.getMany();
+    const result = await query.getMany();
+    return { data: result };
   }
 }
