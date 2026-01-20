@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsOptional, IsString, IsNumber } from 'class-validator';
+import { IsOptional, IsString, IsNumber, IsNotEmpty } from 'class-validator';
 
 export class SubjectQueryDto {
   @IsOptional()
@@ -67,4 +67,14 @@ export class SubjectListingQueryDto {
   @IsNumber()
   @Type(() => Number)
   programId?: number;
+}
+
+export class SubjectEvaluationMarksQueryDto extends SubjectListingQueryDto {
+  @IsNotEmpty({ message: 'Student is required.' })
+  @IsNumber()
+  @Type(() => Number)
+  studentId?: number;
+
+  @IsOptional()
+  examTerm?: string;
 }

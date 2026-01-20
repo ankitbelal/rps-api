@@ -14,6 +14,7 @@ import { CreateSubjectDto } from './dto/create-subject.dto';
 import { UpdateSubjectDto } from './dto/update-subject.dto';
 import { ApiResponse } from 'utils/api-response';
 import {
+  SubjectEvaluationMarksQueryDto,
   SubjectListingQueryDto,
   SubjectQueryDto,
 } from './dto/subject-query-dto';
@@ -76,11 +77,11 @@ export class SubjectController {
   @HttpCode(200)
   @Get('students-subject-eval-param')
   async getAllSubjectListWithEvalParams(
-    @Query() subjectListingQueryDto: SubjectListingQueryDto,
+    @Query() subjectEvaluationMarksQueryDto: SubjectEvaluationMarksQueryDto,
   ) {
     const subjectDetails =
       await this.subjectService.getAllSubjectListWithEvalParams(
-        subjectListingQueryDto,
+        subjectEvaluationMarksQueryDto,
       );
     return ApiResponse.successData(
       subjectDetails,

@@ -9,6 +9,7 @@ import { Brackets, In, Repository } from 'typeorm';
 import { Subject } from '../database/entities/subject.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
+  SubjectEvaluationMarksQueryDto,
   SubjectListingQueryDto,
   SubjectQueryDto,
 } from './dto/subject-query-dto';
@@ -21,7 +22,9 @@ import { SubjectTeachers } from 'src/database/entities/subject-teacher.entity';
 import { SubjectTeacherStatus } from 'utils/enums/general-enums';
 import { AssignSubjectDto } from 'src/teacher/dto/teacher.dto';
 import { EvaluationParametersService } from 'src/evaluation-parameters/evaluation-parameters.service';
-import { ParameterListingQuery } from 'src/evaluation-parameters/dto/evaluation-parameters.dto';
+import { markFetchData } from 'src/result/interfaces/marks.interface';
+import { ResultService } from 'src/result/result.service';
+import { StudentSubjectMarks } from 'src/database/entities/student-marks.entity';
 
 @Injectable()
 export class SubjectService {
@@ -33,6 +36,7 @@ export class SubjectService {
     private readonly subjectTeacherRepo: Repository<SubjectTeachers>,
 
     private readonly evaluationParameterService: EvaluationParametersService,
+    private readonly resultService: ResultService,
   ) {}
 
   async create(createSubjectDto: CreateSubjectDto): Promise<Boolean> {
@@ -356,8 +360,10 @@ export class SubjectService {
   }
 
   async getAllSubjectListWithEvalParams(
-    subjectListingQueryDto: SubjectListingQueryDto,
-  ): Promise<{ data: SubjectResponse[] }> {
+    subjectEvaluationMarksQueryDto: SubjectEvaluationMarksQueryDto,
+  ): Promise<{
+    data: { subjects: SubjectResponse[]; subjectMarks: StudentSubjectMarks[] };
+  }> {
     const query = this.subjectRepo
       .createQueryBuilder('subject')
       .innerJoin('subject.program', 'program')
@@ -377,8 +383,9 @@ export class SubjectService {
         'teacher.lastName',
       ]);
 
-    this.applyFilters(query, subjectListingQueryDto);
-    const subjects = await query.getMany();
+    this.applyFilters(query, subjectEvaluationMarksQueryDto);
+    const subjects = this.denormalizeSubjects(await query.getMany());
+
     const subjectsWithParams = await Promise.all(
       subjects.map(async (subject) => {
         const params =
@@ -394,6 +401,22 @@ export class SubjectService {
       }),
     );
 
-    return { data: this.denormalizeSubjects(subjectsWithParams) };
+    const markFetchData: markFetchData = {
+      studentId: subjectEvaluationMarksQueryDto.studentId,
+      semester: subjectEvaluationMarksQueryDto.semester,
+      examTerm: subjectEvaluationMarksQueryDto.examTerm,
+      subjectId: subjectsWithParams.map((subject) => subject.id),
+    };
+    const subjectMarks =
+      subjects.length > 0
+        ? await this.resultService.getMarks(markFetchData)
+        : [];
+
+    return {
+      data: {
+        subjects: subjectsWithParams,
+        subjectMarks: subjectMarks,
+      },
+    };
   }
 }

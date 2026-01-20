@@ -30,6 +30,9 @@ export class StudentSubjectMarks {
   @JoinColumn({ name: 'subject_id' })
   subject: Subject;
 
+  @Column({ name: 'subject_id' })
+  subjectId: number;
+
   @Column({
     name: 'exam_term',
     type: 'enum',
@@ -42,58 +45,25 @@ export class StudentSubjectMarks {
   })
   extraParametersMarks: ExtraParametersMarks[];
 
-  // @Column({
-  //   name: 'discipline_marks',
-  //   type: 'decimal',
-  //   precision: 5,
-  //   scale: 2,
-  //   default: 0,
-  //   nullable: true,
-  // })
-  // disciplineMarks: number;
-
-  // @Column({
-  //   name: 'uniform_marks',
-  //   type: 'decimal',
-  //   precision: 5,
-  //   scale: 2,
-  //   default: 0,
-  //   nullable: true,
-  // })
-  // uniformMarks: number;
-
-  // @Column({
-  //   name: 'punctuality_marks',
-  //   type: 'decimal',
-  //   precision: 5,
-  //   scale: 2,
-  //   default: 0,
-  //   nullable: true,
-  // })
-  // punctualityMarks: number;
-
-  // @Column({
-  //   name: 'attendance_marks',
-  //   type: 'decimal',
-  //   precision: 5,
-  //   scale: 2,
-  //   default: 0,
-  //   nullable: true,
-  // })
-  // attendanceMarks: number;
+  @Column()
+  semester: number;
 
   @Column({
-    name: 'subject_marks',
+    name: 'obtained_marks',
     type: 'decimal',
     precision: 5,
     scale: 2,
     default: 0,
     nullable: true,
   })
-  subjectMarks: number;
+  obtainedMarks: number;
 
-  @Column()
-  semester: number;
+  @Column({
+    name: 'full_marks',
+    type: 'decimal',
+    default: 100.0,
+  })
+  fullMarks: number;
 
   @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
   createdAt: Date;
