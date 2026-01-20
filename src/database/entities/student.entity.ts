@@ -16,6 +16,7 @@ import { StudentSubjectMarks } from './student-marks.entity';
 import { Status, StudentAttendance } from './student-attendance.entity';
 import { Gender, StudentStatus } from 'utils/enums/general-enums';
 import { timestamp } from 'rxjs';
+import { ExtraParametersMarks } from './extra-parameters-marks.entity';
 
 @Entity('students')
 export class Student {
@@ -89,6 +90,11 @@ export class Student {
     cascade: true,
   })
   studentSubjectMarks: StudentSubjectMarks[];
+
+  @OneToMany(() => ExtraParametersMarks, (eMarks) => eMarks.student, {
+    cascade: true,
+  })
+  extraSubjectMarks: ExtraParametersMarks[];
 
   @OneToMany(() => StudentAttendance, (attentance) => attentance.student, {
     cascade: true,

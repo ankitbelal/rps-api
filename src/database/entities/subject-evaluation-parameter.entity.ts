@@ -31,15 +31,6 @@ export class SubjectsEvaluationParameter {
   @Column({ name: 'subject_id', nullable: true })
   subjectId?: number;
 
-  @OneToMany(
-    () => ExtraParametersMarks,
-    (marks) => marks.subjectsEvaluationParameter,
-    {
-      cascade: true,
-    },
-  )
-  extraParametersMarks: ExtraParametersMarks[];
-
   @Column()
   weight: number;
 

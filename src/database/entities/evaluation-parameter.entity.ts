@@ -7,6 +7,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { SubjectsEvaluationParameter } from './subject-evaluation-parameter.entity';
+import { ExtraParametersMarks } from './extra-parameters-marks.entity';
 
 @Entity('evaluation_parameters')
 export class EvaluationParameter {
@@ -27,6 +28,11 @@ export class EvaluationParameter {
     },
   )
   studentSubjectMarks: SubjectsEvaluationParameter[];
+
+  @OneToMany(() => ExtraParametersMarks, (marks) => marks.evaluationParameter, {
+    cascade: true,
+  })
+  extraParametersMarks: ExtraParametersMarks[];
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
   createdAt: Date;

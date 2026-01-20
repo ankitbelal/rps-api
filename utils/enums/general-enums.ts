@@ -26,3 +26,8 @@ export enum SubjectTeacherStatus {
   ACTIVE = 'A',
   OLD = 'O',
 }
+
+export enum ExamTerm {
+  FIRST = 'F',
+  SECOND = 'S',
+}

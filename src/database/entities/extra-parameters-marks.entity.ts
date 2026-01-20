@@ -7,30 +7,64 @@ import {
   JoinColumn,
   ManyToOne,
 } from 'typeorm';
-import { StudentSubjectMarks } from './student-marks.entity';
-import { SubjectsEvaluationParameter } from './subject-evaluation-parameter.entity';
+
+import { EvaluationParameter } from './evaluation-parameter.entity';
+import { Subject } from './subject.entity';
+import { ExamTerm } from 'utils/enums/general-enums';
+import { Student } from './student.entity';
 
 @Entity('extra_parameters_marks')
 export class ExtraParametersMarks {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => StudentSubjectMarks, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'student_subject_marks_id' })
-  studentSubjectMarks: StudentSubjectMarks;
+  @ManyToOne(() => Student, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'student_id' })
+  student: Student;
 
-  @Column({ name: 'student_subject_marks_id', nullable: true })
-  studentSubjectMarksId?: number;
+  @Column({ name: 'student_id' })
+  studentId: number;
 
-  @ManyToOne(() => SubjectsEvaluationParameter, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'subject_evaluation_parameters_id' })
-  subjectsEvaluationParameter: SubjectsEvaluationParameter;
+  @ManyToOne(() => Subject, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'subject_id' })
+  subject: Subject;
 
-  @Column({ name: 'subject_evaluation_parameters_id', nullable: true })
-  subjectEvaluationParametersId?: number;
+  @Column({ name: 'subject_id' })
+  subjectId: number;
 
-  @Column({ default: 0 })
-  marks: number;
+  @Column({ name: 'evaluation_parameter_id' })
+  evaluationParameterId: number;
+
+  @Column({
+    name: 'exam_term',
+    type: 'enum',
+    enum: ExamTerm,
+  })
+  examTerm: ExamTerm;
+
+  @Column()
+  semester: number;
+
+  @ManyToOne(() => EvaluationParameter, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'evaluation_parameter_id' })
+  evaluationParameter: EvaluationParameter;
+
+  @Column({
+    name: 'obtained_marks',
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    default: 0,
+    nullable: true,
+  })
+  obtainedMarks: number;
+
+  @Column({
+    name: 'full_marks',
+    type: 'decimal',
+    default: 100.0,
+  })
+  fullMarks: number;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
   createdAt: Date;

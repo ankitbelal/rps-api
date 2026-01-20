@@ -1,13 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ExtraParametersMarks } from 'src/database/entities/extra-parameters-marks.entity';
-import {
-  ExamTerm,
-  StudentSubjectMarks,
-} from 'src/database/entities/student-marks.entity';
+import { StudentSubjectMarks } from 'src/database/entities/student-marks.entity';
 import { Repository } from 'typeorm';
-import { markFetchData } from './interfaces/marks.interface';
-import { MarkFetchQueryDto } from './dto/marks.dto';
+import { AddMarksDTO, MarkFetchQueryDto } from './dto/marks.dto';
 
 @Injectable()
 export class ResultService {
@@ -23,25 +19,59 @@ export class ResultService {
     markFetchQueryDto: MarkFetchQueryDto,
   ): Promise<{ data: StudentSubjectMarks[] }> {
     const { studentId, semester, examTerm } = markFetchQueryDto;
-    const query = this.studentSubjectMarks
+
+    const subjectMarks = await this.studentSubjectMarks
       .createQueryBuilder('sm')
-      .where('sm.student_id = :studentId ', { studentId: studentId })
-      .andWhere('sm.semester = :semester', { semester: semester })
-      .andWhere('sm.exam_term = :examTerm', { examTerm: examTerm })
-      .leftJoin('sm.extraParametersMarks', 'ep')
+      .where('sm.student_id = :studentId', { studentId })
+      .andWhere('sm.semester = :semester', { semester })
+      .andWhere('sm.exam_term = :examTerm', { examTerm })
       .select([
         'sm.id',
+        'sm.studentId',
+        'sm.subjectId',
         'sm.examTerm',
         'sm.semester',
-        'sm.subjectId',
         'sm.obtainedMarks',
         'sm.fullMarks',
+        'sm.createdAt',
+      ])
+      .getMany();
+
+    const extraMarks = await this.extraParametersMarks
+      .createQueryBuilder('ep')
+      .where('ep.student_id = :studentId', { studentId })
+      .andWhere('ep.semester = :semester', { semester })
+      .andWhere('ep.exam_term = :examTerm', { examTerm })
+      .select([
         'ep.id',
-        'ep.studentSubjectMarksId',
-        'ep.subjectEvaluationParametersId',
-        'ep.marks',
-      ]);
-    const result = await query.getMany();
-    return { data: result };
+        // 'ep.studentId',
+        'ep.subjectId',
+        'ep.evaluationParameterId',
+        'ep.obtainedMarks',
+        'ep.fullMarks',
+        // 'ep.semester',
+        // 'ep.examTerm',
+        // 'ep.createdAt',
+      ])
+      .getMany();
+
+    const merged = subjectMarks.map((subject) => ({
+      ...subject,
+      extraParametersMarks: extraMarks.filter(
+        (ep) =>
+          // ep.studentId === subject.studentId &&
+          ep.subjectId === subject.subjectId
+          // ep.semester === subject.semester &&
+          // ep.examTerm === subject.examTerm,
+      ),
+    }));
+
+    return { data: merged };
+  }
+
+  async addMarks(addMarksDto: AddMarksDTO): Promise<boolean> {
+    const { studentId, semester, examTerm, marks } = addMarksDto;
+    const toInsert: Partial<StudentSubjectMarks>[] = [];
+    return true;
   }
 }

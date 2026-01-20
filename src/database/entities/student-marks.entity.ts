@@ -11,11 +11,8 @@ import {
   OneToMany,
 } from 'typeorm';
 import { ExtraParametersMarks } from './extra-parameters-marks.entity';
+import { ExamTerm } from 'utils/enums/general-enums';
 
-export enum ExamTerm {
-  FIRST = 'F',
-  SECOND = 'S',
-}
 
 @Entity('students_subjects_marks')
 export class StudentSubjectMarks {
@@ -25,6 +22,9 @@ export class StudentSubjectMarks {
   @ManyToOne(() => Student, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'student_id' })
   student: Student;
+
+  @Column({ name: 'student_id' })
+  studentId: number;
 
   @ManyToOne(() => Subject, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'subject_id' })
@@ -39,11 +39,6 @@ export class StudentSubjectMarks {
     enum: ExamTerm,
   })
   examTerm: ExamTerm;
-
-  @OneToMany(() => ExtraParametersMarks, (marks) => marks.studentSubjectMarks, {
-    cascade: true,
-  })
-  extraParametersMarks: ExtraParametersMarks[];
 
   @Column()
   semester: number;
@@ -64,6 +59,10 @@ export class StudentSubjectMarks {
     default: 100.0,
   })
   fullMarks: number;
+
+  @OneToMany(() => ExtraParametersMarks, (ep) => ep.studentId)
+  extraParametersMarks: ExtraParametersMarks[];
+
 
   @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
   createdAt: Date;

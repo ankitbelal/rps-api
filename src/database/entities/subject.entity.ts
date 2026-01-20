@@ -15,6 +15,7 @@ import {
 import { StudentAttendance } from './student-attendance.entity';
 import { SubjectsEvaluationParameter } from './subject-evaluation-parameter.entity';
 import { SubjectTeachers } from './subject-teacher.entity';
+import { ExtraParametersMarks } from './extra-parameters-marks.entity';
 
 @Entity('subjects')
 @Unique(['programId', 'code']) //duplicacy of subject should be considered when program and subject are same
@@ -51,6 +52,11 @@ export class Subject {
     cascade: true,
   })
   studentSubjectMarks: StudentSubjectMarks[];
+
+  @OneToMany(() => ExtraParametersMarks, (eMarks) => eMarks.subject, {
+    cascade: true,
+  })
+  extraSubjectMarks: ExtraParametersMarks[];
 
   @OneToMany(() => SubjectsEvaluationParameter, (marks) => marks.subject, {
     cascade: true,
