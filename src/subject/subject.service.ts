@@ -362,7 +362,7 @@ export class SubjectService {
   async getAllSubjectListWithEvalParams(
     subjectEvaluationMarksQueryDto: SubjectEvaluationMarksQueryDto,
   ): Promise<{
-    data: { subjects: SubjectResponse[]; subjectMarks: StudentSubjectMarks[] };
+    data: SubjectResponse[];
   }> {
     const query = this.subjectRepo
       .createQueryBuilder('subject')
@@ -401,22 +401,19 @@ export class SubjectService {
       }),
     );
 
-    const markFetchData: markFetchData = {
-      studentId: subjectEvaluationMarksQueryDto.studentId,
-      semester: subjectEvaluationMarksQueryDto.semester,
-      examTerm: subjectEvaluationMarksQueryDto.examTerm,
-      subjectId: subjectsWithParams.map((subject) => subject.id),
-    };
-    const subjectMarks =
-      subjects.length > 0
-        ? await this.resultService.getMarks(markFetchData)
-        : [];
+    // const markFetchData: markFetchData = {
+    //   studentId: subjectEvaluationMarksQueryDto.studentId,
+    //   semester: subjectEvaluationMarksQueryDto.semester,
+    //   examTerm: subjectEvaluationMarksQueryDto.examTerm,
+    //   subjectId: subjectsWithParams.map((subject) => subject.id),
+    // };
+    // const subjectMarks =
+    //   subjects.length > 0
+    //     ? await this.resultService.getMarks(markFetchData)
+    //     : [];
 
     return {
-      data: {
-        subjects: subjectsWithParams,
-        subjectMarks: subjectMarks,
-      },
+      data: subjectsWithParams,
     };
   }
 }
