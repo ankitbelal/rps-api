@@ -20,6 +20,8 @@ import {
 import { SubjectTeachers } from 'src/database/entities/subject-teacher.entity';
 import { SubjectTeacherStatus } from 'utils/enums/general-enums';
 import { AssignSubjectDto } from 'src/teacher/dto/teacher.dto';
+import { EvaluationParametersService } from 'src/evaluation-parameters/evaluation-parameters.service';
+import { ParameterListingQuery } from 'src/evaluation-parameters/dto/evaluation-parameters.dto';
 
 @Injectable()
 export class SubjectService {
@@ -29,6 +31,8 @@ export class SubjectService {
 
     @InjectRepository(SubjectTeachers)
     private readonly subjectTeacherRepo: Repository<SubjectTeachers>,
+
+    private readonly evaluationParameterService: EvaluationParametersService,
   ) {}
 
   async create(createSubjectDto: CreateSubjectDto): Promise<Boolean> {
@@ -349,5 +353,47 @@ export class SubjectService {
     return !!(await this.subjectTeacherRepo.save(
       this.subjectTeacherRepo.create(subjectTeacher),
     ));
+  }
+
+  async getAllSubjectListWithEvalParams(
+    subjectListingQueryDto: SubjectListingQueryDto,
+  ): Promise<{ data: SubjectResponse[] }> {
+    const query = this.subjectRepo
+      .createQueryBuilder('subject')
+      .innerJoin('subject.program', 'program')
+      .leftJoin('subject.subjectTeacher', 'st', 'st.status = :status', {
+        status: SubjectTeacherStatus.ACTIVE,
+      })
+      .leftJoin('st.teacher', 'teacher')
+      .select([
+        'subject.id',
+        'subject.code',
+        'subject.name',
+        'subject.semester',
+        'subject.type',
+        'st.id',
+        'teacher.id',
+        'teacher.firstName',
+        'teacher.lastName',
+      ]);
+
+    this.applyFilters(query, subjectListingQueryDto);
+    const subjects = await query.getMany();
+    const subjectsWithParams = await Promise.all(
+      subjects.map(async (subject) => {
+        const params =
+          await this.evaluationParameterService.getAllParameterList({
+            subjectId: subject.id,
+            type: 'assigned',
+          });
+
+        return {
+          ...subject,
+          evaluationParameters: params.data,
+        };
+      }),
+    );
+
+    return { data: this.denormalizeSubjects(subjectsWithParams) };
   }
 }

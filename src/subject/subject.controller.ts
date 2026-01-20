@@ -72,4 +72,20 @@ export class SubjectController {
       200,
     );
   }
+
+  @HttpCode(200)
+  @Get('students-subject-eval-param')
+  async getAllSubjectListWithEvalParams(
+    @Query() subjectListingQueryDto: SubjectListingQueryDto,
+  ) {
+    const subjectDetails =
+      await this.subjectService.getAllSubjectListWithEvalParams(
+        subjectListingQueryDto,
+      );
+    return ApiResponse.successData(
+      subjectDetails,
+      'Student Subjects and evaluation parameters  fetched successfully.',
+      200,
+    );
+  }
 }

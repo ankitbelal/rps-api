@@ -5,7 +5,6 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EvaluationParameter } from 'src/database/entities/evaluation-parameter.entity';
-import { ExtraParametersMarks } from 'src/database/entities/extra-parameters-marks.entity';
 import { SubjectsEvaluationParameter } from 'src/database/entities/subject-evaluation-parameter.entity';
 import { Brackets, Repository } from 'typeorm';
 import {
@@ -22,9 +21,6 @@ export class EvaluationParametersService {
   constructor(
     @InjectRepository(EvaluationParameter)
     private readonly evaluationParamRepository: Repository<EvaluationParameter>,
-
-    @InjectRepository(ExtraParametersMarks)
-    private readonly extraParamRepository: Repository<ExtraParametersMarks>,
 
     @InjectRepository(SubjectsEvaluationParameter)
     private readonly subjectParamRepository: Repository<SubjectsEvaluationParameter>,

@@ -4,6 +4,7 @@ import { EvaluationParametersService } from './evaluation-parameters.service';
 
 @Module({
   controllers: [EvaluationParametersController],
-  providers: [EvaluationParametersService]
+  providers: [EvaluationParametersService],
+  exports: [EvaluationParametersService],
 })
 export class EvaluationParametersModule {}
