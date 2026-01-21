@@ -151,7 +151,7 @@ export class ResultService {
     const extraMarksInsert: ExtraParametersMarks[] = [];
     const extraMarksUpdate: ExtraParametersMarks[] = [];
 
-    marks.forEach((subject) => {
+    marks.map((subject) => {
       const existing = existingSubjectMarks.find(
         (s) => s.subjectId === subject.subjectId,
       );
