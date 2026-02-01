@@ -134,10 +134,10 @@ export class ResultService {
     const { studentId, semester, examTerm, marks } = addMarksDto;
 
     const [existingSubjectMarks, existingExtraMarks] = await Promise.all([
-      await this.studentSubjectMarks.find({
+      this.studentSubjectMarks.find({
         where: { studentId, semester, examTerm },
       }),
-      await this.extraParametersMarks.find({
+      this.extraParametersMarks.find({
         where: {
           studentId,
           semester,
@@ -215,6 +215,7 @@ export class ResultService {
         ? this.extraParametersMarks.insert(extraMarksInsert)
         : Promise.resolve(),
     ]));
-
   }
+
+  async getFinalizedResult() {}
 }

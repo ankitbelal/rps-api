@@ -271,4 +271,11 @@ export class TeacherService {
 
     return await this.subjectService.assignSubjectTeacher(assignSubjectDto);
   }
+
+  //teacher dashboard route goes as
+  async getAssignedSubjects() {
+    const teacher = await this.teacherRepo.findOne({ where: {} });
+    if (!teacher) return new NotFoundException('Teacher does not exists.');
+    return await this.subjectService.getAllSubjectList;
+  }
 }

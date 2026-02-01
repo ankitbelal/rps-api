@@ -122,6 +122,7 @@ export class Student {
     'student.phone',
     'student.status',
     'student.createdAt',
+    'program.id',
     'program.name',
     // reg no - roll-no
     //status
