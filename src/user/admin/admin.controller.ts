@@ -55,4 +55,13 @@ export class AdminController {
     await this.adminService.remove(+id);
     return ApiResponse.success('Admin removed successfully.', 200);
   }
+
+  @Post()
+  @HttpCode(201)
+  async omBoardingSuperAdmin() {
+    await this.adminService.onBoardingSuperAdmin();
+    return ApiResponse.success(
+      'SuperAdmin created successfully. Please check your email to login.',
+    );
+  }
 }

@@ -5,17 +5,18 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AdminUsers } from 'src/database/entities/admin-users.entity';
-import { Admin, Brackets, Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 import {
   AdminQueryDto,
   CreateAdminDto,
   UpdateAdminDto,
 } from '../dto/admin.dto';
-import { UserStatus, UserType } from 'utils/enums/general-enums';
-import { UserSync } from '../interfaces/user-interface';
+import { Gender, UserStatus, UserType } from 'utils/enums/general-enums';
+import { SuperAdmin, UserSync } from '../interfaces/user-interface';
 import { UserService } from '../user.service';
 import { SelectQueryBuilder } from 'typeorm/browser';
 import { User } from 'src/database/entities/user.entity';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AdminService {
@@ -23,6 +24,7 @@ export class AdminService {
     @InjectRepository(AdminUsers)
     private readonly adminRepo: Repository<AdminUsers>,
     private readonly userService: UserService,
+    private readonly configService: ConfigService,
   ) {}
 
   async create(createAdminDto: CreateAdminDto) {
@@ -229,4 +231,38 @@ export class AdminService {
     };
     return await this.userService.createUser(userSync);
   }
+
+   async onBoardingSuperAdmin() {
+    const alreadyExists = await this.adminRepo.findOne({ where: { id: 1 } });
+    if (alreadyExists) {
+      throw new ConflictException('SuperAdmin already created.');
+    }
+
+    const superAdmin: SuperAdmin = {
+      firstName: this.configService.get<string>('FIRST_NAME', 'Super'),
+      lastName: this.configService.get<string>('LAST_NAME', 'Admin'),
+      email: this.configService.get<string>('EMAIL', 'admin@example.com'),
+      phone: this.configService.get<string>('PHONE', '0000000000'),
+      gender:
+        this.configService.get<string>('GENDER', 'M').toUpperCase() === 'M'
+          ? Gender.MALE
+          : Gender.FEMALE,
+      address1: this.configService.get<string>('ADDRESS', 'Default Address'),
+      address2: this.configService.get<string>('ADDRESS', 'Default Address'),
+      status: UserStatus.ACTIVE,
+      DOB: new Date('2000-01-01'),
+    };
+
+    const user = await this.createUser(superAdmin);
+
+    const adminEntity = this.adminRepo.create({
+      userId: user.id,
+      ...superAdmin,
+    });
+
+    const savedAdmin = await this.adminRepo.save(adminEntity);
+
+    return !!savedAdmin;
+  }
 }
+
