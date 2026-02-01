@@ -70,7 +70,7 @@ export class SubjectListingQueryDto {
 }
 
 export class SubjectEvaluationMarksQueryDto extends SubjectListingQueryDto {
-  @IsNotEmpty({ message: 'Student is required.' })
+  @IsOptional()
   @IsNumber()
   @Type(() => Number)
   studentId?: number;
