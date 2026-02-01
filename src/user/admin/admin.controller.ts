@@ -17,6 +17,7 @@ import {
   UpdateAdminDto,
 } from '../dto/admin.dto';
 import { ApiResponse } from 'utils/api-response';
+import { Public } from 'src/auth/jwt/public.decorator';
 
 @Controller('admins')
 export class AdminController {
@@ -56,7 +57,8 @@ export class AdminController {
     return ApiResponse.success('Admin removed successfully.', 200);
   }
 
-  @Post()
+  @Public()
+  @Post('onboard')
   @HttpCode(201)
   async omBoardingSuperAdmin() {
     await this.adminService.onBoardingSuperAdmin();
