@@ -377,7 +377,6 @@ export class StudentService {
   ): Promise<void> {
     const { programId, currentSemester, status, ...filters } = studentQueryDto;
 
-    // Fetch students with filters
     const query = this.studentRepo
       .createQueryBuilder('student')
       .innerJoinAndSelect('student.program', 'program');
@@ -387,6 +386,15 @@ export class StudentService {
     filteredQuery.orderBy('student.firstName', 'ASC');
 
     const students = await filteredQuery.getMany();
+
+    if (!students.length) {
+      throw new NotFoundException('No data found to export.');
+    }
+
+    let programName = '';
+    if (programId && students.length > 0 && students[0].program) {
+      programName = students[0].program.name;
+    }
 
     // Create workbook and worksheet
     const workbook = new ExcelJS.Workbook();
@@ -400,47 +408,47 @@ export class StudentService {
       pageSetup: { paperSize: 9, orientation: 'landscape' },
     });
 
-    // Define columns
+    // Define columns - EXACT widths as in image
     worksheet.columns = [
-      { header: 'ID', key: 'id', width: 10 },
-      { header: 'Full Name', key: 'name', width: 25 },
-      { header: 'Gender', key: 'gender', width: 10 },
-      { header: 'Email', key: 'email', width: 30 },
+      { header: 'ID', key: 'id', width: 8 },
+      { header: 'Full Name', key: 'name', width: 22 },
+      { header: 'Gender', key: 'gender', width: 8 },
+      { header: 'Email', key: 'email', width: 28 },
       { header: 'Phone', key: 'phone', width: 15 },
-      { header: 'Roll No', key: 'rollNumber', width: 15 },
+      { header: 'Roll No', key: 'rollNumber', width: 14 },
       { header: 'Reg No', key: 'registrationNumber', width: 18 },
-      { header: 'Semester', key: 'semester', width: 10 },
-      { header: 'Address', key: 'address', width: 30 },
-      { header: 'Program', key: 'program', width: 20 },
+      { header: 'Semester', key: 'semester', width: 9 },
+      { header: 'Address', key: 'address', width: 25 },
+      { header: 'Program', key: 'program', width: 22 },
       { header: 'Status', key: 'status', width: 12 },
     ];
 
-    const lastCol = 'K'; // 11 columns (A to K)
+    const lastCol = 'K';
     let currentRow = 1;
 
-    // ================= HEADER SECTION WITH LOGO =================
-    // Use 8 rows for header (logo at top, text at bottom)
-    const headerRows = 8;
+    //HEADER SECTION WITH LOGO
+    // Use 12 rows for header to give MORE space between logo and text
+    const headerRows = 12;
     worksheet.mergeCells(
       `A${currentRow}:${lastCol}${currentRow + headerRows - 1}`,
     );
     const headerCell = worksheet.getCell(`A${currentRow}`);
 
-    // Style the header background
+    // Style the header background - LIGHT YELLOW as in image (#4)
     headerCell.fill = {
       type: 'pattern',
       pattern: 'solid',
-      fgColor: { argb: 'FF1A4B7A' }, // Deep blue background
+      fgColor: { argb: 'FFFFF9E6' }, // Light yellow background
     };
 
     headerCell.border = {
-      top: { style: 'medium', color: { argb: 'FF0A192F' } },
-      left: { style: 'medium', color: { argb: 'FF0A192F' } },
-      bottom: { style: 'medium', color: { argb: 'FF0A192F' } },
-      right: { style: 'medium', color: { argb: 'FF0A192F' } },
+      top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+      left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+      bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+      right: { style: 'thin', color: { argb: 'FFCCCCCC' } },
     };
 
-    // Add logo from file - FIXED: Better positioning for circular logo
+    // Add logo at top center - ROUND LOGO
     const logoPath = join(process.cwd(), 'src', 'assets', 'lms-logo.png');
     const fs = require('fs');
 
@@ -450,75 +458,151 @@ export class StudentService {
         extension: 'png',
       });
 
-      // FIXED: Position logo exactly as in the image - top center with proper sizing
-      // Using row 0.5 to place it at the top with some padding
-      // Using 100x100 to maintain aspect ratio and make it appear round
+      // Position logo at top center - with equal width/height for perfect circle
       worksheet.addImage(logoImageId, {
-        tl: { col: 5.2, row: 0.8 }, // Centered horizontally, slightly adjusted
-        ext: { width: 100, height: 100 }, // Square dimensions for circular logo
+        tl: { col: 5.1, row: 0.8 }, // Top center position
+        ext: { width: 100, height: 100 }, // Equal width/height = perfect circle
         editAs: 'oneCell',
       });
     }
 
-    // Build header text exactly as shown in the image
-    let headerText = 'RESULT PROCESSING SYSTEM - LMS';
-    if (programId && students.length > 0 && students[0].program) {
-      headerText += `\n${students[0].program.name}`;
-    }
-    if (currentSemester) {
-      headerText += `\nSemester ${currentSemester}`; // FIXED: Format as "Semester X" to match image
+    //DYNAMIC HEADER TEXT WITH COLORS
+
+    // Create rich text array with proper typing
+    const richText: ExcelJS.RichText[] = [];
+
+    // Add line breaks for logo spacing (5 line breaks)
+    richText.push({
+      font: {
+        name: 'Calibri',
+        size: 20,
+        bold: true,
+        color: { argb: 'FF008080' }, // Dark teal (will be overridden by next line)
+      },
+      text: '\n\n\n\n\n',
+    });
+
+    // First line - Dark teal (#2)
+    richText.push({
+      font: {
+        name: 'Calibri',
+        size: 20,
+        bold: true,
+        color: { argb: 'FF008080' }, // Dark teal
+      },
+      text: 'RESULT PROCESSING SYSTEM - LMS\n',
+    });
+
+    // Second line: Program name with optional semester - Dark blue (#1)
+    if (programName) {
+      let secondLineText = programName;
+      if (currentSemester) {
+        secondLineText += ` - ${currentSemester}th Semester`;
+      }
+
+      richText.push({
+        font: {
+          name: 'Calibri',
+          size: 18,
+          bold: true,
+          color: { argb: 'FF00008B' }, // Dark blue
+        },
+        text: secondLineText + '\n',
+      });
     }
 
-    // Use statusLabels for status text
-    const statusText =
-      status && statusLabels[status] ? statusLabels[status] : '';
-    headerText += `\n${statusText} Student Report`; // FIXED: Removed extra space
+    // Third line: Status + Student Report - Dark red (#3)
+    let thirdLineText = '';
+    if (status && statusLabels[status]) {
+      thirdLineText = `${statusLabels[status]} `;
+    }
+    thirdLineText += 'Student Report';
 
-    headerCell.value = headerText;
-    headerCell.font = {
-      name: 'Calibri',
-      size: 20,
-      bold: true,
-      color: { argb: 'FFFFFFFF' }, // White text
-    };
+    richText.push({
+      font: {
+        name: 'Calibri',
+        size: 18,
+        bold: true,
+        color: { argb: 'FF8B0000' }, // Dark red
+      },
+      text: thirdLineText,
+    });
+
+    // Set the header cell value as rich text
+    headerCell.value = { richText };
+
     headerCell.alignment = {
       horizontal: 'center',
-      vertical: 'bottom', // Align text to bottom of merged cell
+      vertical: 'bottom',
       wrapText: true,
     };
 
     // Move past header
     currentRow += headerRows;
 
-    // ================= ADD SPACE GAP (3 blank rows) =================
-    // This creates the gap between header text and table header - EXACTLY as in image
-    for (let i = 0; i < 3; i++) {
-      const blankRow = worksheet.getRow(currentRow);
-      blankRow.height = 20;
-      currentRow++;
-    }
+    // TWO BLANK WHITE ROWS (MERGED) BEFORE TABLE
+    // First blank white row - merged A to K
+    const firstBlankRow = worksheet.getRow(currentRow);
+    worksheet.mergeCells(`A${currentRow}:${lastCol}${currentRow}`);
+    firstBlankRow.getCell(1).value = '';
+    firstBlankRow.height = 15;
 
-    // ================= TABLE HEADER =================
+    // Apply white background
+    for (let i = 1; i <= 11; i++) {
+      const cell = firstBlankRow.getCell(i);
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFFFFFFF' }, // Pure white
+      };
+      cell.border = {
+        left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+        right: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+      };
+    }
+    currentRow++;
+
+    // Second blank white row - merged A to K
+    const secondBlankRow = worksheet.getRow(currentRow);
+    worksheet.mergeCells(`A${currentRow}:${lastCol}${currentRow}`);
+    secondBlankRow.getCell(1).value = '';
+    secondBlankRow.height = 15;
+
+    // Apply white background
+    for (let i = 1; i <= 11; i++) {
+      const cell = secondBlankRow.getCell(i);
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFFFFFFF' }, // Pure white
+      };
+      cell.border = {
+        left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+        right: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+      };
+    }
+    currentRow++;
+
+    //TABLE HEADER WITH AUTO FILTER
     const headerRow = worksheet.getRow(currentRow);
     headerRow.values = worksheet.columns.map((col) => col.header as string);
-    headerRow.height = 30;
+    headerRow.height = 25;
 
     headerRow.eachCell((cell) => {
       cell.font = {
         bold: true,
-        size: 12,
+        size: 11,
         color: { argb: 'FFFFFFFF' },
         name: 'Calibri',
       };
       cell.alignment = {
         horizontal: 'center',
         vertical: 'middle',
-        wrapText: true,
       };
       cell.fill = {
         type: 'pattern',
         pattern: 'solid',
-        fgColor: { argb: 'FF244062' },
+        fgColor: { argb: 'FF244062' }, // Dark blue header
       };
       cell.border = {
         top: { style: 'thin', color: { argb: 'FF000000' } },
@@ -528,10 +612,16 @@ export class StudentService {
       };
     });
 
+    // Apply auto filter to the header row - this adds the filter dropdown buttons
+    worksheet.autoFilter = {
+      from: { row: currentRow, column: 1 },
+      to: { row: currentRow, column: 11 },
+    };
+
     const tableStartRow = currentRow;
     currentRow++;
 
-    // ================= DATA ROWS =================
+    //DATA ROWS
     if (students.length === 0) {
       const noDataRow = worksheet.getRow(currentRow);
       noDataRow.getCell(1).value = 'No students found matching the criteria';
@@ -547,22 +637,27 @@ export class StudentService {
         const row = worksheet.getRow(currentRow);
 
         row.getCell(1).value = student.id;
-        row.getCell(2).value =
-          `${student.firstName || ''} ${student.lastName || ''}`.trim();
-        row.getCell(3).value = student.gender || 'N/A';
-        row.getCell(4).value = student.email || 'N/A';
-        row.getCell(5).value = student.phone || 'N/A';
-        row.getCell(6).value = student.rollNumber || 'N/A';
-        row.getCell(7).value = student.registrationNumber || 'N/A';
-        row.getCell(8).value = student.currentSemester?.toString() || 'N/A';
 
-        // FIXED: Format address to match the image style (Country, City format)
-        const address = [student.address2, student.address1]
+        // Format full name as in image
+        const fullName =
+          `${student.firstName || ''} ${student.lastName || ''}`.trim();
+        row.getCell(2).value = fullName;
+
+        row.getCell(3).value = student.gender || '';
+        row.getCell(4).value = student.email || '';
+        row.getCell(5).value = student.phone || '';
+        row.getCell(6).value = student.rollNumber || '';
+        row.getCell(7).value = student.registrationNumber || '';
+        row.getCell(8).value = student.currentSemester?.toString() || '';
+
+        // Format address exactly as in image (Country, City)
+        const address = [student.address1, student.address2]
           .filter((addr) => addr && addr.trim() !== '')
           .join(', ');
-        row.getCell(9).value = address || 'N/A';
+        row.getCell(9).value = address || '';
 
-        row.getCell(10).value = student.program?.name || 'N/A';
+        // Format program name as in image
+        row.getCell(10).value = student.program?.name || '';
 
         // Use statusLabels for status display in data rows
         const statusDisplay =
@@ -571,12 +666,13 @@ export class StudentService {
             : student.status || 'N/A';
         row.getCell(11).value = statusDisplay;
 
-        row.height = 22;
+        row.height = 20;
 
         for (let i = 1; i <= 11; i++) {
           const cell = row.getCell(i);
 
-          if (i === 1 || i === 3 || i === 8) {
+          // Center alignment for specific columns
+          if (i === 1 || i === 3 || i === 8 || i === 11) {
             cell.alignment = { horizontal: 'center', vertical: 'middle' };
           } else {
             cell.alignment = { horizontal: 'left', vertical: 'middle' };
@@ -589,17 +685,18 @@ export class StudentService {
             right: { style: 'thin', color: { argb: 'FFCCCCCC' } },
           };
 
+          // Alternate row colors - exactly as in image
           if (index % 2 === 0) {
             cell.fill = {
               type: 'pattern',
               pattern: 'solid',
-              fgColor: { argb: 'FFF8F9FA' },
+              fgColor: { argb: 'FFF5F5F5' }, // Light gray for even rows
             };
           } else {
             cell.fill = {
               type: 'pattern',
               pattern: 'solid',
-              fgColor: { argb: 'FFFFFFFF' },
+              fgColor: { argb: 'FFFFFFFF' }, // White for odd rows
             };
           }
         }
@@ -608,46 +705,105 @@ export class StudentService {
       });
     }
 
-    // ================= SUMMARY ROW =================
-    const summaryRow = worksheet.getRow(currentRow);
-    summaryRow.getCell(1).value = `Total Students: ${students.length}`;
+    //WHITE SEPARATOR ROW (FULLY BLANK)
+    // This creates a visual separation between data and summary
+    const whiteSeparatorRow = worksheet.getRow(currentRow);
+    whiteSeparatorRow.height = 15;
+
+    // Merge the entire row from A to K as a single cell
+    worksheet.mergeCells(`A${currentRow}:${lastCol}${currentRow}`);
+
+    // Make it completely blank with white background
+    const whiteCell = whiteSeparatorRow.getCell(1);
+    whiteCell.value = '';
+    whiteCell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFFFFFFF' }, // Pure white background
+    };
+    whiteCell.border = {
+      left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+      right: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+    };
+
+    currentRow++;
+
+    //SUMMARY SECTION (LIGHT BLUE BACKGROUND)
+    const summaryStartRow = currentRow;
+
+    // Total Students row - LEFT ALIGNED
+    const totalRow = worksheet.getRow(currentRow);
+    totalRow.getCell(1).value = `Total Students: ${students.length}`;
     worksheet.mergeCells(`A${currentRow}:C${currentRow}`);
-    summaryRow.getCell(1).font = {
+    totalRow.getCell(1).font = {
       bold: true,
       size: 11,
-      color: { argb: 'FF1A4B7A' },
+      color: { argb: 'FF1F4A7A' }, // Dark blue
     };
-    summaryRow.getCell(1).alignment = { horizontal: 'left' };
+    totalRow.getCell(1).alignment = { horizontal: 'left' };
 
-    // FIXED: Format date exactly as in image (MM/DD/YYYY, HH:MM:SS AM/PM)
-    const now = new Date();
-    const formattedDate = now.toLocaleDateString('en-US', {
-      month: '2-digit',
-      day: '2-digit',
-      year: 'numeric',
-    });
-    const formattedTime = now.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: true,
-    });
-
-    const dateCell = summaryRow.getCell(11);
-    dateCell.value = `Generated: ${formattedDate}, ${formattedTime}`;
-    dateCell.font = { italic: true, size: 10, color: { argb: 'FF666666' } };
-    dateCell.alignment = { horizontal: 'right' };
-
+    // Apply light blue background to entire row
     for (let i = 1; i <= 11; i++) {
-      const cell = summaryRow.getCell(i);
+      const cell = totalRow.getCell(i);
       cell.fill = {
         type: 'pattern',
         pattern: 'solid',
-        fgColor: { argb: 'FFF0F7FF' },
+        fgColor: { argb: 'FFE6F0FA' }, // Very light blue
+      };
+      cell.border = {
+        left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+        right: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+        top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
       };
     }
 
-    // ================= FREEZE PANE =================
+    currentRow++;
+
+    // Generated date row - LEFT ALIGNED (right below total students)
+    const dateRow = worksheet.getRow(currentRow);
+
+    // Format date exactly as in image (M/D/YYYY, HH:MM:SS AM/PM)
+    const now = new Date();
+    const month = now.getMonth() + 1;
+    const day = now.getDate();
+    const year = now.getFullYear();
+
+    let hours = now.getHours();
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const seconds = now.getSeconds().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // 12-hour format
+
+    const formattedDate = `${month}/${day}/${year}`;
+    const formattedTime = `${hours}:${minutes}:${seconds} ${ampm}`;
+
+    // LEFT ALIGN the generated date in column A (merged A-C)
+    dateRow.getCell(1).value = `Generated: ${formattedDate}, ${formattedTime}`;
+    worksheet.mergeCells(`A${currentRow}:C${currentRow}`);
+    dateRow.getCell(1).font = {
+      italic: true,
+      size: 10,
+      color: { argb: 'FF666666' },
+    };
+    dateRow.getCell(1).alignment = { horizontal: 'left' };
+
+    // Apply light blue background to entire date row
+    for (let i = 1; i <= 11; i++) {
+      const cell = dateRow.getCell(i);
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE6F0FA' }, // Very light blue
+      };
+      cell.border = {
+        left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+        right: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+        bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+      };
+    }
+
+    //FREEZE PANE
     worksheet.views = [
       {
         state: 'frozen',
@@ -657,13 +813,7 @@ export class StudentService {
       },
     ];
 
-    // ================= AUTO FILTER =================
-    worksheet.autoFilter = {
-      from: { row: tableStartRow, column: 1 },
-      to: { row: tableStartRow, column: 11 },
-    };
-
-    // ================= RESPONSE HEADERS =================
+    //RESPONSE HEADERS
     res.setHeader(
       'Content-Type',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -673,7 +823,7 @@ export class StudentService {
       `attachment; filename=students_report_${Date.now()}.xlsx`,
     );
 
-    // ================= WRITE FILE =================
+    //WRITE FILE
     await workbook.xlsx.write(res);
     res.end();
   }
