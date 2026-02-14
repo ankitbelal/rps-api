@@ -8,7 +8,10 @@ import {
   Delete,
   HttpCode,
   Query,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
+
 import { TeacherService } from './teacher.service';
 import {
   AssignSubjectDto,
@@ -18,6 +21,7 @@ import {
   UpdateTeacherDto,
 } from './dto/teacher.dto';
 import { ApiResponse } from 'utils/api-response';
+import { Public } from 'src/auth/jwt/public.decorator';
 
 @Controller('teacher')
 export class TeacherController {
@@ -77,5 +81,13 @@ export class TeacherController {
   async assignSubjects(@Body() assignSubjectDto: AssignSubjectDto) {
     await this.teacherService.assignSubjects(assignSubjectDto);
     return ApiResponse.success('Subject assigned successfully.', 201);
+  }
+
+  @Get('report')
+  async downloadReport(
+    @Query() teacherQueryDto: TeacherQueryDto,
+    @Res() res: Response,
+  ) {
+    return await this.teacherService.generateExcelReport(teacherQueryDto, res);
   }
 }
