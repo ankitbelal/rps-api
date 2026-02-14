@@ -40,7 +40,6 @@ export class StudentController {
     );
   }
 
-  @Public()
   @Get('report')
   async downloadReport(
     @Query() studentQueryDto: StudentQueryDto,

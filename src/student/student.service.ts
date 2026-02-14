@@ -375,13 +375,13 @@ export class StudentService {
     studentQueryDto: StudentQueryDto,
     res: Response,
   ): Promise<void> {
-    const { programId, currentSemester, status, ...filters } = studentQueryDto;
+    const { programId, currentSemester, status } = studentQueryDto;
 
     const query = this.studentRepo
       .createQueryBuilder('student')
       .innerJoinAndSelect('student.program', 'program');
 
-    const filteredQuery = this.applyFilters(query, filters);
+    const filteredQuery = this.applyFilters(query, studentQueryDto);
     filteredQuery.andWhere('student.deletedAt IS NULL');
     filteredQuery.orderBy('student.firstName', 'ASC');
 
