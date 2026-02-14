@@ -1,9 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ExtraParametersMarks } from 'src/database/entities/extra-parameters-marks.entity';
 import { StudentSubjectMarks } from 'src/database/entities/student-marks.entity';
 import { Repository } from 'typeorm';
 import { AddMarksDTO, MarkFetchQueryDto } from './dto/marks.dto';
+import { SubjectService } from 'src/subject/subject.service';
+import { StudentService } from 'src/student/student.service';
+import { ResultDto } from './dto/result.dto';
+import { SubjectInternalResponse } from 'src/subject/interfaces/subject.interface';
 
 @Injectable()
 export class ResultService {
@@ -13,6 +17,9 @@ export class ResultService {
 
     @InjectRepository(ExtraParametersMarks)
     private readonly extraParametersMarks: Repository<ExtraParametersMarks>,
+
+    private readonly subjectService: SubjectService,
+    private readonly studentService: StudentService,
   ) {}
 
   async getMarks(
@@ -20,40 +27,52 @@ export class ResultService {
   ): Promise<{ data: StudentSubjectMarks[] }> {
     const { studentId, semester, examTerm } = markFetchQueryDto;
 
-    const subjectMarks = await this.studentSubjectMarks
+    const query = this.studentSubjectMarks
       .createQueryBuilder('sm')
-      .where('sm.student_id = :studentId', { studentId })
-      .andWhere('sm.semester = :semester', { semester })
-      .andWhere('sm.exam_term = :examTerm', { examTerm })
-      .select([
-        'sm.id',
-        'sm.studentId',
-        'sm.subjectId',
-        'sm.examTerm',
-        'sm.semester',
-        'sm.obtainedMarks',
-        'sm.fullMarks',
-        'sm.createdAt',
-      ])
-      .getMany();
+      .where('sm.student_id = :studentId', { studentId });
 
-    const extraMarks = await this.extraParametersMarks
+    const query2 = await this.extraParametersMarks
       .createQueryBuilder('ep')
-      .where('ep.student_id = :studentId', { studentId })
-      .andWhere('ep.semester = :semester', { semester })
-      .andWhere('ep.exam_term = :examTerm', { examTerm })
-      .select([
-        'ep.id',
-        // 'ep.studentId',
-        'ep.subjectId',
-        'ep.evaluationParameterId',
-        'ep.obtainedMarks',
-        'ep.fullMarks',
-        // 'ep.semester',
-        // 'ep.examTerm',
-        // 'ep.createdAt',
-      ])
-      .getMany();
+      .where('ep.student_id = :studentId', { studentId });
+
+    if (markFetchQueryDto.semester) {
+      query.andWhere('sm.semester = :semester', { semester });
+      query2.andWhere('ep.semester = :semester', { semester });
+    }
+
+    if (markFetchQueryDto.examTerm) {
+      query.andWhere('sm.exam_term = :examTerm', { examTerm });
+      query2.andWhere('ep.exam_term = :examTerm', { examTerm });
+    }
+
+    const [subjectMarks, extraMarks] = await Promise.all([
+      query
+        .select([
+          'sm.id',
+          // 'sm.studentId',
+          'sm.subjectId',
+          'sm.examTerm',
+          'sm.semester',
+          'sm.obtainedMarks',
+          'sm.fullMarks',
+          'sm.createdAt',
+        ])
+        .getMany(),
+
+      query2
+        .select([
+          'ep.id',
+          // 'ep.studentId',
+          'ep.subjectId',
+          'ep.evaluationParameterId',
+          'ep.obtainedMarks',
+          'ep.fullMarks',
+          // 'ep.semester',
+          // 'ep.examTerm',
+          // 'ep.createdAt',
+        ])
+        .getMany(),
+    ]);
 
     const merged = subjectMarks.map((subject) => ({
       ...subject,
@@ -68,67 +87,6 @@ export class ResultService {
 
     return { data: merged };
   }
-
-  // async addMarks(addMarksDto: AddMarksDTO): Promise<boolean> {
-  //   const { studentId, semester, examTerm, marks } = addMarksDto;
-  //   await Promise.all(
-  //     marks.map(async (subject) => {
-  //       let subjectMarks = await this.studentSubjectMarks.findOne({
-  //         where: {
-  //           studentId,
-  //           semester,
-  //           examTerm,
-  //           subjectId: subject.subjectId,
-  //         },
-  //       });
-  //       if (!subjectMarks) {
-  //         subjectMarks = this.studentSubjectMarks.create({
-  //           studentId,
-  //           semester,
-  //           examTerm,
-  //           subjectId: subject.subjectId,
-  //           obtainedMarks: subject.obtainedMarks,
-  //         });
-  //       } else {
-  //         subjectMarks.obtainedMarks = subject.obtainedMarks!;
-  //       }
-
-  //       await this.studentSubjectMarks.save(subjectMarks);
-
-  //       if (subject.parameters?.length) {
-  //         await Promise.all(
-  //           subject.parameters.map(async (param) => {
-  //             let extra = await this.extraParametersMarks.findOne({
-  //               where: {
-  //                 studentId,
-  //                 semester,
-  //                 examTerm,
-  //                 subjectId: subject.subjectId,
-  //                 evaluationParameterId: param.parameterId,
-  //               },
-  //             });
-
-  //             if (!extra) {
-  //               extra = this.extraParametersMarks.create({
-  //                 studentId,
-  //                 semester,
-  //                 examTerm,
-  //                 subjectId: subject.subjectId,
-  //                 evaluationParameterId: param.parameterId,
-  //                 obtainedMarks: param.mark,
-  //               });
-  //             } else {
-  //               extra.obtainedMarks = param.mark;
-  //             }
-
-  //             await this.extraParametersMarks.save(extra);
-  //           }),
-  //         );
-  //       }
-  //     }),
-  //   );
-  //   return true;
-  // }
 
   async addMarks(addMarksDto: AddMarksDTO) {
     const { studentId, semester, examTerm, marks } = addMarksDto;
@@ -217,5 +175,60 @@ export class ResultService {
     ]));
   }
 
-  async getFinalizedResult() {}
+  async getFinalizedResult(resultDto: ResultDto) {
+    const student = await this.studentService.findStudentById(
+      resultDto.studentId,
+    );
+    if (!student)
+      throw new NotFoundException(
+        `Student with id: ${resultDto.studentId} does not exists.`,
+      );
+
+    const programId = student.programId;
+
+    const allSemesterSubjects: SubjectInternalResponse[] =
+      await this.subjectService.getSubjectsInternal({ programId });
+
+    const result = await this.getMarks({ studentId: resultDto.studentId });
+    return { result };
+
+    //fetch all subjects that belong to particular student ->programID , using currentSemester ---
+    //fetch all marks below the currentsemester
+
+    //semesters is get from the
+
+    /*response:[
+    {
+      semester:1,
+      obtained:12,
+      total:100,
+      math: 80,
+      science:12,
+      gpa: 2.5
+      createdAt:first term any result date ---differentiate date by fall or spring
+    },
+
+    ]
+
+
+
+    now in the result service, there is method called getFinalizedResult, also there is commented code to get the result as required so , implement so that i can get result like that,  and formula to get is is  in the studentmarks table there is total mark , and obtained marks, and in extra param mark there is also obtained and total for each subject. by combining both the obtained should be out of 100 combining all the extra parameter marks and actual subject obtained marks. 
+
+
+note the  extra parameter marks contain 50 weight no matter how many parameters are assigned, and obtained will have 50 as full, so 
+
+if 1 subject have 5 param then 
+
+
+
+
+
+one more addition, we should enforce only the eval param that wil give the 50 marks as total no more, and the rest 50 marks is given by the subject marks table, so 
+
+
+    
+    */
+
+    return {};
+  }
 }

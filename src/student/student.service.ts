@@ -13,11 +13,19 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Student } from 'src/database/entities/student.entity';
 import { Brackets, Repository } from 'typeorm';
 import { UserService } from 'src/user/user.service';
-import { StudentStatus, UserStatus, UserType } from 'utils/enums/general-enums';
-import { SelectQueryBuilder } from 'typeorm/browser';
+import {
+  statusLabels,
+  StudentStatus,
+  UserStatus,
+  UserType,
+} from 'utils/enums/general-enums';
+import { SelectQueryBuilder } from 'typeorm';
 import { UserSync } from 'src/user/interfaces/user-interface';
 import { User } from 'src/database/entities/user.entity';
 import { mapStudentUserStatus } from 'utils/general-utils';
+import * as ExcelJS from 'exceljs';
+import type { Response } from 'express';
+import { join } from 'path';
 
 @Injectable()
 export class StudentService {
@@ -146,7 +154,7 @@ export class StudentService {
     id: number,
     updateStudentDto: UpdateStudentDto,
   ): Promise<Boolean> {
-    const student = await this.studentRepo.findOne({ where: { id } });
+    const student = await this.findStudentById(id);
     if (!student) {
       throw new NotFoundException({
         status: 'false',
@@ -189,7 +197,7 @@ export class StudentService {
   }
 
   async remove(id: number): Promise<Boolean> {
-    const student = await this.studentRepo.findOne({ where: { id } });
+    const student = await this.findStudentById(id);
     if (!student)
       throw new NotFoundException({
         status: 'false',
@@ -201,6 +209,10 @@ export class StudentService {
       await this.userService.removeUser(student.userId);
     }
     return !!(await this.studentRepo.softRemove(student));
+  }
+
+  async findStudentById(id: number): Promise<Student | null> {
+    return await this.studentRepo.findOne({ where: { id } });
   }
 
   async validateStudentContact(data: {
@@ -357,5 +369,312 @@ export class StudentService {
       status: UserStatus.ACTIVE,
     };
     return await this.userService.createUser(userSync);
+  }
+
+  async generateExcelReport(
+    studentQueryDto: StudentQueryDto,
+    res: Response,
+  ): Promise<void> {
+    const { programId, currentSemester, status, ...filters } = studentQueryDto;
+
+    // Fetch students with filters
+    const query = this.studentRepo
+      .createQueryBuilder('student')
+      .innerJoinAndSelect('student.program', 'program');
+
+    const filteredQuery = this.applyFilters(query, filters);
+    filteredQuery.andWhere('student.deletedAt IS NULL');
+    filteredQuery.orderBy('student.firstName', 'ASC');
+
+    const students = await filteredQuery.getMany();
+
+    // Create workbook and worksheet
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'LMS System';
+    workbook.lastModifiedBy = 'LMS System';
+    workbook.created = new Date();
+    workbook.modified = new Date();
+
+    const worksheet = workbook.addWorksheet('Students Report', {
+      properties: { tabColor: { argb: 'FF244062' } },
+      pageSetup: { paperSize: 9, orientation: 'landscape' },
+    });
+
+    // Define columns
+    worksheet.columns = [
+      { header: 'ID', key: 'id', width: 10 },
+      { header: 'Full Name', key: 'name', width: 25 },
+      { header: 'Gender', key: 'gender', width: 10 },
+      { header: 'Email', key: 'email', width: 30 },
+      { header: 'Phone', key: 'phone', width: 15 },
+      { header: 'Roll No', key: 'rollNumber', width: 15 },
+      { header: 'Reg No', key: 'registrationNumber', width: 18 },
+      { header: 'Semester', key: 'semester', width: 10 },
+      { header: 'Address', key: 'address', width: 30 },
+      { header: 'Program', key: 'program', width: 20 },
+      { header: 'Status', key: 'status', width: 12 },
+    ];
+
+    const lastCol = 'K'; // 11 columns (A to K)
+    let currentRow = 1;
+
+    // ================= HEADER SECTION WITH LOGO =================
+    // Use 8 rows for header (logo at top, text at bottom)
+    const headerRows = 8;
+    worksheet.mergeCells(
+      `A${currentRow}:${lastCol}${currentRow + headerRows - 1}`,
+    );
+    const headerCell = worksheet.getCell(`A${currentRow}`);
+
+    // Style the header background
+    headerCell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF1A4B7A' }, // Deep blue background
+    };
+
+    headerCell.border = {
+      top: { style: 'medium', color: { argb: 'FF0A192F' } },
+      left: { style: 'medium', color: { argb: 'FF0A192F' } },
+      bottom: { style: 'medium', color: { argb: 'FF0A192F' } },
+      right: { style: 'medium', color: { argb: 'FF0A192F' } },
+    };
+
+    // Add logo from file - FIXED: Better positioning for circular logo
+    const logoPath = join(process.cwd(), 'src', 'assets', 'lms-logo.png');
+    const fs = require('fs');
+
+    if (fs.existsSync(logoPath)) {
+      const logoImageId = workbook.addImage({
+        filename: logoPath,
+        extension: 'png',
+      });
+
+      // FIXED: Position logo exactly as in the image - top center with proper sizing
+      // Using row 0.5 to place it at the top with some padding
+      // Using 100x100 to maintain aspect ratio and make it appear round
+      worksheet.addImage(logoImageId, {
+        tl: { col: 5.2, row: 0.8 }, // Centered horizontally, slightly adjusted
+        ext: { width: 100, height: 100 }, // Square dimensions for circular logo
+        editAs: 'oneCell',
+      });
+    }
+
+    // Build header text exactly as shown in the image
+    let headerText = 'RESULT PROCESSING SYSTEM - LMS';
+    if (programId && students.length > 0 && students[0].program) {
+      headerText += `\n${students[0].program.name}`;
+    }
+    if (currentSemester) {
+      headerText += `\nSemester ${currentSemester}`; // FIXED: Format as "Semester X" to match image
+    }
+
+    // Use statusLabels for status text
+    const statusText =
+      status && statusLabels[status] ? statusLabels[status] : '';
+    headerText += `\n${statusText} Student Report`; // FIXED: Removed extra space
+
+    headerCell.value = headerText;
+    headerCell.font = {
+      name: 'Calibri',
+      size: 20,
+      bold: true,
+      color: { argb: 'FFFFFFFF' }, // White text
+    };
+    headerCell.alignment = {
+      horizontal: 'center',
+      vertical: 'bottom', // Align text to bottom of merged cell
+      wrapText: true,
+    };
+
+    // Move past header
+    currentRow += headerRows;
+
+    // ================= ADD SPACE GAP (3 blank rows) =================
+    // This creates the gap between header text and table header - EXACTLY as in image
+    for (let i = 0; i < 3; i++) {
+      const blankRow = worksheet.getRow(currentRow);
+      blankRow.height = 20;
+      currentRow++;
+    }
+
+    // ================= TABLE HEADER =================
+    const headerRow = worksheet.getRow(currentRow);
+    headerRow.values = worksheet.columns.map((col) => col.header as string);
+    headerRow.height = 30;
+
+    headerRow.eachCell((cell) => {
+      cell.font = {
+        bold: true,
+        size: 12,
+        color: { argb: 'FFFFFFFF' },
+        name: 'Calibri',
+      };
+      cell.alignment = {
+        horizontal: 'center',
+        vertical: 'middle',
+        wrapText: true,
+      };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF244062' },
+      };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FF000000' } },
+        left: { style: 'thin', color: { argb: 'FF000000' } },
+        bottom: { style: 'thin', color: { argb: 'FF000000' } },
+        right: { style: 'thin', color: { argb: 'FF000000' } },
+      };
+    });
+
+    const tableStartRow = currentRow;
+    currentRow++;
+
+    // ================= DATA ROWS =================
+    if (students.length === 0) {
+      const noDataRow = worksheet.getRow(currentRow);
+      noDataRow.getCell(1).value = 'No students found matching the criteria';
+      worksheet.mergeCells(`A${currentRow}:${lastCol}${currentRow}`);
+      noDataRow.getCell(1).alignment = {
+        horizontal: 'center',
+        vertical: 'middle',
+      };
+      noDataRow.getCell(1).font = { italic: true, color: { argb: 'FFFF0000' } };
+      currentRow++;
+    } else {
+      students.forEach((student, index) => {
+        const row = worksheet.getRow(currentRow);
+
+        row.getCell(1).value = student.id;
+        row.getCell(2).value =
+          `${student.firstName || ''} ${student.lastName || ''}`.trim();
+        row.getCell(3).value = student.gender || 'N/A';
+        row.getCell(4).value = student.email || 'N/A';
+        row.getCell(5).value = student.phone || 'N/A';
+        row.getCell(6).value = student.rollNumber || 'N/A';
+        row.getCell(7).value = student.registrationNumber || 'N/A';
+        row.getCell(8).value = student.currentSemester?.toString() || 'N/A';
+
+        // FIXED: Format address to match the image style (Country, City format)
+        const address = [student.address2, student.address1]
+          .filter((addr) => addr && addr.trim() !== '')
+          .join(', ');
+        row.getCell(9).value = address || 'N/A';
+
+        row.getCell(10).value = student.program?.name || 'N/A';
+
+        // Use statusLabels for status display in data rows
+        const statusDisplay =
+          student.status && statusLabels[student.status]
+            ? statusLabels[student.status]
+            : student.status || 'N/A';
+        row.getCell(11).value = statusDisplay;
+
+        row.height = 22;
+
+        for (let i = 1; i <= 11; i++) {
+          const cell = row.getCell(i);
+
+          if (i === 1 || i === 3 || i === 8) {
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+          } else {
+            cell.alignment = { horizontal: 'left', vertical: 'middle' };
+          }
+
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+            left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+            bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+            right: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+          };
+
+          if (index % 2 === 0) {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFF8F9FA' },
+            };
+          } else {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFFFFFFF' },
+            };
+          }
+        }
+
+        currentRow++;
+      });
+    }
+
+    // ================= SUMMARY ROW =================
+    const summaryRow = worksheet.getRow(currentRow);
+    summaryRow.getCell(1).value = `Total Students: ${students.length}`;
+    worksheet.mergeCells(`A${currentRow}:C${currentRow}`);
+    summaryRow.getCell(1).font = {
+      bold: true,
+      size: 11,
+      color: { argb: 'FF1A4B7A' },
+    };
+    summaryRow.getCell(1).alignment = { horizontal: 'left' };
+
+    // FIXED: Format date exactly as in image (MM/DD/YYYY, HH:MM:SS AM/PM)
+    const now = new Date();
+    const formattedDate = now.toLocaleDateString('en-US', {
+      month: '2-digit',
+      day: '2-digit',
+      year: 'numeric',
+    });
+    const formattedTime = now.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    });
+
+    const dateCell = summaryRow.getCell(11);
+    dateCell.value = `Generated: ${formattedDate}, ${formattedTime}`;
+    dateCell.font = { italic: true, size: 10, color: { argb: 'FF666666' } };
+    dateCell.alignment = { horizontal: 'right' };
+
+    for (let i = 1; i <= 11; i++) {
+      const cell = summaryRow.getCell(i);
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFF0F7FF' },
+      };
+    }
+
+    // ================= FREEZE PANE =================
+    worksheet.views = [
+      {
+        state: 'frozen',
+        xSplit: 0,
+        ySplit: tableStartRow,
+        activeCell: 'A2',
+      },
+    ];
+
+    // ================= AUTO FILTER =================
+    worksheet.autoFilter = {
+      from: { row: tableStartRow, column: 1 },
+      to: { row: tableStartRow, column: 11 },
+    };
+
+    // ================= RESPONSE HEADERS =================
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=students_report_${Date.now()}.xlsx`,
+    );
+
+    // ================= WRITE FILE =================
+    await workbook.xlsx.write(res);
+    res.end();
   }
 }

@@ -28,3 +28,14 @@ export interface SubjectTeacher {
   subjectId?: number;
   status?: SubjectTeacherStatus;
 }
+
+export interface SubjectInternal {
+  semester?: number;
+  programId: number;
+}
+
+export interface SubjectInternalResponse {
+  id?: number;
+  name?: string;
+  code?: string;
+}

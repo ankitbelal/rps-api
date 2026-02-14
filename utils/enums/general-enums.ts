@@ -31,3 +31,9 @@ export enum ExamTerm {
   FIRST = 'F',
   SECOND = 'S',
 }
+
+export const statusLabels: Record<StudentStatus, string> = {
+  [StudentStatus.ACTIVE]: 'Active',
+  [StudentStatus.PASSED]: 'Passed',
+  [StudentStatus.SUSPENDED]: 'Suspended',
+};

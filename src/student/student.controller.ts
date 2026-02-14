@@ -8,12 +8,15 @@ import {
   Delete,
   HttpCode,
   Query,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 
 import { StudentService } from './student.service';
 import { CreateStudentDto, StudentQueryDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { ApiResponse } from 'utils/api-response';
+import { Public } from 'src/auth/jwt/public.decorator';
 
 @Controller('students')
 export class StudentController {
@@ -35,6 +38,15 @@ export class StudentController {
       'Students fetched succcessfully.',
       200,
     );
+  }
+
+  @Public()
+  @Get('report')
+  async downloadReport(
+    @Query() studentQueryDto: StudentQueryDto,
+    @Res() res: Response,
+  ) {
+    return await this.studentService.generateExcelReport(studentQueryDto, res);
   }
 
   @Patch(':id')

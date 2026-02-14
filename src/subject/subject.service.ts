@@ -14,6 +14,8 @@ import {
 } from './dto/subject-query-dto';
 import { SelectQueryBuilder } from 'typeorm/browser';
 import {
+  SubjectInternal,
+  SubjectInternalResponse,
   SubjectResponse,
   SubjectTeacher,
 } from './interfaces/subject.interface';
@@ -32,7 +34,6 @@ export class SubjectService {
     private readonly subjectTeacherRepo: Repository<SubjectTeachers>,
 
     private readonly evaluationParameterService: EvaluationParametersService,
-    // private readonly resultService: ResultService,
   ) {}
 
   async create(createSubjectDto: CreateSubjectDto): Promise<Boolean> {
@@ -400,5 +401,16 @@ export class SubjectService {
     return {
       data: subjectsWithParams,
     };
+  }
+
+  async getSubjectsInternal(
+    subjectFilter: SubjectInternal,
+  ): Promise<SubjectInternalResponse[]> {
+    const { programId } = subjectFilter;
+    return await this.subjectRepo.find({
+      where: { programId },
+      select: ['id', 'name', 'code'],
+      order: { semester: 'DESC' },
+    });
   }
 }

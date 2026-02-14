@@ -13,9 +13,8 @@ import {
   DeleteDateColumn,
 } from 'typeorm';
 import { StudentSubjectMarks } from './student-marks.entity';
-import { Status, StudentAttendance } from './student-attendance.entity';
+import { StudentAttendance } from './student-attendance.entity';
 import { Gender, StudentStatus } from 'utils/enums/general-enums';
-import { timestamp } from 'rxjs';
 import { ExtraParametersMarks } from './extra-parameters-marks.entity';
 
 @Entity('students')
