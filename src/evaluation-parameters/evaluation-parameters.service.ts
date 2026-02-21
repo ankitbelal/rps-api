@@ -60,15 +60,17 @@ export class EvaluationParametersService {
     const query =
       this.evaluationParamRepository.createQueryBuilder('parameter');
 
-    if (filters?.name)
-      query.andWhere('parameter.name LIKE :name', {
-        name: `%${filters.name}%`,
-      });
-
-    if (filters?.code)
-      query.andWhere('parameter.code = :code', {
-        code: filters.code,
-      });
+    if (filters?.search) {
+      query.andWhere(
+        new Brackets((qb) => {
+          qb.where('parameter.name LIKE :search', {
+            search: `%${filters.search}%`,
+          }).orWhere('parameter.code LIKE :search', {
+            search: `%${filters.search}%`,
+          });
+        }),
+      );
+    }
 
     query.select(EvaluationParameter.ALLOWED_FIELDS_LIST);
     query.skip((page - 1) * limit).take(limit);

@@ -16,10 +16,7 @@ export class UpdateEvaluationParamDto extends PartialType(
 
 export class EvaluationParamQueryDto {
   @IsOptional()
-  code?: string;
-
-  @IsOptional()
-  name?: string;
+  search?: string;
 
   @IsOptional()
   @IsNumber()
