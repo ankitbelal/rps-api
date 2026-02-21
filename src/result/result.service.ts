@@ -191,6 +191,14 @@ export class ResultService {
     return 0.0;
   }
 
+  private calculateGrade(gpa: number): string {
+    switch (gpa) {
+      case 4:
+        return 'A';
+    }
+    return '';
+  }
+
   // ─── CORE CALCULATION (reusable private method) ─────────────────────
 
   private async calculateResult(
@@ -352,12 +360,18 @@ export class ResultService {
       );
 
     const finalPercentage = parseFloat(
-      ((firstTerm.percentage + secondTerm.percentage) / 2).toFixed(2),
+      (
+        (Number(firstTerm.percentage) + Number(secondTerm.percentage)) /
+        2
+      ).toFixed(2),
     );
     const finalTotalObtained = parseFloat(
-      ((firstTerm.totalObtained + secondTerm.totalObtained) / 2).toFixed(2),
+      (
+        (Number(firstTerm.totalObtained) + Number(secondTerm.totalObtained)) /
+        2
+      ).toFixed(2),
     );
-    const finalTotalFull = firstTerm.totalFull;
+    const finalTotalFull = Number(firstTerm.totalFull);
 
     const subjectBreakdown = firstTerm.subjectBreakdown.map((fs) => {
       const ss = secondTerm.subjectBreakdown.find(
@@ -367,15 +381,17 @@ export class ResultService {
         subjectId: fs.subjectId,
         subjectName: fs.subjectName,
         subjectCode: fs.subjectCode,
-        firstTermMark: fs.finalMarkOutOf100,
-        secondTermMark: ss?.finalMarkOutOf100 ?? 0,
+        firstTermMark: Number(fs.finalMarkOutOf100),
+        secondTermMark: Number(ss?.finalMarkOutOf100 ?? 0),
         finalMarkOutOf100: parseFloat(
-          ((fs.finalMarkOutOf100 + (ss?.finalMarkOutOf100 ?? 0)) / 2).toFixed(
-            2,
-          ),
+          (
+            (Number(fs.finalMarkOutOf100) +
+              Number(ss?.finalMarkOutOf100 ?? 0)) /
+            2
+          ).toFixed(2),
         ),
-        subjectObtainedOutOf50: fs.subjectObtainedOutOf50,
-        extraParamObtainedOutOf50: fs.extraParamObtainedOutOf50,
+        subjectObtainedOutOf50: Number(fs.subjectObtainedOutOf50),
+        extraParamObtainedOutOf50: Number(fs.extraParamObtainedOutOf50),
       };
     });
 

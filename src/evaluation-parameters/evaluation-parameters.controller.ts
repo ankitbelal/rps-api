@@ -48,7 +48,7 @@ export class EvaluationParametersController {
   }
 
   @HttpCode(200)
-  @Delete()
+  @Delete(':id')
   async remove(@Param('id') id: string) {
     await this.evaluationParameterService.remove(+id);
     return ApiResponse.success('Parameter removed successfully.', 200);
