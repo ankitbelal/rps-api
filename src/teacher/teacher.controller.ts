@@ -21,7 +21,6 @@ import {
   UpdateTeacherDto,
 } from './dto/teacher.dto';
 import { ApiResponse } from 'utils/api-response';
-import { Public } from 'src/auth/jwt/public.decorator';
 
 @Controller('teacher')
 export class TeacherController {

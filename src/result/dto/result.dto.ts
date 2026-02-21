@@ -6,3 +6,5 @@ export class ResultDto {
   @Type(() => Number)
   studentId: number;
 }
+
+

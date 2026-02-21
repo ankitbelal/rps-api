@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { CreateSubjectDto } from './dto/create-subject.dto';
 import { UpdateSubjectDto } from './dto/update-subject.dto';
-import { Brackets, In, Repository } from 'typeorm';
+import { Brackets, In, LessThanOrEqual, Repository } from 'typeorm';
 import { Subject } from '../database/entities/subject.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
@@ -406,11 +406,17 @@ export class SubjectService {
   async getSubjectsInternal(
     subjectFilter: SubjectInternal,
   ): Promise<SubjectInternalResponse[]> {
-    const { programId } = subjectFilter;
+    const { programId, semester } = subjectFilter;
+
+    const whereCondition: any = { programId };
+    if (semester) {
+      whereCondition.semester = LessThanOrEqual(semester);
+    }
+
     return await this.subjectRepo.find({
-      where: { programId },
-      select: ['id', 'name', 'code'],
-      order: { semester: 'DESC' },
+      where: whereCondition,
+      select: ['id', 'name', 'code', 'semester'], // semester added
+      order: { semester: 'ASC' },
     });
   }
 }

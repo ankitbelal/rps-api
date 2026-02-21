@@ -74,15 +74,18 @@ export class CreateStudentDto {
 }
 
 export class StudentQueryDto {
+
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
-  id: number;
+  id?: number;
 
   @IsOptional()
-  programId: string;
+  @Type(() => Number)
+  programId?: number;
 
   @IsOptional()
+  @Type(() => Number)
   currentSemester?: number;
 
   @IsOptional()

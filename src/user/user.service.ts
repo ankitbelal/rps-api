@@ -231,4 +231,10 @@ export class UserService {
   async removeUser(id: number): Promise<boolean> {
     return !!(await this.userRepo.delete(id));
   }
+
+  async findUserById(id: number): Promise<User | null> {
+    const user = await this.userRepo.findOne({ where: { id } });
+    if (user) return user;
+    return null;
+  }
 }

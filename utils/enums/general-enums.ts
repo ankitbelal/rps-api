@@ -30,6 +30,7 @@ export enum SubjectTeacherStatus {
 export enum ExamTerm {
   FIRST = 'F',
   SECOND = 'S',
+  FINAL = 'FINAL',
 }
 
 export const statusLabels: Record<StudentStatus, string> = {

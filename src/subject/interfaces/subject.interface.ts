@@ -33,9 +33,9 @@ export interface SubjectInternal {
   semester?: number;
   programId: number;
 }
-
 export interface SubjectInternalResponse {
   id?: number;
   name?: string;
   code?: string;
+  semester?: number;
 }

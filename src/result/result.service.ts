@@ -6,8 +6,10 @@ import { Repository } from 'typeorm';
 import { AddMarksDTO, MarkFetchQueryDto } from './dto/marks.dto';
 import { SubjectService } from 'src/subject/subject.service';
 import { StudentService } from 'src/student/student.service';
-import { ResultDto } from './dto/result.dto';
-import { SubjectInternalResponse } from 'src/subject/interfaces/subject.interface';
+import { ExamTerm } from 'utils/enums/general-enums';
+import { PublishedResult } from 'src/database/entities/published-result.entity';
+import { StudentQueryDto } from 'src/student/dto/create-student.dto';
+import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class ResultService {
@@ -18,8 +20,12 @@ export class ResultService {
     @InjectRepository(ExtraParametersMarks)
     private readonly extraParametersMarks: Repository<ExtraParametersMarks>,
 
+    @InjectRepository(PublishedResult)
+    private readonly publishedResultRepo: Repository<PublishedResult>,
+
     private readonly subjectService: SubjectService,
     private readonly studentService: StudentService,
+    private readonly userService: UserService,
   ) {}
 
   async getMarks(
@@ -31,7 +37,7 @@ export class ResultService {
       .createQueryBuilder('sm')
       .where('sm.student_id = :studentId', { studentId });
 
-    const query2 = await this.extraParametersMarks
+    const query2 = this.extraParametersMarks
       .createQueryBuilder('ep')
       .where('ep.student_id = :studentId', { studentId });
 
@@ -175,60 +181,265 @@ export class ResultService {
     ]));
   }
 
-  async getFinalizedResult(resultDto: ResultDto) {
-    const student = await this.studentService.findStudentById(
-      resultDto.studentId,
-    );
-    if (!student)
-      throw new NotFoundException(
-        `Student with id: ${resultDto.studentId} does not exists.`,
+  private calculateGPA(percentage: number): number {
+    if (percentage >= 90) return 4.0;
+    if (percentage >= 80) return 3.7;
+    if (percentage >= 70) return 3.3;
+    if (percentage >= 60) return 3.0;
+    if (percentage >= 50) return 2.0;
+    if (percentage >= 40) return 1.0;
+    return 0.0;
+  }
+
+  // ─── CORE CALCULATION (reusable private method) ─────────────────────
+
+  private async calculateResult(
+    studentId: number,
+    programId: number,
+    semester: number,
+    examTerm: ExamTerm,
+  ) {
+    // fetch subjects for this specific semester only
+    const subjects = await this.subjectService.getSubjectsInternal({
+      programId,
+      semester,
+    });
+
+    // fetch marks filtered by semester AND examTerm
+    const [subjectMarks, extraMarks] = await Promise.all([
+      this.studentSubjectMarks.find({
+        where: { studentId, semester, examTerm },
+      }),
+      this.extraParametersMarks.find({
+        where: { studentId, semester, examTerm },
+      }),
+    ]);
+
+    const subjectBreakdown: PublishedResult['subjectBreakdown'] = [];
+
+    for (const subject of subjects) {
+      const subjectMark = subjectMarks.find(
+        (sm) => sm.subjectId === subject.id,
       );
 
-    const programId = student.programId;
+      let subjectObtainedOutOf50 = 0;
+      if (subjectMark && subjectMark.fullMarks) {
+        subjectObtainedOutOf50 =
+          (Number(subjectMark.obtainedMarks) / Number(subjectMark.fullMarks)) *
+          50;
+      }
 
-    const allSemesterSubjects: SubjectInternalResponse[] =
-      await this.subjectService.getSubjectsInternal({ programId });
+      const subjectExtraMarks = extraMarks.filter(
+        (ep) => ep.subjectId === subject.id,
+      );
 
-    const result = await this.getMarks({ studentId: resultDto.studentId });
-    return { result };
+      const extraObtained = subjectExtraMarks.reduce(
+        (sum, ep) => sum + Number(ep.obtainedMarks),
+        0,
+      );
 
-    //fetch all subjects that belong to particular student ->programID , using currentSemester ---
-    //fetch all marks below the currentsemester
+      const finalMarkOutOf100 = subjectObtainedOutOf50 + extraObtained;
 
-    //semesters is get from the
+      subjectBreakdown.push({
+        subjectId: subject.id!,
+        subjectName: subject.name!,
+        subjectCode: subject.code!,
+        subjectObtainedOutOf50: parseFloat(subjectObtainedOutOf50.toFixed(2)),
+        extraParamObtainedOutOf50: parseFloat(extraObtained.toFixed(2)),
+        finalMarkOutOf100: parseFloat(finalMarkOutOf100.toFixed(2)),
+      });
+    }
 
-    /*response:[
-    {
-      semester:1,
-      obtained:12,
-      total:100,
-      math: 80,
-      science:12,
-      gpa: 2.5
-      createdAt:first term any result date ---differentiate date by fall or spring
-    },
+    const totalObtained = subjectBreakdown.reduce(
+      (sum, s) => sum + s.finalMarkOutOf100,
+      0,
+    );
+    const totalFull = subjectBreakdown.length * 100;
+    const percentage =
+      totalFull > 0
+        ? parseFloat(((totalObtained / totalFull) * 100).toFixed(2))
+        : 0;
 
-    ]
+    return {
+      subjectBreakdown,
+      totalObtained: parseFloat(totalObtained.toFixed(2)),
+      totalFull,
+      percentage,
+      gpa: this.calculateGPA(percentage),
+    };
+  }
 
+  // ─── PUBLISH SINGLE ─────────────────────────────────────────
+  async publishSingle(
+    studentId: number,
+    semester: number,
+    examTerm: ExamTerm,
+    publishedBy: number,
+  ): Promise<boolean> {
+    const student = await this.studentService.findStudentById(studentId);
+    if (!student)
+      throw new NotFoundException(
+        `Student with id: ${studentId} does not exist.`,
+      );
 
+    const calculated = await this.calculateResult(
+      studentId,
+      student.programId,
+      semester,
+      examTerm,
+    );
 
-    now in the result service, there is method called getFinalizedResult, also there is commented code to get the result as required so , implement so that i can get result like that,  and formula to get is is  in the studentmarks table there is total mark , and obtained marks, and in extra param mark there is also obtained and total for each subject. by combining both the obtained should be out of 100 combining all the extra parameter marks and actual subject obtained marks. 
+    await this.publishedResultRepo.upsert(
+      {
+        studentId,
+        programId: student.programId,
+        semester,
+        examTerm,
+        publishedBy: await this.getUserName(publishedBy),
+        ...calculated,
+      },
+      ['studentId', 'semester', 'examTerm'],
+    );
 
+    return true;
+  }
 
-note the  extra parameter marks contain 50 weight no matter how many parameters are assigned, and obtained will have 50 as full, so 
+  // ─── PUBLISH BULK ────────────────────────────────────────────
+  async publishBulk(
+    programId: number,
+    semester: number,
+    examTerm: ExamTerm,
+    publishedBy: number, // ← add
+  ): Promise<boolean> {
+    const students = await this.studentService.findAll({
+      programId: programId,
+      currentSemester: semester,
+      limit: 1000,
+    });
 
-if 1 subject have 5 param then 
+    for (const student of students.data) {
+      try {
+        await this.publishSingle(student.id, semester, examTerm, publishedBy);
+      } catch (e) {}
+    }
 
+    return true;
+  }
 
+  // ─── FINALIZE SINGLE ─────────────────────────────────────────
+  async finalizeSingle(
+    studentId: number,
+    semester: number,
+    publishedBy: number,
+  ): Promise<boolean> {
+    const [firstTerm, secondTerm] = await Promise.all([
+      this.publishedResultRepo.findOne({
+        where: { studentId, semester, examTerm: ExamTerm.FIRST },
+      }),
+      this.publishedResultRepo.findOne({
+        where: { studentId, semester, examTerm: ExamTerm.SECOND },
+      }),
+    ]);
 
+    if (!firstTerm)
+      throw new NotFoundException(
+        `First term result not published yet for student: ${studentId}`,
+      );
 
+    if (!secondTerm)
+      throw new NotFoundException(
+        `Second term result not published yet for student: ${studentId}`,
+      );
 
-one more addition, we should enforce only the eval param that wil give the 50 marks as total no more, and the rest 50 marks is given by the subject marks table, so 
+    const finalPercentage = parseFloat(
+      ((firstTerm.percentage + secondTerm.percentage) / 2).toFixed(2),
+    );
+    const finalTotalObtained = parseFloat(
+      ((firstTerm.totalObtained + secondTerm.totalObtained) / 2).toFixed(2),
+    );
+    const finalTotalFull = firstTerm.totalFull;
 
+    const subjectBreakdown = firstTerm.subjectBreakdown.map((fs) => {
+      const ss = secondTerm.subjectBreakdown.find(
+        (s) => s.subjectId === fs.subjectId,
+      );
+      return {
+        subjectId: fs.subjectId,
+        subjectName: fs.subjectName,
+        subjectCode: fs.subjectCode,
+        firstTermMark: fs.finalMarkOutOf100,
+        secondTermMark: ss?.finalMarkOutOf100 ?? 0,
+        finalMarkOutOf100: parseFloat(
+          ((fs.finalMarkOutOf100 + (ss?.finalMarkOutOf100 ?? 0)) / 2).toFixed(
+            2,
+          ),
+        ),
+        subjectObtainedOutOf50: fs.subjectObtainedOutOf50,
+        extraParamObtainedOutOf50: fs.extraParamObtainedOutOf50,
+      };
+    });
 
-    
-    */
+    await this.publishedResultRepo.upsert(
+      {
+        studentId,
+        programId: firstTerm.programId,
+        semester,
+        examTerm: ExamTerm.FINAL,
+        totalObtained: finalTotalObtained,
+        totalFull: finalTotalFull,
+        percentage: finalPercentage,
+        gpa: this.calculateGPA(finalPercentage),
+        subjectBreakdown,
+        publishedBy: await this.getUserName(publishedBy),
+      },
+      ['studentId', 'semester', 'examTerm'],
+    );
 
-    return {};
+    return true;
+  }
+
+  // ─── FINALIZE BULK ───────────────────────────────────────────
+  async finalizeBulk(
+    programId: number,
+    semester: number,
+    publishedBy: number, // ← add
+  ): Promise<boolean> {
+    const studentFetchData: StudentQueryDto = {
+      programId: programId,
+      currentSemester: semester,
+      page: 1,
+      limit: 10000,
+    };
+    const students = await this.studentService.findAll(studentFetchData);
+
+    for (const student of students.data) {
+      try {
+        await this.finalizeSingle(student.id, semester, publishedBy);
+      } catch (e) {}
+    }
+
+    return true;
+  }
+
+  // ─── GET PUBLISHED RESULT ────────────────────────────────────────────
+
+  async getPublishedResult(
+    studentId: number,
+    examTerm?: ExamTerm,
+    semester?: number,
+  ): Promise<PublishedResult[]> {
+    const where: any = { studentId };
+    if (examTerm) where.examTerm = examTerm;
+    if (semester) where.semester = semester;
+
+    return await this.publishedResultRepo.find({
+      where,
+      order: { semester: 'ASC' },
+    });
+  }
+
+  private async getUserName(userId: number) {
+    const user = await this.userService.findUserById(userId);
+    return user?.name;
   }
 }

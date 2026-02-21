@@ -14,6 +14,7 @@ import { ExtraParametersMarks } from './entities/extra-parameters-marks.entity';
 import { AuditTrails } from './entities/audit-trails.entity';
 import { AdminUsers } from './entities/admin-users.entity';
 import { SubjectTeachers } from './entities/subject-teacher.entity';
+import { PublishedResult } from './entities/published-result.entity';
 export const entities = [
   User,
   UserActivity,
@@ -31,4 +32,5 @@ export const entities = [
   ExtraParametersMarks,
   AuditTrails,
   AdminUsers,
+  PublishedResult,
 ];
