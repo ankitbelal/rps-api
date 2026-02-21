@@ -11,7 +11,6 @@ import {
   CreateEvaluationParamDto,
   EvaluationParamQueryDto,
   ParameterListingQuery,
-  UpdateEvaluationParamDto,
 } from './dto/evaluation-parameters.dto';
 import { AssignSubjectEvaluationParamsDto } from './dto/subject-evaluation-parameters.dto';
 import { EvaluationParameterListing } from './interfaces/evaluation-parameter.interface';
@@ -28,19 +27,27 @@ export class EvaluationParametersService {
 
   async createEvaluationParameters(
     createEvaluationParamDto: CreateEvaluationParamDto,
-  ): Promise<Boolean> {
-    const exists = await this.checkDuplicate(createEvaluationParamDto.code);
-    if (exists)
+  ): Promise<boolean> {
+    const existing = await this.checkDuplicate(createEvaluationParamDto.code);
+
+    if (existing && !existing.deletedAt) {
       throw new ConflictException(
         `Parameter already exists for Code: ${createEvaluationParamDto.code}.`,
       );
-    const evaluationParam = this.evaluationParamRepository.create(
-      createEvaluationParamDto,
-    );
-    return !!(await this.evaluationParamRepository.save(evaluationParam));
+    }
+    
+    if (existing && existing.deletedAt) {
+      await this.evaluationParamRepository.restore(existing.id);
+      Object.assign(existing, createEvaluationParamDto);
+      return !!(await this.evaluationParamRepository.save(existing));
+    }
+
+    return !!(await this.evaluationParamRepository.save(
+      this.evaluationParamRepository.create(createEvaluationParamDto),
+    ));
   }
 
-  async remove(id: number): Promise<Boolean> {
+  async remove(id: number): Promise<boolean> {
     const evaluationParam = await this.evaluationParamRepository.findOne({
       where: { id },
     });
@@ -79,33 +86,6 @@ export class EvaluationParametersService {
     const lastPage = Math.ceil(total / limit);
 
     return { data, total, page, limit, lastPage };
-  }
-
-  async update(
-    id: number,
-    updateEvaluationParamDto: UpdateEvaluationParamDto,
-  ): Promise<Boolean> {
-    const parameter = await this.evaluationParamRepository.findOne({
-      where: { id },
-    });
-    if (!parameter)
-      throw new NotFoundException(`Parameter with id: ${id} doesn't exists.`);
-
-    if (
-      updateEvaluationParamDto.code &&
-      updateEvaluationParamDto.code !== parameter.code
-    ) {
-      const exists = await this.checkDuplicate(updateEvaluationParamDto.code);
-
-      if (exists) {
-        throw new ConflictException(
-          `Parameter with code: ${updateEvaluationParamDto.code} already exists.`,
-        );
-      }
-    }
-
-    Object.assign(parameter, updateEvaluationParamDto);
-    return !!(await this.evaluationParamRepository.save(parameter));
   }
 
   async getAllParameterList(
@@ -182,10 +162,11 @@ export class EvaluationParametersService {
     return { data };
   }
 
-  async checkDuplicate(code: string): Promise<Boolean> {
-    return !!(await this.evaluationParamRepository.findOne({
+  async checkDuplicate(code: string): Promise<EvaluationParameter | null> {
+    return await this.evaluationParamRepository.findOne({
       where: { code },
-    }));
+      withDeleted: true,
+    });
   }
 
   async assignSubjectEvaluationParams(
