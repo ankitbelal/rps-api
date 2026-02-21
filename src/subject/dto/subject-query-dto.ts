@@ -41,6 +41,10 @@ export class SubjectQueryDto {
 
   @IsOptional()
   search?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  userId?: number;
 }
 
 export class SubjectListingQueryDto {

@@ -89,6 +89,7 @@ export class Subject {
     'teacher.firstName',
     'teacher.lastName',
     'teacher.email',
+    'teacher.userId',
     'subject.createdAt',
   ];
 
@@ -107,6 +108,7 @@ export class Subject {
     'teacher.firstName',
     'teacher.lastName',
     'teacher.email',
+    'teacher.userId',
     'subject.createdAt',
   ];
 }

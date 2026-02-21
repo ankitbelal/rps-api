@@ -8,6 +8,7 @@ import {
   Delete,
   HttpCode,
   Query,
+  Req,
 } from '@nestjs/common';
 import { SubjectService } from './subject.service';
 import { CreateSubjectDto } from './dto/create-subject.dto';
@@ -32,8 +33,11 @@ export class SubjectController {
 
   @Get()
   @HttpCode(200)
-  async findAll(@Query() SubjectQueryDto: SubjectQueryDto) {
-    const subjects = await this.subjectService.findAll(SubjectQueryDto);
+  async findAll(@Query() SubjectQueryDto: SubjectQueryDto, @Req() req) {
+    const subjects = await this.subjectService.findAll({
+      ...SubjectQueryDto,
+      userId: req.user.userId,
+    });
     return ApiResponse.successData(
       subjects,
       'Subjects fetched successfully.',

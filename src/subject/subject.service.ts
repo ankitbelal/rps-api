@@ -20,9 +20,10 @@ import {
   SubjectTeacher,
 } from './interfaces/subject.interface';
 import { SubjectTeachers } from 'src/database/entities/subject-teacher.entity';
-import { SubjectTeacherStatus } from 'utils/enums/general-enums';
+import { SubjectTeacherStatus, UserType } from 'utils/enums/general-enums';
 import { AssignSubjectDto } from 'src/teacher/dto/teacher.dto';
 import { EvaluationParametersService } from 'src/evaluation-parameters/evaluation-parameters.service';
+import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class SubjectService {
@@ -34,6 +35,7 @@ export class SubjectService {
     private readonly subjectTeacherRepo: Repository<SubjectTeachers>,
 
     private readonly evaluationParameterService: EvaluationParametersService,
+    private readonly userService: UserService,
   ) {}
 
   async create(createSubjectDto: CreateSubjectDto): Promise<Boolean> {
@@ -81,6 +83,12 @@ export class SubjectService {
       )
       .leftJoin('st.teacher', 'teacher');
 
+    if (filters.userId) {
+      const user = await this.userService.findUserById(filters.userId);
+      if (user?.userType === UserType.TEACHER) {
+        query.andWhere('teacher.userId = :userId', { userId: filters.userId });
+      }
+    }
     if (filters?.id) {
       query.andWhere('subject.id = :id', { id: filters.id });
 
@@ -97,10 +105,10 @@ export class SubjectService {
     const filteredquery = this.applyFilters(query, filters);
     filteredquery.select(Subject.ALLOWED_FIELDS_LIST);
 
-    query.skip((page - 1) * limit).take(limit);
-    query.orderBy('subject.name', 'ASC');
-    const [data, total] = await query.getManyAndCount();
+    filteredquery.skip((page - 1) * limit).take(limit);
+    filteredquery.orderBy('subject.name', 'ASC');
 
+    const [data, total] = await filteredquery.getManyAndCount();
     const lastPage = Math.ceil(total / limit);
 
     return {
