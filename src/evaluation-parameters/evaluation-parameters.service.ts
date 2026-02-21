@@ -35,10 +35,10 @@ export class EvaluationParametersService {
         `Parameter already exists for Code: ${createEvaluationParamDto.code}.`,
       );
     }
-    
+
     if (existing && existing.deletedAt) {
-      await this.evaluationParamRepository.restore(existing.id);
       Object.assign(existing, createEvaluationParamDto);
+      existing.deletedAt = null;
       return !!(await this.evaluationParamRepository.save(existing));
     }
 

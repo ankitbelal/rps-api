@@ -42,7 +42,7 @@ export class EvaluationParameter {
   updatedAt: Date;
 
   @DeleteDateColumn({ name: 'deleted_at', type: 'timestamp', nullable: true })
-  deletedAt: Date;
+  deletedAt: Date | null;
 
   static readonly ALLOWED_FIELDS_LIST = [
     'parameter.id',
