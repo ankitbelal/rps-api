@@ -46,7 +46,7 @@ export class EvaluationParametersService {
     });
     if (!evaluationParam)
       throw new NotFoundException(`Parameter with id: ${id} doesn't exists.`);
-    return !!this.evaluationParamRepository.remove(evaluationParam);
+    return !!this.evaluationParamRepository.softRemove(evaluationParam);
   }
 
   async findAll(evaluationParamQueryDto: EvaluationParamQueryDto): Promise<{
@@ -71,7 +71,7 @@ export class EvaluationParametersService {
         }),
       );
     }
-
+    query.andWhere('parameter.deletedAt IS NULL');
     query.select(EvaluationParameter.ALLOWED_FIELDS_LIST);
     query.skip((page - 1) * limit).take(limit);
     query.orderBy('parameter.name', 'ASC');
