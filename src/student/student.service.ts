@@ -101,10 +101,9 @@ export class StudentService {
     //handle the query if fetched fromt the teacher dashboard
     if (filters.userId) {
       const user = await this.userService.findUserById(filters.userId);
-      if (user?.userType !== UserType.TEACHER) {
-        return { data: [], total: 0, page, lastPage: 0, limit };
+      if (user?.userType == UserType.TEACHER) {
+        await this.teacherWiseFilter(filters.userId, query);
       }
-      await this.teacherWiseFilter(filters.userId, query);
     }
 
     const filteredquery = this.applyFilters(query, filters);
