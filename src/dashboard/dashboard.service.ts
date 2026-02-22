@@ -45,7 +45,7 @@ export class DashboardService {
     const teacher = await this.teacherService.findTeacherByUserId(userId);
     const [subjects, assignedPrograms] = await Promise.all([
       this.subjectService.getSubjectCount(teacher?.id),
-      this.subjectService.getAssignedProgramAndSemester(userId), //intrnally find by userID map with teacher
+      this.subjectService.getAssignedProgramAndSemester(userId, 'dashboard'), //intrnally find by userID map with teacher
     ]);
     return { subjects, assignedPrograms };
   }

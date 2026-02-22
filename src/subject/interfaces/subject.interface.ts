@@ -39,3 +39,15 @@ export interface SubjectInternalResponse {
   code?: string;
   semester?: number;
 }
+
+export interface ProgramSemesterPair {
+  programId: number;
+  semester: number;
+}
+
+export interface ProgramSemesterDashboard {
+  programId: number;
+  programName: string;
+  programCode: string;
+  semesters: { semester: number; subjectCount: number }[];
+}

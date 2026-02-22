@@ -14,6 +14,8 @@ import {
 } from './dto/subject-query-dto';
 import { SelectQueryBuilder } from 'typeorm/browser';
 import {
+  ProgramSemesterDashboard,
+  ProgramSemesterPair,
   SubjectInternal,
   SubjectInternalResponse,
   SubjectResponse,
@@ -435,23 +437,61 @@ export class SubjectService {
 
   async getAssignedProgramAndSemester(
     userId: number,
-  ): Promise<{ programId: number; semester: number }[]> {
-    const results = await this.subjectRepo
+    type?: string,
+  ): Promise<ProgramSemesterPair[] | ProgramSemesterDashboard[]> {
+    const baseQuery = this.subjectRepo
       .createQueryBuilder('subject')
       .innerJoin('subject.subjectTeacher', 'st')
       .innerJoin('subject.program', 'program')
       .innerJoin('st.teacher', 'teacher')
       .where('teacher.userId = :userId', { userId })
-      .andWhere('st.status = :status', { status: SubjectTeacherStatus.ACTIVE })
+      .andWhere('st.status = :status', { status: SubjectTeacherStatus.ACTIVE });
+
+    if (!type) {
+      const results = await baseQuery
+        .select('subject.programId', 'programId')
+        .addSelect('subject.semester', 'semester')
+        .groupBy('subject.programId')
+        .addGroupBy('subject.semester')
+        .getRawMany();
+
+      return results.map(
+        (r): ProgramSemesterPair => ({
+          programId: r.programId,
+          semester: r.semester,
+        }),
+      );
+    }
+
+    const results = await baseQuery
       .select('subject.programId', 'programId')
+      .addSelect('program.name', 'programName')
+      .addSelect('program.code', 'programCode')
       .addSelect('subject.semester', 'semester')
+      .addSelect('COUNT(subject.id)', 'subjectCount')
       .groupBy('subject.programId')
+      .addGroupBy('program.name')
+      .addGroupBy('program.code')
       .addGroupBy('subject.semester')
       .getRawMany();
 
-    return results.map((r) => ({
-      programId: r.programId,
-      semester: r.semester,
-    }));
+    const programMap = new Map<number, ProgramSemesterDashboard>();
+
+    results.forEach((r) => {
+      if (!programMap.has(r.programId)) {
+        programMap.set(r.programId, {
+          programId: r.programId,
+          programName: r.programName,
+          programCode: r.programCode,
+          semesters: [],
+        });
+      }
+      programMap.get(r.programId)!.semesters.push({
+        semester: Number(r.semester),
+        subjectCount: Number(r.subjectCount),
+      });
+    });
+
+    return Array.from(programMap.values());
   }
 }
