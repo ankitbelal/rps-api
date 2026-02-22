@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { IsEnum, IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
 import { ExamTerm } from 'utils/enums/general-enums';
 export class PublishSingleDto {
@@ -70,5 +70,6 @@ export class GetPublishedResultDto {
 
   @IsOptional()
   @IsEnum(ExamTerm)
+  @Transform(({ value }) => (value === '' ? undefined : value))
   examTerm?: ExamTerm;
 }
