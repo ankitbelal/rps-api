@@ -20,7 +20,7 @@ export class DashboardController {
   @Get('teacher')
   async getTeacherDashboardData(@Req() req) {
     const data = await this.dashboardService.getTeacherDashboardData(
-      req?.userId,
+      req?.user.userId,
     );
     return ApiResponse.successSingleData(
       data,
