@@ -66,9 +66,9 @@ export class GetPublishedResultDto {
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
-  semester: number;
+  semester?: number;
 
   @IsOptional()
   @IsEnum(ExamTerm)
-  examTerm: ExamTerm;
+  examTerm?: ExamTerm;
 }
