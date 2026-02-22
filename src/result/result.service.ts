@@ -6,10 +6,11 @@ import { Repository } from 'typeorm';
 import { AddMarksDTO, MarkFetchQueryDto } from './dto/marks.dto';
 import { SubjectService } from 'src/subject/subject.service';
 import { StudentService } from 'src/student/student.service';
-import { ExamTerm } from 'utils/enums/general-enums';
+import { ExamTerm, UserType } from 'utils/enums/general-enums';
 import { PublishedResult } from 'src/database/entities/published-result.entity';
 import { StudentQueryDto } from 'src/student/dto/create-student.dto';
 import { UserService } from 'src/user/user.service';
+import { TeacherService } from 'src/teacher/teacher.service';
 
 @Injectable()
 export class ResultService {
@@ -26,12 +27,13 @@ export class ResultService {
     private readonly subjectService: SubjectService,
     private readonly studentService: StudentService,
     private readonly userService: UserService,
+    private readonly teacherService: TeacherService,
   ) {}
 
   async getMarks(
     markFetchQueryDto: MarkFetchQueryDto,
   ): Promise<{ data: StudentSubjectMarks[] }> {
-    const { studentId, semester, examTerm } = markFetchQueryDto;
+    const { studentId, semester, examTerm, userId } = markFetchQueryDto;
 
     const query = this.studentSubjectMarks
       .createQueryBuilder('sm')
@@ -49,6 +51,21 @@ export class ResultService {
     if (markFetchQueryDto.examTerm) {
       query.andWhere('sm.exam_term = :examTerm', { examTerm });
       query2.andWhere('ep.exam_term = :examTerm', { examTerm });
+    }
+
+    if (userId) {
+      const user = await this.userService.findUserById(userId);
+      if (user?.userType === UserType.TEACHER) {
+        const teacher = await this.teacherService.findTeacherByUserId(userId);
+        const assignedSubjects =
+          await this.subjectService.getAssignedSubjectsId(teacher?.id);
+        if (assignedSubjects.length) {
+          const subjectIds = assignedSubjects.map((s) => s.subjectId);
+
+          query.andWhere('sm.subject_id IN (:...subjectIds)', { subjectIds });
+          query2.andWhere('ep.subject_id IN (:...subjectIds)', { subjectIds });
+        }
+      }
     }
 
     const [subjectMarks, extraMarks] = await Promise.all([

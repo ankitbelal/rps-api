@@ -19,6 +19,10 @@ export class MarkFetchQueryDto {
   @IsOptional()
   @IsEnum(ExamTerm, { message: 'Exam term must be a valid.' })
   examTerm?: ExamTerm;
+
+  @IsOptional()
+  @Type(() => Number)
+  userId?: number;
 }
 
 export class AddMarksDTO {

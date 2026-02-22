@@ -204,6 +204,16 @@ export class SubjectService {
     return await this.subjectRepo.count();
   }
 
+  //teacher subjects assigned
+  async getAssignedSubjectsId(
+    teacherId?: number,
+  ): Promise<Partial<SubjectTeacher>[]> {
+    return await this.subjectTeacherRepo.find({
+      where: { teacherId, status: SubjectTeacherStatus.ACTIVE },
+      select: ['subjectId'],
+    });
+  }
+
   async checkDuplicateSubjects(code: string): Promise<Boolean> {
     return !!(await this.subjectRepo.findOne({ where: { code } }));
   }

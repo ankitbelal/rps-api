@@ -24,9 +24,15 @@ export class ResultController {
 
   @HttpCode(200)
   @Get('student-marks')
-  async studentMarks(@Query() markFetchQueryDto: MarkFetchQueryDto) {
+  async studentMarks(
+    @Query() markFetchQueryDto: MarkFetchQueryDto,
+    @Req() req,
+  ) {
     return ApiResponse.successData(
-      await this.resultService.getMarks(markFetchQueryDto),
+      await this.resultService.getMarks({
+        ...markFetchQueryDto,
+        userId: req.user.userId,
+      }),
       'Student marks fetched successfully.',
       200,
     );
