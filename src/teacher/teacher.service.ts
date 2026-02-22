@@ -712,4 +712,8 @@ export class TeacherService {
     if (!teacher) return new NotFoundException('Teacher does not exists.');
     return await this.subjectService.getAllSubjectList;
   }
+
+  async findTeacherByUserId(userId: number) {
+    return await this.teacherRepo.findOne({ where: { userId } });
+  }
 }

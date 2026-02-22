@@ -41,10 +41,12 @@ export class DashboardService {
     };
   }
 
-  async getTeacherDashboardData(teacherId: number) {
-    const [subjects] = await Promise.all([
-      this.subjectService.getSubjectCount(teacherId),
+  async getTeacherDashboardData(userId: number) {
+    const teacher = await this.teacherService.findTeacherByUserId(userId);
+    const [subjects, assignedPrograms] = await Promise.all([
+      this.subjectService.getSubjectCount(teacher?.id),
+      this.subjectService.getAssignedProgramAndSemester(userId), //intrnally find by userID map with teacher
     ]);
-    return { subjects };
+    return { subjects, assignedPrograms };
   }
 }
