@@ -40,4 +40,11 @@ export class DashboardService {
       studentsDistributions,
     };
   }
+
+  async getTeacherDashboardData(teacherId: number) {
+    const [subjects] = await Promise.all([
+      this.subjectService.getSubjectCount(teacherId),
+    ]);
+    return { subjects };
+  }
 }

@@ -191,7 +191,12 @@ export class SubjectService {
     return !!(await this.subjectRepo.remove(subject));
   }
 
-  async getSubjectCount(): Promise<number> {
+  async getSubjectCount(teacherId?: number): Promise<number> {
+    if (teacherId) {
+      return await this.subjectTeacherRepo.count({
+        where: { teacherId, status: SubjectTeacherStatus.ACTIVE },
+      });
+    }
     return await this.subjectRepo.count();
   }
 
@@ -426,5 +431,27 @@ export class SubjectService {
       select: ['id', 'name', 'code', 'semester'], // semester added
       order: { semester: 'ASC' },
     });
+  }
+
+  async getAssignedProgramAndSemester(
+    userId: number,
+  ): Promise<{ programId: number; semester: number }[]> {
+    const results = await this.subjectRepo
+      .createQueryBuilder('subject')
+      .innerJoin('subject.subjectTeacher', 'st')
+      .innerJoin('subject.program', 'program')
+      .innerJoin('st.teacher', 'teacher')
+      .where('teacher.userId = :userId', { userId })
+      .andWhere('st.status = :status', { status: SubjectTeacherStatus.ACTIVE })
+      .select('subject.programId', 'programId')
+      .addSelect('subject.semester', 'semester')
+      .groupBy('subject.programId')
+      .addGroupBy('subject.semester')
+      .getRawMany();
+
+    return results.map((r) => ({
+      programId: r.programId,
+      semester: r.semester,
+    }));
   }
 }

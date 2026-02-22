@@ -1,4 +1,4 @@
-import { Controller, Get, HttpCode } from '@nestjs/common';
+import { Controller, Get, HttpCode, Req } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
 import { ApiResponse } from 'utils/api-response';
 
@@ -12,6 +12,19 @@ export class DashboardController {
     return ApiResponse.successSingleData(
       data,
       'Data fetched successfully.',
+      200,
+    );
+  }
+
+  @HttpCode(200)
+  @Get('teacher')
+  async getTeacherDashboardData(@Req() req) {
+    const data = await this.dashboardService.getTeacherDashboardData(
+      req?.userId,
+    );
+    return ApiResponse.successSingleData(
+      data,
+      'Data fetched successfully',
       200,
     );
   }

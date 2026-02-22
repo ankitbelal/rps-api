@@ -26,6 +26,7 @@ import { mapStudentUserStatus } from 'utils/general-utils';
 import * as ExcelJS from 'exceljs';
 import type { Response } from 'express';
 import { join } from 'path';
+import { SubjectService } from 'src/subject/subject.service';
 
 @Injectable()
 export class StudentService {
@@ -33,6 +34,7 @@ export class StudentService {
     @InjectRepository(Student)
     private readonly studentRepo: Repository<Student>,
     private readonly userService: UserService,
+    private readonly subjectService: SubjectService,
   ) {}
 
   async create(createStudentDto: CreateStudentDto): Promise<Boolean> {
@@ -96,6 +98,15 @@ export class StudentService {
       return { data: [data] };
     }
 
+    //handle the query if fetched fromt the teacher dashboard
+    if (filters.userId) {
+      const user = await this.userService.findUserById(filters.userId);
+      if (user?.userType !== UserType.TEACHER) {
+        return { data: [], total: 0, page, lastPage: 0, limit };
+      }
+      await this.teacherWiseFilter(filters.userId, query);
+    }
+
     const filteredquery = this.applyFilters(query, filters);
     filteredquery.andWhere('student.deletedAt IS NULL');
     filteredquery.select(Student.ALLOWED_FIELDS_LIST);
@@ -148,6 +159,27 @@ export class StudentService {
     }
 
     return query;
+  }
+
+  private async teacherWiseFilter(
+    userId: number,
+    query: SelectQueryBuilder<Student>,
+  ): Promise<void> {
+    const pairs =
+      await this.subjectService.getAssignedProgramAndSemester(userId);
+
+    if (!pairs.length) return;
+
+    query.andWhere(
+      new Brackets((qb) => {
+        pairs.forEach((pair, i) => {
+          qb.orWhere(
+            `(student.program_id = :pid${i} AND student.current_semester = :sem${i})`,
+            { [`pid${i}`]: pair.programId, [`sem${i}`]: pair.semester },
+          );
+        });
+      }),
+    );
   }
 
   async update(

@@ -74,7 +74,6 @@ export class CreateStudentDto {
 }
 
 export class StudentQueryDto {
-
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
@@ -104,6 +103,9 @@ export class StudentQueryDto {
 
   @IsOptional()
   search?: string;
+
+  @IsOptional()
+  userId?: number;
 }
 
 export class SearchStudentListDto {
