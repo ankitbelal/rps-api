@@ -209,11 +209,13 @@ export class ResultService {
   }
 
   private calculateGrade(gpa: number): string {
-    switch (gpa) {
-      case 4:
-        return 'A';
-    }
-    return '';
+    if (gpa >= 4.0) return 'A+';
+    if (gpa >= 3.7) return 'A';
+    if (gpa >= 3.3) return 'B+';
+    if (gpa >= 3.0) return 'B';
+    if (gpa >= 2.0) return 'C';
+    if (gpa >= 1.0) return 'D';
+    return 'F';
   }
 
   // ─── CORE CALCULATION (reusable private method) ─────────────────────
@@ -271,6 +273,7 @@ export class ResultService {
         subjectCode: subject.code!,
         subjectObtainedOutOf50: parseFloat(subjectObtainedOutOf50.toFixed(2)),
         extraParamObtainedOutOf50: parseFloat(extraObtained.toFixed(2)),
+        grade: this.calculateGrade(this.calculateGPA(finalMarkOutOf100)),
         finalMarkOutOf100: parseFloat(finalMarkOutOf100.toFixed(2)),
       });
     }

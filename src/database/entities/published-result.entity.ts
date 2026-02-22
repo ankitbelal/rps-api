@@ -42,7 +42,7 @@ export class PublishedResult {
   @Column({ type: 'decimal', precision: 5, scale: 2 })
   percentage: number;
 
-  @Column({ type: 'decimal', precision: 3, scale: 1 })
+  @Column({ type: 'decimal', precision: 3, scale: 1, nullable: true })
   gpa: number;
 
   // snapshot of subject-wise breakdown
@@ -51,6 +51,7 @@ export class PublishedResult {
     subjectId: number;
     subjectName: string;
     subjectCode: string;
+    grade: string;
     subjectObtainedOutOf50: number;
     extraParamObtainedOutOf50: number;
     finalMarkOutOf100: number;
