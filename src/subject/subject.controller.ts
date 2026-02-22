@@ -82,11 +82,13 @@ export class SubjectController {
   @Get('students-subject-eval-param')
   async getAllSubjectListWithEvalParams(
     @Query() subjectEvaluationMarksQueryDto: SubjectEvaluationMarksQueryDto,
+    @Req() req,
   ) {
     const subjectDetails =
-      await this.subjectService.getAllSubjectListWithEvalParams(
-        subjectEvaluationMarksQueryDto,
-      );
+      await this.subjectService.getAllSubjectListWithEvalParams({
+        ...subjectEvaluationMarksQueryDto,
+        userId: req.user.userId,
+      });
     return ApiResponse.successData(
       subjectDetails,
       'Student Subjects and evaluation parameters  fetched successfully.',

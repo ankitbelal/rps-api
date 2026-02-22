@@ -81,4 +81,8 @@ export class SubjectEvaluationMarksQueryDto extends SubjectListingQueryDto {
 
   @IsOptional()
   examTerm?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  userId?: number;
 }

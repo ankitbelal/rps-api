@@ -9,6 +9,7 @@ import { Brackets, In, LessThanOrEqual, Repository } from 'typeorm';
 import { Subject } from '../database/entities/subject.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
+  SubjectEvaluationMarksQueryDto,
   SubjectListingQueryDto,
   SubjectQueryDto,
 } from './dto/subject-query-dto';
@@ -85,12 +86,6 @@ export class SubjectService {
       )
       .leftJoin('st.teacher', 'teacher');
 
-    if (filters.userId) {
-      const user = await this.userService.findUserById(filters.userId);
-      if (user?.userType === UserType.TEACHER) {
-        query.andWhere('teacher.userId = :userId', { userId: filters.userId });
-      }
-    }
     if (filters?.id) {
       query.andWhere('subject.id = :id', { id: filters.id });
 
@@ -104,7 +99,7 @@ export class SubjectService {
       return { data: this.denormalizeSubjects(data) };
     }
 
-    const filteredquery = this.applyFilters(query, filters);
+    const filteredquery = await this.applyFilters(query, filters);
     filteredquery.select(Subject.ALLOWED_FIELDS_LIST);
 
     filteredquery.skip((page - 1) * limit).take(limit);
@@ -122,10 +117,17 @@ export class SubjectService {
     };
   }
 
-  private applyFilters(
+  private async applyFilters(
     query: SelectQueryBuilder<Subject>,
     filters: Partial<SubjectQueryDto>,
-  ): SelectQueryBuilder<Subject> {
+  ): Promise<SelectQueryBuilder<Subject>> {
+    if (filters.userId) {
+      const user = await this.userService.findUserById(filters.userId);
+      if (user?.userType === UserType.TEACHER) {
+        query.andWhere('teacher.userId = :userId', { userId: filters.userId });
+      }
+    }
+
     if (filters?.type) {
       query.andWhere('subject.type = :type', {
         type: filters.type,
@@ -273,7 +275,7 @@ export class SubjectService {
       }
     }
 
-    this.applyFilters(query, subjectListingQueryDto);
+    await this.applyFilters(query, subjectListingQueryDto);
     const data = await query.getMany();
     return { data: this.denormalizeSubjects(data) };
   }
@@ -372,7 +374,7 @@ export class SubjectService {
   }
 
   async getAllSubjectListWithEvalParams(
-    subjectEvaluationMarksQueryDto: SubjectListingQueryDto,
+    subjectEvaluationMarksQueryDto: SubjectEvaluationMarksQueryDto,
   ): Promise<{
     data: SubjectResponse[];
   }> {
@@ -395,7 +397,7 @@ export class SubjectService {
         'teacher.lastName',
       ]);
 
-    this.applyFilters(query, subjectEvaluationMarksQueryDto);
+    await this.applyFilters(query, subjectEvaluationMarksQueryDto);
     const subjects = this.denormalizeSubjects(await query.getMany());
 
     const subjectsWithParams = await Promise.all(
