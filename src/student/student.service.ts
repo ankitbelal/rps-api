@@ -858,4 +858,30 @@ export class StudentService {
     await workbook.xlsx.write(res);
     res.end();
   }
+
+  async getTeacherStudentCount(userId: number): Promise<number> {
+    const pairs =
+      await this.subjectService.getAssignedProgramAndSemester(userId);
+
+    if (!pairs.length) return 0;
+
+    const query = this.studentRepo
+      .createQueryBuilder('student')
+      .andWhere('student.deletedAt IS NULL');
+
+    query.andWhere(
+      new Brackets((qb) => {
+        (pairs as { programId: number; semester: number }[]).forEach(
+          (pair, i) => {
+            qb.orWhere(
+              `(student.program_id = :pid${i} AND student.current_semester = :sem${i})`,
+              { [`pid${i}`]: pair.programId, [`sem${i}`]: pair.semester },
+            );
+          },
+        );
+      }),
+    );
+
+    return await query.getCount();
+  }
 }
