@@ -297,7 +297,6 @@ export class ResultService {
     };
   }
 
-  // ─── PUBLISH SINGLE ─────────────────────────────────────────
   async publishSingle(
     studentId: number,
     semester: number,
@@ -317,21 +316,23 @@ export class ResultService {
       examTerm,
     );
 
-    await this.publishedResultRepo.upsert(
-      {
-        studentId,
-        programId: student.programId,
-        semester,
-        examTerm,
-        publishedBy: await this.getUserName(publishedBy),
-        ...calculated,
-      },
-      ['studentId', 'semester', 'examTerm'],
-    );
+    // ✅ manual upsert — find existing to get id, then save
+    const existing = await this.publishedResultRepo.findOne({
+      where: { studentId, semester, examTerm },
+    });
+
+    await this.publishedResultRepo.save({
+      ...(existing ?? {}), // spreads id if exists → update, else insert
+      studentId,
+      programId: student.programId,
+      semester,
+      examTerm,
+      publishedBy: await this.getUserName(publishedBy),
+      ...calculated,
+    });
 
     return true;
   }
-
   // ─── PUBLISH BULK ────────────────────────────────────────────
   async publishBulk(
     programId: number,
@@ -397,19 +398,20 @@ export class ResultService {
       const ss = secondTerm.subjectBreakdown.find(
         (s) => s.subjectId === fs.subjectId,
       );
+      const finalMarkOutOf100 = parseFloat(
+        (
+          (Number(fs.finalMarkOutOf100) + Number(ss?.finalMarkOutOf100 ?? 0)) /
+          2
+        ).toFixed(2),
+      );
       return {
         subjectId: fs.subjectId,
         subjectName: fs.subjectName,
         subjectCode: fs.subjectCode,
         firstTermMark: Number(fs.finalMarkOutOf100),
         secondTermMark: Number(ss?.finalMarkOutOf100 ?? 0),
-        finalMarkOutOf100: parseFloat(
-          (
-            (Number(fs.finalMarkOutOf100) +
-              Number(ss?.finalMarkOutOf100 ?? 0)) /
-            2
-          ).toFixed(2),
-        ),
+        finalMarkOutOf100: finalMarkOutOf100,
+        grade: this.calculateGrade(this.calculateGPA(finalMarkOutOf100)),
         subjectObtainedOutOf50: Number(fs.subjectObtainedOutOf50),
         extraParamObtainedOutOf50: Number(fs.extraParamObtainedOutOf50),
       };
