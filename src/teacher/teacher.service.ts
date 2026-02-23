@@ -67,12 +67,13 @@ export class TeacherService {
     const { page = 1, limit = 10, ...filters } = teacherQueryDto;
     const query = this.teacherRepo.createQueryBuilder('teacher');
 
-    if (filters?.id || filters?.userId) {
+    if (filters?.id || filters?.self) {
       filters?.id
         ? query.andWhere('teacher.id = :id', { id: filters.id })
         : query.andWhere('teacher.user_id = :userId', {
             userId: filters.userId,
           });
+
       query.select(Teacher.ALLOWED_DETAILS);
       const data = await query.getOne();
       if (!data)

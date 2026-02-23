@@ -94,6 +94,11 @@ export class TeacherQueryDto {
   @IsOptional()
   @Type(() => Number)
   userId?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
+  self: boolean;
 }
 
 export class SearchTeacherListDto {

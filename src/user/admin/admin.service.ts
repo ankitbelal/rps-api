@@ -59,7 +59,7 @@ export class AdminService {
   }> {
     const { page = 1, limit = 10, ...filters } = adminQueryDto;
     const query = this.adminRepo.createQueryBuilder('admin');
-    if (filters?.id || filters?.userId) {
+    if (filters?.id || filters?.self) {
       filters.id
         ? query.andWhere('admin.id = :id', { id: filters.id })
         : query.andWhere('admin.user_id = :userId', { userId: filters.userId });
