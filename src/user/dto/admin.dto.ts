@@ -10,7 +10,7 @@ import {
   IsOptional,
   MaxDate,
 } from 'class-validator';
-import { Gender, UserStatus } from 'utils/enums/general-enums';
+import { Gender, UserStatus, UserType } from 'utils/enums/general-enums';
 
 export class AdminHeadQueryDto {
   @IsOptional()
@@ -50,6 +50,9 @@ export class CreateAdminDto {
   @IsDate({ message: 'DOB must be a valid date.' })
   @MaxDate(new Date(), { message: 'DOB cannot be a future date.' })
   DOB: Date;
+
+  @IsOptional()
+  userType?: UserType;
 }
 export class AdminQueryDto {
   @IsOptional()

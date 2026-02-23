@@ -19,4 +19,5 @@ export interface SuperAdmin {
   address2: string;
   status: UserStatus;
   DOB: Date;
+  userType: UserType;
 }

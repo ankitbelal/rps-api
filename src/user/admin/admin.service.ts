@@ -225,7 +225,7 @@ export class AdminService {
     const userSync: UserSync = {
       name: dto.firstName + ' ' + dto.lastName,
       email: dto.email,
-      userType: UserType.ADMIN,
+      userType: dto.userType ?? UserType.ADMIN,
       status: UserStatus.ACTIVE,
     };
     return await this.userService.createUser(userSync);
@@ -250,6 +250,7 @@ export class AdminService {
       address2: this.configService.get<string>('ADDRESS', 'Default Address'),
       status: UserStatus.ACTIVE,
       DOB: new Date('2000-01-01'),
+      userType: UserType.SUPERADMIN,
     };
 
     const user = await this.createUser(superAdmin);

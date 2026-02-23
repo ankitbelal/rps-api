@@ -2,6 +2,7 @@ export enum UserType {
   ADMIN = 'A',
   TEACHER = 'T',
   STUDENT = 'S',
+  SUPERADMIN = 'SA',
 }
 
 export enum UserStatus {
