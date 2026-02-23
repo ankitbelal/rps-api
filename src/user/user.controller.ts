@@ -1,7 +1,16 @@
-import { Controller, Get, HttpCode, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Patch,
+  Query,
+  Req,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { ApiResponse } from 'utils/api-response';
 import { AdminHeadQueryDto } from './dto/admin.dto';
+import { UserPasswordChange } from './dto/user.dto';
 
 @Controller('user')
 export class UserController {
@@ -16,5 +25,18 @@ export class UserController {
       'Eligible admin fetched successfully.',
       200,
     );
+  }
+
+  @HttpCode(200)
+  @Patch('change-password')
+  async changePassword(
+    @Body() UserPasswordChange: UserPasswordChange,
+    @Req() req,
+  ) {
+    await this.userService.changePassword({
+      ...UserPasswordChange,
+      userId: req.user.userId,
+    });
+    return ApiResponse.success('Password changed successfully.', 200);
   }
 }

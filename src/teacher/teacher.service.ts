@@ -66,12 +66,18 @@ export class TeacherService {
   }> {
     const { page = 1, limit = 10, ...filters } = teacherQueryDto;
     const query = this.teacherRepo.createQueryBuilder('teacher');
-    if (filters?.id) {
-      query.andWhere('teacher.id = :id', { id: filters.id });
+
+    if (filters?.id || filters?.userId) {
+      filters?.id
+        ? query.andWhere('teacher.id = :id', { id: filters.id })
+        : query.andWhere('teacher.user_id = :userId', {
+            userId: filters.userId,
+          });
       query.select(Teacher.ALLOWED_DETAILS);
       const data = await query.getOne();
       if (!data)
         throw new NotFoundException({
+          success: false,
           statusCode: 404,
           message: `Teacher with id: ${filters.id} does not exists`,
         });
@@ -115,6 +121,19 @@ export class TeacherService {
     return query;
   }
 
+  async selfEdit(updateTeacherDto: UpdateTeacherDto): Promise<Boolean> {
+    const teacher = await this.findTeacherByUserId(updateTeacherDto.userId!);
+
+    if (!teacher)
+      throw new NotFoundException({
+        success: false,
+        statusCode: 404,
+        message: `Teacher with userId: ${updateTeacherDto.userId} does not exists.`,
+      });
+
+    return await this.update(teacher.id, updateTeacherDto);
+  }
+
   async update(
     id: number,
     updateTeacherDto: UpdateTeacherDto,
@@ -122,7 +141,7 @@ export class TeacherService {
     const teacher = await this.teacherRepo.findOne({ where: { id } });
     if (!teacher) {
       throw new NotFoundException({
-        status: 'false',
+        success: false,
         statusCode: 404,
         message: `Teacher with id: ${id} does not exists.`,
       });
@@ -163,7 +182,7 @@ export class TeacherService {
     const teacher = await this.teacherRepo.findOne({ where: { id } });
     if (!teacher)
       throw new NotFoundException({
-        status: 'false',
+        success: false,
         statusCode: 404,
         message: `Teacher with id: ${id} does not exists.`,
       });
@@ -269,7 +288,12 @@ export class TeacherService {
     const teacher = await this.teacherRepo.findOne({
       where: { id: assignSubjectDto.teacherId },
     });
-    if (!teacher) return new NotFoundException('Teacher does not exists.');
+    if (!teacher)
+      throw new NotFoundException({
+        success: false,
+        statusCode: 404,
+        message: `Teacher does not exists`,
+      });
 
     return await this.subjectService.assignSubjectTeacher(assignSubjectDto);
   }
@@ -290,7 +314,11 @@ export class TeacherService {
     const teachers = await filteredQuery.getMany();
 
     if (!teachers.length) {
-      throw new NotFoundException('No data found to export.');
+      throw new NotFoundException({
+        success: false,
+        statusCode: 404,
+        message: `No data found to export.`,
+      });
     }
 
     // Create workbook and worksheet
@@ -709,7 +737,13 @@ export class TeacherService {
   //teacher dashboard route goes as
   async getAssignedSubjects() {
     const teacher = await this.teacherRepo.findOne({ where: {} });
-    if (!teacher) return new NotFoundException('Teacher does not exists.');
+    if (!teacher)
+      throw new NotFoundException({
+        success: false,
+        statusCode: 404,
+        message: `Teacher does not exists.`,
+      });
+
     return await this.subjectService.getAllSubjectList;
   }
 

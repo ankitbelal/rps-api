@@ -9,6 +9,7 @@ import {
   HttpCode,
   Query,
   Res,
+  Req,
 } from '@nestjs/common';
 import type { Response } from 'express';
 
@@ -35,8 +36,11 @@ export class TeacherController {
 
   @Get()
   @HttpCode(200)
-  async findAll(@Query() teacherQueryDto: TeacherQueryDto) {
-    const teachers = await this.teacherService.findAll(teacherQueryDto);
+  async findAll(@Query() teacherQueryDto: TeacherQueryDto, @Req() req) {
+    const teachers = await this.teacherService.findAll({
+      ...teacherQueryDto,
+      userId: req.user.userId,
+    });
     return ApiResponse.successData(
       teachers,
       'Teachers fetched successfully.',
@@ -52,6 +56,16 @@ export class TeacherController {
   ) {
     await this.teacherService.update(+id, updateTeacherDto);
     return ApiResponse.success('Teacher updated successfully.', 200);
+  }
+
+  @Patch('self-edit')
+  @HttpCode(200)
+  async selfEdit(@Body() updateTeacherDto: UpdateTeacherDto, @Req() req) {
+    await this.teacherService.selfEdit({
+      ...updateTeacherDto,
+      userId: req.user.userId,
+    });
+    return ApiResponse.success('Personal details updated successfully.', 200);
   }
 
   @Delete(':id')

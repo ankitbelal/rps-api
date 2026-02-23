@@ -50,10 +50,7 @@ export class AdminService {
     return !!(await this.adminRepo.save(this.adminRepo.create(adminData)));
   }
 
-  async findAll(
-    adminQueryDto: AdminQueryDto,
-    userId: number,
-  ): Promise<{
+  async findAll(adminQueryDto: AdminQueryDto): Promise<{
     data: AdminUsers[];
     total?: number;
     page?: number;
@@ -62,21 +59,23 @@ export class AdminService {
   }> {
     const { page = 1, limit = 10, ...filters } = adminQueryDto;
     const query = this.adminRepo.createQueryBuilder('admin');
-    if (filters?.id || filters?.self) {
-      if (filters.id) query.andWhere('admin.id = :id', { id: filters.id });
-
-      if (filters.self) query.andWhere('admin.user_id = :userId', { userId });
+    if (filters?.id || filters?.userId) {
+      filters.id
+        ? query.andWhere('admin.id = :id', { id: filters.id })
+        : query.andWhere('admin.user_id = :userId', { userId: filters.userId });
 
       query.select(AdminUsers.ALLOWED_DETAILS);
       const data = await query.getOne();
       if (!data)
         throw new NotFoundException({
+          success: true,
           statusCode: 404,
           message: `Admin with id: ${filters.id} does not exists`,
         });
       return { data: [data] };
     }
-    query.andWhere('admin.user_id != :userId', { userId });
+
+    query.andWhere('admin.user_id != :userId', { userId: filters.userId });
     const filteredquery = this.applyFilters(query, filters);
     filteredquery.select(AdminUsers.ALLOWED_FIELDS_LIST);
     filteredquery.skip((page - 1) * limit).take(limit);
@@ -118,7 +117,7 @@ export class AdminService {
     const admin = await this.adminRepo.findOne({ where: { id } });
     if (!admin) {
       throw new NotFoundException({
-        status: 'false',
+        status: false,
         statusCode: 404,
         message: `Admin with id: ${id} does not exists.`,
       });
@@ -188,7 +187,7 @@ export class AdminService {
     const admin = await this.adminRepo.findOne({ where: { id } });
     if (!admin)
       throw new NotFoundException({
-        status: 'false',
+        status: false,
         statusCode: 404,
         message: `Admin with id: ${id} does not exists.`,
       });
@@ -232,7 +231,7 @@ export class AdminService {
     return await this.userService.createUser(userSync);
   }
 
-   async onBoardingSuperAdmin() {
+  async onBoardingSuperAdmin() {
     const alreadyExists = await this.adminRepo.findOne({ where: { id: 1 } });
     if (alreadyExists) {
       throw new ConflictException('SuperAdmin already created.');
@@ -264,5 +263,19 @@ export class AdminService {
 
     return !!savedAdmin;
   }
-}
 
+  async selfEdit(updateAdminDto: UpdateAdminDto): Promise<Boolean> {
+    const admin = await this.adminRepo.findOne({
+      where: { userId: updateAdminDto.userId },
+    });
+
+    if (!admin)
+      throw new NotFoundException({
+        success: false,
+        statusCode: 404,
+        message: `Admin with userId: ${updateAdminDto.userId} does not exists.`,
+      });
+
+    return await this.update(admin.id, updateAdminDto);
+  }
+}

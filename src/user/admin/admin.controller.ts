@@ -33,10 +33,10 @@ export class AdminController {
   @Get()
   @HttpCode(200)
   async findAll(@Query() adminQueryDto: AdminQueryDto, @Req() req) {
-    const admins = await this.adminService.findAll(
-      adminQueryDto,
-      req.user.userId,
-    );
+    const admins = await this.adminService.findAll({
+      ...adminQueryDto,
+      userId: req.user.userId,
+    });
     return ApiResponse.successData(admins, 'Admins fetched successfully.', 200);
   }
 
@@ -55,6 +55,16 @@ export class AdminController {
   async remove(@Param('id') id: string) {
     await this.adminService.remove(+id);
     return ApiResponse.success('Admin removed successfully.', 200);
+  }
+
+  @Patch('self-edit')
+  @HttpCode(200)
+  async selfEdit(@Body() UpdateAdminDto: UpdateAdminDto, @Req() req) {
+    await this.adminService.selfEdit({
+      ...UpdateAdminDto,
+      userId: req.user.userId,
+    });
+    return ApiResponse.success('Personal details updated successfully.', 200);
   }
 
   @Public()

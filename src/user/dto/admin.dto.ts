@@ -95,6 +95,14 @@ export class AdminQueryDto {
   @IsOptional()
   @IsEnum(UserStatus, { message: 'Status must be valid.' })
   status: UserStatus;
+
+  @IsOptional()
+  @Type(() => Number)
+  userId?: number;
 }
 
-export class UpdateAdminDto extends PartialType(CreateAdminDto) {}
+export class UpdateAdminDto extends PartialType(CreateAdminDto) {
+  @IsOptional()
+  @Type(() => Number)
+  userId?: number;
+}

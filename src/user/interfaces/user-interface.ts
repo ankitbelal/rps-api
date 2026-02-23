@@ -6,8 +6,8 @@ export interface UserSync {
   email?: string;
   userType?: UserType;
   status?: UserStatus;
+  password?: string;
 }
-
 
 export interface SuperAdmin {
   firstName: string;

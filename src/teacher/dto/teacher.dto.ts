@@ -49,7 +49,11 @@ export class CreateTeacherDto {
   createUser?: boolean = true; //by default create the user
 }
 
-export class UpdateTeacherDto extends PartialType(CreateTeacherDto) {}
+export class UpdateTeacherDto extends PartialType(CreateTeacherDto) {
+  @IsOptional()
+  @Type(() => Number)
+  userId?: number;
+}
 
 export class TeacherQueryDto {
   @IsOptional()
@@ -86,12 +90,16 @@ export class TeacherQueryDto {
 
   @IsOptional()
   search: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  userId?: number;
 }
 
 export class SearchTeacherListDto {
   @IsOptional()
   name?: string;
-} 
+}
 
 export class AssignSubjectDto {
   @IsNotEmpty({ message: 'Teacher is required.' })

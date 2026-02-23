@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { loginDTO, PasswordResetDto } from 'src/auth/dto/login.dto';
@@ -17,6 +18,7 @@ import { MailingService } from 'src/mailing/mailing.service';
 import { CreatedUser } from 'src/mailing/interfaces/mailing-interface';
 import { AdminHeadQueryDto } from './dto/admin.dto';
 import { UserSync } from './interfaces/user-interface';
+import { UserPasswordChange } from './dto/user.dto';
 
 @Injectable()
 export class UserService {
@@ -185,7 +187,7 @@ export class UserService {
   }
 
   async updateUser(userSync: UserSync) {
-    const user = await this.userRepo.findOne({ where: { id: userSync.id } });
+    const user = await this.findUserById(userSync?.id!);
     if (!user)
       throw new NotFoundException({
         message: 'Failed to update login details.',
@@ -236,5 +238,22 @@ export class UserService {
     const user = await this.userRepo.findOne({ where: { id } });
     if (user) return user;
     return null;
+  }
+
+  async changePassword(
+    userPasswordChange: UserPasswordChange,
+  ): Promise<Boolean> {
+    if (userPasswordChange.password !== userPasswordChange.confirmPassword)
+      throw new UnprocessableEntityException({
+        success: false,
+        statusCode: 404,
+        message: `Password and Confirm password does not match`,
+      });
+
+    const syncData: UserSync = {
+      id: userPasswordChange.userId,
+      password: userPasswordChange.password,
+    };
+    return !!(await this.updateUser(syncData));
   }
 }
