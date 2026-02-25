@@ -112,3 +112,9 @@ export class SearchStudentListDto {
   @IsOptional()
   name?: string;
 }
+
+export class PromoteStudentDto {
+  @IsNotEmpty({ message: 'Program is required.' })
+  @Type(() => Number)
+  programId: number;
+}

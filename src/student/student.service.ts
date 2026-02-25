@@ -5,13 +5,14 @@ import {
 } from '@nestjs/common';
 import {
   CreateStudentDto,
+  PromoteStudentDto,
   SearchStudentListDto,
   StudentQueryDto,
 } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Student } from 'src/database/entities/student.entity';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, LessThan, Repository } from 'typeorm';
 import { UserService } from 'src/user/user.service';
 import {
   statusLabels,
@@ -27,6 +28,8 @@ import * as ExcelJS from 'exceljs';
 import type { Response } from 'express';
 import { join } from 'path';
 import { SubjectService } from 'src/subject/subject.service';
+import { ProgramService } from 'src/program/program.service';
+import { STATUS_CODES } from 'http';
 
 @Injectable()
 export class StudentService {
@@ -35,6 +38,7 @@ export class StudentService {
     private readonly studentRepo: Repository<Student>,
     private readonly userService: UserService,
     private readonly subjectService: SubjectService,
+    private readonly programService: ProgramService,
   ) {}
 
   async create(createStudentDto: CreateStudentDto): Promise<Boolean> {
@@ -400,6 +404,42 @@ export class StudentService {
       status: UserStatus.ACTIVE,
     };
     return await this.userService.createUser(userSync);
+  }
+
+  async promoteStudent(promoteStudentDto: PromoteStudentDto): Promise<Boolean> {
+    const program = await this.programService.findProgramById(
+      promoteStudentDto.programId,
+    );
+
+    if (!program)
+      throw new NotFoundException({
+        success: false,
+        statusCode: STATUS_CODES.NotFoundException,
+        message: `Program does not exists.`,
+      });
+
+    await this.studentRepo.update(
+      {
+        programId: promoteStudentDto.programId,
+        currentSemester: program.totalSemesters,
+        status: StudentStatus.ACTIVE,
+      },
+      {
+        status: StudentStatus.PASSED,
+      },
+    );
+
+    await this.studentRepo.increment(
+      {
+        programId: promoteStudentDto.programId,
+        currentSemester: LessThan(program.totalSemesters),
+        status: StudentStatus.ACTIVE,
+      },
+      'currentSemester',
+      1,
+    );
+
+    return true;
   }
 
   async generateExcelReport(

@@ -138,7 +138,7 @@ export class ProgramService {
     return !!(await this.programRepo.findOne({ where: { code } }));
   }
 
-  async findProgramById(id: number): Promise<Boolean> {
-    return !!(await this.programRepo.findOne({ where: { id } }));
+  async findProgramById(id: number): Promise<Program | null> {
+    return await this.programRepo.findOne({ where: { id } });
   }
 }

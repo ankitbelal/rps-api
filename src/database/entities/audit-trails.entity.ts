@@ -20,11 +20,8 @@ export class AuditTrails {
   @Column()
   action: string;
 
-  @Column()
+  @Column({ nullable: true })
   comment: string;
-
-  @Column({ name: 'user_name' })
-  userName: string;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })

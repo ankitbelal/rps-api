@@ -14,7 +14,11 @@ import {
 import type { Response } from 'express';
 
 import { StudentService } from './student.service';
-import { CreateStudentDto, StudentQueryDto } from './dto/create-student.dto';
+import {
+  CreateStudentDto,
+  PromoteStudentDto,
+  StudentQueryDto,
+} from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { ApiResponse } from 'utils/api-response';
 
@@ -65,5 +69,12 @@ export class StudentController {
   async remove(@Param('id') id: string) {
     await this.studentService.remove(+id);
     return ApiResponse.success('Student removed successfully.', 200);
+  }
+
+  @Post('promote-student')
+  @HttpCode(200)
+  async promoteStudents(@Body() promoteStudentDto: PromoteStudentDto) {
+    await this.studentService.promoteStudent(promoteStudentDto);
+    return ApiResponse.success('Student promoted successfully.', 200);
   }
 }
