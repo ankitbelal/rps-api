@@ -264,7 +264,7 @@ export class UserService {
       });
     const syncData: UserSync = {
       id: userPasswordChange.userId,
-      password: userPasswordChange.password,
+      password: await bcrypt.hash(userPasswordChange.password, 10),
     };
     return !!(await this.updateUser(syncData));
   }
