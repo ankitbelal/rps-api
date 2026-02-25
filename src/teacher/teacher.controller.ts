@@ -58,7 +58,7 @@ export class TeacherController {
     return ApiResponse.success('Teacher updated successfully.', 200);
   }
 
-  @Patch('self-edit')
+  @Post('self-edit')
   @HttpCode(200)
   async selfEdit(@Body() updateTeacherDto: UpdateTeacherDto, @Req() req) {
     await this.teacherService.selfEdit({

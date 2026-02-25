@@ -57,7 +57,7 @@ export class AdminController {
     return ApiResponse.success('Admin removed successfully.', 200);
   }
 
-  @Patch('self-edit')
+  @Post('self-edit')
   @HttpCode(200)
   async selfEdit(@Body() UpdateAdminDto: UpdateAdminDto, @Req() req) {
     await this.adminService.selfEdit({

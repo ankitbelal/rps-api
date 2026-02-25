@@ -75,7 +75,11 @@ export class AdminService {
       return { data: [data] };
     }
 
-    query.andWhere('admin.user_id != :userId', { userId: filters.userId });
+    query
+      .andWhere('admin.user_id != :userId', { userId: filters.userId })
+      .andWhere('admin.user_type != :userType', {
+        UserType: UserType.SUPERADMIN,
+      });
     const filteredquery = this.applyFilters(query, filters);
     filteredquery.select(AdminUsers.ALLOWED_FIELDS_LIST);
     filteredquery.skip((page - 1) * limit).take(limit);
