@@ -17,6 +17,7 @@ import {
   PublishBulkDto,
   PublishSingleDto,
 } from './dto/result-publish.dto';
+import { TopStudentQueryDto } from './dto/result.dto';
 
 @Controller('result')
 export class ResultController {
@@ -101,6 +102,16 @@ export class ResultController {
         dto.semester,
       ),
       'Published result fetched successfully.',
+      200,
+    );
+  }
+
+  @HttpCode(200)
+  @Get('top-students')
+  async topStudets(@Query() topStudentQueryDto: TopStudentQueryDto) {
+    return ApiResponse.successSingleData(
+      await this.resultService.topStudentsData(topStudentQueryDto),
+      'Student leaderboard fetched.',
       200,
     );
   }

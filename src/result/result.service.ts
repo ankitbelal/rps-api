@@ -11,6 +11,7 @@ import { PublishedResult } from 'src/database/entities/published-result.entity';
 import { StudentQueryDto } from 'src/student/dto/create-student.dto';
 import { UserService } from 'src/user/user.service';
 import { TeacherService } from 'src/teacher/teacher.service';
+import { TopStudentQueryDto } from './dto/result.dto';
 
 @Injectable()
 export class ResultService {
@@ -479,5 +480,64 @@ export class ResultService {
   private async getUserName(userId: number) {
     const user = await this.userService.findUserById(userId);
     return user?.name;
+  }
+
+  async topStudentsData(topStudentQueryDto: TopStudentQueryDto) {
+    const maxSemSubQuery = this.publishedResultRepo
+      .createQueryBuilder('pr_sub')
+      .select('pr_sub.studentId', 'studentId')
+      .addSelect('MAX(pr_sub.semester)', 'maxSem')
+      .groupBy('pr_sub.studentId');
+
+    const qb = this.publishedResultRepo
+      .createQueryBuilder('pr')
+      .innerJoin(
+        `(${maxSemSubQuery.getQuery()})`,
+        'latest',
+        'latest.studentId = pr.studentId AND latest.maxSem = pr.semester',
+      )
+      .innerJoin('pr.student', 'student')
+      .select([
+        'pr.studentId        AS studentId',
+        'pr.programId        AS programId',
+        'latest.maxSem       AS semester',
+        'pr.examTerm         AS examTerm',
+        'student.id          AS sId',
+        'student.firstName   AS firstName',
+        'student.lastName    AS lastName',
+        'student.rollNumber  AS rollNumber',
+        'pr.percentage       AS percentage',
+        'pr.gpa              AS gpa',
+        'pr.totalObtained    AS totalObtained',
+        'pr.totalFull        AS totalFull',
+      ])
+      .orderBy('pr.gpa', 'DESC')
+      .addOrderBy('pr.percentage', 'DESC')
+      .limit(10);
+
+    qb.andWhere('pr.examTerm = :examTerm', {
+      examTerm: topStudentQueryDto.examTerm,
+    });
+
+    if (topStudentQueryDto.programId) {
+      qb.andWhere('pr.programId = :programId', {
+        programId: topStudentQueryDto.programId,
+      });
+    }
+
+    const results = await qb.getRawMany();
+
+    return results.map((r) => ({
+      studentId: Number(r.sId),
+      name: `${r.firstName} ${r.lastName}`,
+      rollNumber: r.rollNumber,
+      programId: Number(r.programId),
+      semester: Number(r.semester),
+      examTerm: r.examTerm,
+      gpa: r.gpa ? Number(Number(r.gpa).toFixed(2)) : null,
+      percentage: Number(Number(r.percentage).toFixed(2)),
+      totalObtained: Number(r.totalObtained),
+      totalFull: Number(r.totalFull),
+    }));
   }
 }

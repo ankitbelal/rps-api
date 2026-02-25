@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
-import { IsNotEmpty } from 'class-validator';
+import { IsNotEmpty, IsOptional } from 'class-validator';
+import { ExamTerm } from 'utils/enums/general-enums';
 
 export class ResultDto {
   @IsNotEmpty({ message: 'Student Id is required.' })
@@ -7,4 +8,11 @@ export class ResultDto {
   studentId: number;
 }
 
+export class TopStudentQueryDto {
+  @IsOptional()
+  @Type(() => Number)
+  programId?: number;
 
+  @IsOptional()
+  examTerm?: ExamTerm = ExamTerm.FINAL;
+}
