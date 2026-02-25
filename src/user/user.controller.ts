@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   Patch,
+  Post,
   Query,
   Req,
 } from '@nestjs/common';
@@ -28,7 +29,7 @@ export class UserController {
   }
 
   @HttpCode(200)
-  @Patch('change-password')
+  @Post('change-password')
   async changePassword(
     @Body() UserPasswordChange: UserPasswordChange,
     @Req() req,
