@@ -58,7 +58,9 @@ export class AdminService {
     limit?: number;
   }> {
     const { page = 1, limit = 10, ...filters } = adminQueryDto;
-    const query = this.adminRepo.createQueryBuilder('admin');
+    const query = this.adminRepo
+      .createQueryBuilder('admin')
+      .innerJoin('admin.user', 'user');
     if (filters?.id || filters?.self) {
       filters.id
         ? query.andWhere('admin.id = :id', { id: filters.id })
@@ -77,13 +79,13 @@ export class AdminService {
 
     query
       .andWhere('admin.user_id != :userId', { userId: filters.userId })
-      .andWhere('admin.user_type != :userType', {
-        UserType: UserType.SUPERADMIN,
+      .andWhere('user.user_type != :userType', {
+        userType: UserType.SUPERADMIN,
       });
     const filteredquery = this.applyFilters(query, filters);
     filteredquery.select(AdminUsers.ALLOWED_FIELDS_LIST);
     filteredquery.skip((page - 1) * limit).take(limit);
-    filteredquery.orderBy('admin.first_name', 'ASC');
+    filteredquery.orderBy('admin.firstName', 'ASC');
     const [data, total] = await filteredquery.getManyAndCount();
     const lastPage = Math.ceil(total / limit);
     return { data, total, page, lastPage, limit };
