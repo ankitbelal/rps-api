@@ -195,11 +195,12 @@ export class UserService {
         error: 'User not found.',
       });
 
-    if (userSync.email && (await this.checkDuplicate(userSync.email)))
-      throw new NotFoundException({
-        message: 'Failed to update login details.',
-        error: 'Email already used.',
-      });
+    if (userSync.email && userSync.email !== user.email)
+      if (await this.checkDuplicate(userSync.email))
+        throw new NotFoundException({
+          message: 'Failed to update login details.',
+          error: 'Email already used.',
+        });
 
     Object.assign(user, userSync);
     return await this.userRepo.save(user);
