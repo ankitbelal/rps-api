@@ -19,6 +19,7 @@ import { CreatedUser } from 'src/mailing/interfaces/mailing-interface';
 import { AdminHeadQueryDto } from './dto/admin.dto';
 import { UserSync } from './interfaces/user-interface';
 import { UserPasswordChange } from './dto/user.dto';
+import { STATUS_CODES } from 'http';
 
 @Injectable()
 export class UserService {
@@ -246,10 +247,20 @@ export class UserService {
     if (userPasswordChange.password !== userPasswordChange.confirmPassword)
       throw new UnprocessableEntityException({
         success: false,
-        statusCode: 404,
+        statusCode: 422,
         message: `Password and Confirm password does not match`,
       });
 
+    const validateUserPassword = await this.loginValidateUser({
+      email: userPasswordChange.email,
+      password: userPasswordChange.currentPassword,
+    });
+    if (!validateUserPassword)
+      throw new UnprocessableEntityException({
+        success: false,
+        stausCode: STATUS_CODES.UnprocessableEntityException,
+        message: `Invalid current password.`,
+      });
     const syncData: UserSync = {
       id: userPasswordChange.userId,
       password: userPasswordChange.password,
