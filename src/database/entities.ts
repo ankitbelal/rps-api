@@ -15,6 +15,8 @@ import { AuditTrails } from './entities/audit-trails.entity';
 import { AdminUsers } from './entities/admin-users.entity';
 import { SubjectTeachers } from './entities/subject-teacher.entity';
 import { PublishedResult } from './entities/published-result.entity';
+import { GradingSystem } from './entities/grading-system.entity';
+import { gradeRange } from './entities/grade-ranges.entity';
 export const entities = [
   User,
   UserActivity,
@@ -33,4 +35,6 @@ export const entities = [
   AuditTrails,
   AdminUsers,
   PublishedResult,
+  GradingSystem,
+  gradeRange,
 ];

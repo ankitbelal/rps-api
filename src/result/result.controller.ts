@@ -1,8 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
+  Param,
   Post,
   Query,
   Req,
@@ -17,7 +19,7 @@ import {
   PublishBulkDto,
   PublishSingleDto,
 } from './dto/result-publish.dto';
-import { TopStudentQueryDto } from './dto/result.dto';
+import { CreateGradingSystemDto, TopStudentQueryDto } from './dto/result.dto';
 
 @Controller('result')
 export class ResultController {
@@ -114,5 +116,28 @@ export class ResultController {
       'Student leaderboard fetched.',
       200,
     );
+  }
+
+  @HttpCode(200)
+  @Get('grading-system')
+  async getGradingSystem() {
+    return ApiResponse.successSingleData(
+      await this.resultService.getGradingSystem(),
+      'Grading system fetched successfully',
+      200,
+    );
+  }
+
+  @HttpCode(201)
+  @Post('add-grading')
+  async addGradingSystem(@Body() dto: CreateGradingSystemDto) {
+    await this.resultService.addGradingSystem(dto);
+    return ApiResponse.success('Grading system added successfully.', 201);
+  }
+
+  @Delete('delete-grading')
+  async deleteGradingSystem() {
+    await this.resultService.deleteGradingSystem();
+    ApiResponse.success('Grading system deleted successfully.', 200);
   }
 }

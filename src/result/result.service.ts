@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ExtraParametersMarks } from 'src/database/entities/extra-parameters-marks.entity';
 import { StudentSubjectMarks } from 'src/database/entities/student-marks.entity';
@@ -11,7 +15,9 @@ import { PublishedResult } from 'src/database/entities/published-result.entity';
 import { StudentQueryDto } from 'src/student/dto/create-student.dto';
 import { UserService } from 'src/user/user.service';
 import { TeacherService } from 'src/teacher/teacher.service';
-import { TopStudentQueryDto } from './dto/result.dto';
+import { CreateGradingSystemDto, TopStudentQueryDto } from './dto/result.dto';
+import { GradingSystem } from 'src/database/entities/grading-system.entity';
+import { STATUS_CODES } from 'http';
 
 @Injectable()
 export class ResultService {
@@ -24,6 +30,9 @@ export class ResultService {
 
     @InjectRepository(PublishedResult)
     private readonly publishedResultRepo: Repository<PublishedResult>,
+
+    @InjectRepository(GradingSystem)
+    private readonly gradingSystemRepo: Repository<GradingSystem>,
 
     private readonly subjectService: SubjectService,
     private readonly studentService: StudentService,
@@ -539,5 +548,56 @@ export class ResultService {
       totalObtained: Number(r.totalObtained),
       totalFull: Number(r.totalFull),
     }));
+  }
+
+  async getGradingSystem() {
+    const system = await this.gradingSystemRepo
+      .createQueryBuilder('gs')
+      .leftJoinAndSelect('gs.gradeRanges', 'gr')
+      .select([
+        'gs.id',
+        'gs.name',
+        'gr.id',
+        'gr.minGPA',
+        'gr.maxGPA',
+        'gr.grade',
+        'gr.remarks',
+        'gs.createdAt',
+      ])
+      .orderBy('gr.maxGPA', 'DESC')
+      .getOne();
+
+    return system ? [system] : [];
+  }
+
+  async addGradingSystem(dto: CreateGradingSystemDto): Promise<Boolean> {
+    const existing = await this.gradingSystemRepo.find();
+    if (existing) await this.gradingSystemRepo.softRemove(existing);
+
+    const gradingSystem = this.gradingSystemRepo.create({
+      name: dto.name,
+      gradeRanges: dto.gradeRanges.map((range) => ({
+        minGPA: range.minGPA,
+        maxGPA: range.maxGPA,
+        grade: range.grade,
+        remarks: range.remarks,
+      })),
+    });
+
+    return !!(await this.gradingSystemRepo.save(gradingSystem));
+  }
+
+  async deleteGradingSystem(): Promise<Boolean> {
+    const system = await this.gradingSystemRepo.find();
+
+    if (!system) {
+      throw new NotFoundException({
+        success: false,
+        statusCode: STATUS_CODES.NotFoundException,
+        message: `Active grading system does not exists.`,
+      });
+    }
+
+    return !!(await this.gradingSystemRepo.softDelete(system));
   }
 }
