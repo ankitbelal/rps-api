@@ -33,6 +33,7 @@ export class CreateStudentDto {
   @IsNotEmpty({ message: 'Enrollment Date is required.' })
   @Type(() => Date)
   @IsDate({ message: 'Enrollment Date must be a valid date.' })
+  @MaxDate(new Date(), { message: 'Enrollment Date cannot be a future date.' })
   enrollmentDate: Date;
 
   @IsNotEmpty({ message: 'Address is required.' })

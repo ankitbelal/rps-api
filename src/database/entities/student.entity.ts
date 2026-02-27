@@ -131,7 +131,7 @@ export class Student {
     'student.email',
     'student.phone',
     'student.status',
-    'student.createdAt',
+    'student.enrollmentDate',
     'program.id',
     'program.name',
     // reg no - roll-no
@@ -156,6 +156,6 @@ export class Student {
     'student.registrationNumber',
     'program.name',
     'program.id',
-    'student.createdAt',
+    'student.enrollmentDate',
   ];
 }

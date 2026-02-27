@@ -939,7 +939,7 @@ export class StudentService {
     return await query.getCount();
   }
 
-  async threeYearStudentStats(studentStatsDto: StudentStatsDto) {
+  async StudentStats(studentStatsDto: StudentStatsDto) {
     const currentYear = new Date().getFullYear();
     const { fromYear = currentYear - 2, toYear = currentYear } =
       studentStatsDto;
@@ -952,7 +952,8 @@ export class StudentService {
       });
     const result = await this.studentRepo
       .createQueryBuilder('student')
-      .select('YEAR(student.createdAt)', 'year')
+      .withDeleted()
+      .select('YEAR(student.enrollmentDate)', 'year')
       .addSelect('COUNT(student.id)', 'new')
       .addSelect(
         `SUM(CASE WHEN student.status = 'P' AND YEAR(student.passedAt) BETWEEN :fromYear AND :toYear THEN 1 ELSE 0 END)`,
@@ -963,7 +964,7 @@ export class StudentService {
         'disabled',
       )
       .addSelect('COUNT(student.id)', 'total')
-      .where('YEAR(student.createdAt) BETWEEN :fromYear AND :toYear', {
+      .where('YEAR(student.enrollmentDate) BETWEEN :fromYear AND :toYear', {
         fromYear,
         toYear,
       })

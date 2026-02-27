@@ -83,7 +83,7 @@ export class StudentController {
   @Get('student-report')
   async threeYearsStudentData(@Query() studentStatsDto: StudentStatsDto) {
     return ApiResponse.successData(
-      await this.studentService.threeYearStudentStats(studentStatsDto),
+      await this.studentService.StudentStats(studentStatsDto),
       'Student report fetched successfully.',
       200,
     );
