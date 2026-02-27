@@ -944,7 +944,7 @@ export class StudentService {
     const { fromYear = currentYear - 2, toYear = currentYear } =
       studentStatsDto;
 
-    if (fromYear > toYear)
+    if (fromYear >= toYear)
       throw new BadRequestException({
         success: false,
         statusCode: 400,
