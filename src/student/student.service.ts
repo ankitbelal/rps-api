@@ -955,6 +955,7 @@ export class StudentService {
       .createQueryBuilder('student')
       .withDeleted()
       .select('student.id', 'id')
+      .addSelect('student.status', 'status')
       .addSelect('YEAR(student.enrollmentDate)', 'enrollYear')
       .addSelect('YEAR(student.passedAt)', 'passedYear')
       .addSelect('YEAR(student.deletedAt)', 'deletedYear')
@@ -968,21 +969,28 @@ export class StudentService {
 
     const dataMap: Record<number, any> = {};
     for (let year = fromYear; year <= toYear; year++) {
-      dataMap[year] = { year, new: 0, passed: 0, disabled: 0, total: 0 };
+      dataMap[year] = { year, new: 0, passed: 0, disabled: 0 };
     }
 
     for (const r of result) {
-      if (r.enrollYear >= fromYear && r.enrollYear <= toYear) {
-        dataMap[r.enrollYear].new += 1;
-        dataMap[r.enrollYear].total += 1;
+      const enrollYear = Number(r.enrollYear);
+      const passedYear = Number(r.passedYear);
+      const deletedYear = Number(r.deletedYear);
+
+      if (enrollYear >= fromYear && enrollYear <= toYear) {
+        dataMap[enrollYear].new += 1;
       }
-      if (r.passedYear >= fromYear && r.passedYear <= toYear) {
-        dataMap[r.passedYear].passed += 1;
-        dataMap[r.passedYear].total += 1;
+
+      if (r.status === 'P' && passedYear >= fromYear && passedYear <= toYear) {
+        dataMap[passedYear].passed += 1;
       }
-      if (r.deletedYear >= fromYear && r.deletedYear <= toYear) {
-        dataMap[r.deletedYear].disabled += 1;
-        dataMap[r.deletedYear].total += 1;
+
+      if (
+        r.status === 'S' &&
+        deletedYear >= fromYear &&
+        deletedYear <= toYear
+      ) {
+        dataMap[deletedYear].disabled += 1;
       }
     }
 
