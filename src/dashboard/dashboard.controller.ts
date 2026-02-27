@@ -17,6 +17,16 @@ export class DashboardController {
   }
 
   @HttpCode(200)
+  @Get('student-report')
+  async threeYearsStudentData() {
+    return ApiResponse.successSingleData(
+      await this.dashboardService.threeYearStudentStats(),
+      'Student report fetched successfully.',
+      200,
+    );
+  }
+
+  @HttpCode(200)
   @Get('teacher')
   async getTeacherDashboardData(@Req() req) {
     const data = await this.dashboardService.getTeacherDashboardData(
@@ -24,7 +34,7 @@ export class DashboardController {
     );
     return ApiResponse.successSingleData(
       data,
-      'Data fetched successfully',
+      'Data fetched successfully.',
       200,
     );
   }

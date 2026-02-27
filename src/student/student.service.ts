@@ -924,4 +924,38 @@ export class StudentService {
 
     return await query.getCount();
   }
+
+async threeYearStudentStats() {
+  const result = await this.studentRepo
+    .createQueryBuilder('student')
+    .select('YEAR(student.createdAt)', 'year')
+    .addSelect(
+      'SUM(CASE WHEN YEAR(student.createdAt) = YEAR(student.createdAt) THEN 1 ELSE 0 END)',
+      'new'
+    )
+    .addSelect(
+      "SUM(CASE WHEN student.status = 'passed' AND YEAR(student.passedAt) = YEAR(student.createdAt) THEN 1 ELSE 0 END)",
+      'passed'
+    )
+    .addSelect(
+      'SUM(CASE WHEN student.deletedAt IS NOT NULL AND YEAR(student.deletedAt) = YEAR(student.createdAt) THEN 1 ELSE 0 END)',
+      'disabled'
+    )
+    .addSelect(
+      'COUNT(student.id)',
+      'total'
+    )
+    .where('student.createdAt >= DATE_SUB(CURDATE(), INTERVAL 3 YEAR)')
+    .groupBy('YEAR(student.createdAt)')
+    .orderBy('year', 'DESC')
+    .getRawMany();
+
+  return result.map(r => ({
+    year: Number(r.year),
+    new: Number(r.new),
+    passed: Number(r.passed),
+    disabled: Number(r.disabled),
+    total: Number(r.total)
+  }));
+}
 }

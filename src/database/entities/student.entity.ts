@@ -11,6 +11,7 @@ import {
   OneToMany,
   JoinColumn,
   DeleteDateColumn,
+  BeforeUpdate,
 } from 'typeorm';
 import { StudentSubjectMarks } from './student-marks.entity';
 import { StudentAttendance } from './student-attendance.entity';
@@ -103,10 +104,20 @@ export class Student {
   @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn({ type: 'timestamp', name: 'updated_at' })
+  @Column({ type: 'timestamp', name: 'passed_at', nullable: true })
+  passedAt: Date;
+
+  @BeforeUpdate()
+  setPassedAt() {
+    if (this.status === StudentStatus.PASSED && !this.passedAt) {
+      this.passedAt = new Date();
+    }
+  }
+
+  @UpdateDateColumn({ type: 'timestamp', name: 'updated_at', nullable: true })
   updatedAt: Date;
 
-  @DeleteDateColumn({ type: 'timestamp', name: 'deleted_at' })
+  @DeleteDateColumn({ type: 'timestamp', name: 'deleted_at', nullable: true })
   deletedAt: Date;
 
   static readonly ALLOWED_FIELDS_LIST = [

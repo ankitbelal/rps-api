@@ -20,7 +20,6 @@ export enum Gender {
 export enum StudentStatus {
   ACTIVE = 'A',
   PASSED = 'P',
-  SUSPENDED = 'S',
 }
 
 export enum SubjectTeacherStatus {
@@ -37,5 +36,4 @@ export enum ExamTerm {
 export const statusLabels: Record<StudentStatus, string> = {
   [StudentStatus.ACTIVE]: 'Active',
   [StudentStatus.PASSED]: 'Passed',
-  [StudentStatus.SUSPENDED]: 'Suspended',
 };
