@@ -950,35 +950,43 @@ export class StudentService {
         statusCode: 400,
         message: `Please use valid date range.`,
       });
+
     const result = await this.studentRepo
       .createQueryBuilder('student')
       .withDeleted()
-      .select('YEAR(student.enrollmentDate)', 'year')
-      .addSelect('COUNT(student.id)', 'new')
-      .addSelect(
-        `SUM(CASE WHEN student.status = 'P' AND YEAR(student.passedAt) BETWEEN :fromYear AND :toYear THEN 1 ELSE 0 END)`,
-        'passed',
+      .select('student.id', 'id')
+      .addSelect('YEAR(student.enrollmentDate)', 'enrollYear')
+      .addSelect('YEAR(student.passedAt)', 'passedYear')
+      .addSelect('YEAR(student.deletedAt)', 'deletedYear')
+      .where(
+        `(YEAR(student.enrollmentDate) BETWEEN :fromYear AND :toYear)
+       OR (student.status = 'P' AND YEAR(student.passedAt) BETWEEN :fromYear AND :toYear)
+       OR (student.status = 'S' AND YEAR(student.deletedAt) BETWEEN :fromYear AND :toYear)`,
+        { fromYear, toYear },
       )
-      .addSelect(
-        `SUM(CASE WHEN student.status = 'S' AND YEAR(student.deletedAt) BETWEEN :fromYear AND :toYear THEN 1 ELSE 0 END)`,
-        'disabled',
-      )
-      .addSelect('COUNT(student.id)', 'total')
-      .where('YEAR(student.enrollmentDate) BETWEEN :fromYear AND :toYear', {
-        fromYear,
-        toYear,
-      })
-      .groupBy('year')
-      .orderBy('year', 'DESC')
       .getRawMany();
 
-    const data = result.map((r) => ({
-      year: Number(r.year),
-      new: Number(r.new),
-      passed: Number(r.passed),
-      disabled: Number(r.disabled),
-      total: Number(r.total),
-    }));
-    return { toYear, fromYear, data };
+    const dataMap: Record<number, any> = {};
+    for (let year = fromYear; year <= toYear; year++) {
+      dataMap[year] = { year, new: 0, passed: 0, disabled: 0, total: 0 };
+    }
+
+    for (const r of result) {
+      if (r.enrollYear >= fromYear && r.enrollYear <= toYear) {
+        dataMap[r.enrollYear].new += 1;
+        dataMap[r.enrollYear].total += 1;
+      }
+      if (r.passedYear >= fromYear && r.passedYear <= toYear) {
+        dataMap[r.passedYear].passed += 1;
+        dataMap[r.passedYear].total += 1;
+      }
+      if (r.deletedYear >= fromYear && r.deletedYear <= toYear) {
+        dataMap[r.deletedYear].disabled += 1;
+        dataMap[r.deletedYear].total += 1;
+      }
+    }
+
+    const data = Object.values(dataMap).sort((a, b) => b.year - a.year);
+    return { fromYear, toYear, data };
   }
 }
