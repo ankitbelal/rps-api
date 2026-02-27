@@ -951,7 +951,7 @@ export class StudentService {
         message: `Please use valid date range.`,
       });
 
-    const result = await this.studentRepo
+    const query = this.studentRepo
       .createQueryBuilder('student')
       .withDeleted()
       .select('student.id', 'id')
@@ -964,8 +964,13 @@ export class StudentService {
        OR (student.status = 'P' AND YEAR(student.passedAt) BETWEEN :fromYear AND :toYear)
        OR (student.status = 'S' AND YEAR(student.deletedAt) BETWEEN :fromYear AND :toYear)`,
         { fromYear, toYear },
-      )
-      .getRawMany();
+      );
+    if (studentStatsDto.programId)
+      query.andWhere('student.programId = :programId', {
+        programId: studentStatsDto.programId,
+      });
+
+    const result = await query.getRawMany();
 
     const dataMap: Record<number, any> = {};
     for (let year = fromYear; year <= toYear; year++) {

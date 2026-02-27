@@ -133,4 +133,9 @@ export class StudentStatsDto {
   })
   @Type(() => Number)
   toYear?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  programId?: number;
 }
