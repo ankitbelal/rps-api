@@ -123,6 +123,13 @@ export class StudentStatsDto {
   @IsOptional()
   @IsNumber({}, { message: 'The year must be in number.' })
   @Type(() => Number)
-  @Max(5)
-  years?: number = 3;
+  fromYear?: number;
+
+  @IsOptional()
+  @IsNumber({}, { message: 'The year must be in number.' })
+  @Max(Number(new Date().getFullYear()), {
+    message: 'Date must not be in future.',
+  })
+  @Type(() => Number)
+  toYear?: number;
 }

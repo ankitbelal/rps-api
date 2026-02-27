@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -30,7 +31,6 @@ import type { Response } from 'express';
 import { join } from 'path';
 import { SubjectService } from 'src/subject/subject.service';
 import { ProgramService } from 'src/program/program.service';
-import { STATUS_CODES } from 'http';
 
 @Injectable()
 export class StudentService {
@@ -429,7 +429,7 @@ export class StudentService {
     if (!program)
       throw new NotFoundException({
         success: false,
-        statusCode: STATUS_CODES.NotFoundException,
+        statusCode: 404,
         message: `Program does not exists.`,
       });
 
@@ -940,25 +940,34 @@ export class StudentService {
   }
 
   async threeYearStudentStats(studentStatsDto: StudentStatsDto) {
-    const { years } = studentStatsDto;
+    const currentYear = new Date().getFullYear();
+    const { fromYear = currentYear - 2, toYear = currentYear } =
+      studentStatsDto;
+
+    if (fromYear > toYear)
+      throw new BadRequestException({
+        success: false,
+        statusCode: 400,
+        message: `Please use valid date range.`,
+      });
     const result = await this.studentRepo
       .createQueryBuilder('student')
       .select('YEAR(student.createdAt)', 'year')
+      .addSelect('COUNT(student.id)', 'new')
       .addSelect(
-        'SUM(CASE WHEN YEAR(student.createdAt) = YEAR(student.createdAt) THEN 1 ELSE 0 END)',
-        'new',
-      )
-      .addSelect(
-        "SUM(CASE WHEN student.status = 'P' AND YEAR(student.passedAt) = YEAR(student.createdAt) THEN 1 ELSE 0 END)",
+        `SUM(CASE WHEN student.status = 'P' AND YEAR(student.passedAt) BETWEEN :fromYear AND :toYear THEN 1 ELSE 0 END)`,
         'passed',
       )
       .addSelect(
-        "SUM(CASE WHEN (student.status ='S') AND YEAR(student.deletedAt) = YEAR(student.createdAt) THEN 1 ELSE 0 END)",
+        `SUM(CASE WHEN student.status = 'S' AND YEAR(student.deletedAt) BETWEEN :fromYear AND :toYear THEN 1 ELSE 0 END)`,
         'disabled',
       )
       .addSelect('COUNT(student.id)', 'total')
-      .where(`student.createdAt >= DATE_SUB(CURDATE(), INTERVAL ${years} YEAR)`)
-      .groupBy('YEAR(student.createdAt)')
+      .where('YEAR(student.createdAt) BETWEEN :fromYear AND :toYear', {
+        fromYear,
+        toYear,
+      })
+      .groupBy('year')
       .orderBy('year', 'DESC')
       .getRawMany();
 

@@ -17,7 +17,6 @@ import { UserService } from 'src/user/user.service';
 import { TeacherService } from 'src/teacher/teacher.service';
 import { CreateGradingSystemDto, TopStudentQueryDto } from './dto/result.dto';
 import { GradingSystem } from 'src/database/entities/grading-system.entity';
-import { STATUS_CODES } from 'http';
 
 @Injectable()
 export class ResultService {
@@ -593,7 +592,7 @@ export class ResultService {
     if (!system) {
       throw new NotFoundException({
         success: false,
-        statusCode: STATUS_CODES.NotFoundException,
+        statusCode: 404,
         message: `Active grading system does not exists.`,
       });
     }

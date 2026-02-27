@@ -19,7 +19,6 @@ import { CreatedUser } from 'src/mailing/interfaces/mailing-interface';
 import { AdminHeadQueryDto } from './dto/admin.dto';
 import { UserSync } from './interfaces/user-interface';
 import { UserPasswordChange } from './dto/user.dto';
-import { STATUS_CODES } from 'http';
 
 @Injectable()
 export class UserService {
@@ -259,7 +258,7 @@ export class UserService {
     if (!validateUserPassword)
       throw new UnprocessableEntityException({
         success: false,
-        stausCode: STATUS_CODES.UnprocessableEntityException,
+        stausCode: 422,
         message: `Invalid current password.`,
       });
     const syncData: UserSync = {
