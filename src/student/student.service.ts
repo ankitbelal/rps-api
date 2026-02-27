@@ -8,6 +8,7 @@ import {
   PromoteStudentDto,
   SearchStudentListDto,
   StudentQueryDto,
+  StudentStatsDto,
 } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -87,6 +88,7 @@ export class StudentService {
     const { page = 1, limit = 10, ...filters } = studentQueryDto;
     const query = this.studentRepo
       .createQueryBuilder('student')
+      .withDeleted()
       .innerJoin('student.program', 'program');
 
     if (filters?.id) {
@@ -111,7 +113,6 @@ export class StudentService {
     }
 
     const filteredquery = this.applyFilters(query, filters);
-    filteredquery.andWhere('student.deletedAt IS NULL');
     filteredquery.select(Student.ALLOWED_FIELDS_LIST);
     filteredquery.skip((page - 1) * limit).take(limit);
     filteredquery.orderBy('student.firstName', 'ASC');
@@ -128,6 +129,13 @@ export class StudentService {
       query.andWhere('student.status = :status', {
         status: filters.status,
       });
+    } else {
+      query.andWhere(
+        'student.status NOT IN (:...excludedStatuses) AND student.deletedAt IS NULL AND student.passedAt IS NULL',
+        {
+          excludedStatuses: [StudentStatus.PASSED, StudentStatus.SUSPENDED],
+        },
+      );
     }
 
     if (filters?.programId) {
@@ -243,6 +251,13 @@ export class StudentService {
     if (student.userId) {
       await this.userService.removeUser(student.userId);
     }
+    student.status = StudentStatus.SUSPENDED;
+    this.studentRepo
+      .createQueryBuilder()
+      .update(Student)
+      .set({ status: StudentStatus.SUSPENDED })
+      .where('id = :id', { id: student.id })
+      .execute();
     return !!(await this.studentRepo.softRemove(student));
   }
 
@@ -453,7 +468,6 @@ export class StudentService {
       .innerJoinAndSelect('student.program', 'program');
 
     const filteredQuery = this.applyFilters(query, studentQueryDto);
-    filteredQuery.andWhere('student.deletedAt IS NULL');
     filteredQuery.orderBy('student.firstName', 'ASC');
 
     const students = await filteredQuery.getMany();
@@ -925,37 +939,35 @@ export class StudentService {
     return await query.getCount();
   }
 
-async threeYearStudentStats() {
-  const result = await this.studentRepo
-    .createQueryBuilder('student')
-    .select('YEAR(student.createdAt)', 'year')
-    .addSelect(
-      'SUM(CASE WHEN YEAR(student.createdAt) = YEAR(student.createdAt) THEN 1 ELSE 0 END)',
-      'new'
-    )
-    .addSelect(
-      "SUM(CASE WHEN student.status = 'passed' AND YEAR(student.passedAt) = YEAR(student.createdAt) THEN 1 ELSE 0 END)",
-      'passed'
-    )
-    .addSelect(
-      'SUM(CASE WHEN student.deletedAt IS NOT NULL AND YEAR(student.deletedAt) = YEAR(student.createdAt) THEN 1 ELSE 0 END)',
-      'disabled'
-    )
-    .addSelect(
-      'COUNT(student.id)',
-      'total'
-    )
-    .where('student.createdAt >= DATE_SUB(CURDATE(), INTERVAL 3 YEAR)')
-    .groupBy('YEAR(student.createdAt)')
-    .orderBy('year', 'DESC')
-    .getRawMany();
+  async threeYearStudentStats(studentStatsDto: StudentStatsDto) {
+    const { years } = studentStatsDto;
+    const result = await this.studentRepo
+      .createQueryBuilder('student')
+      .select('YEAR(student.createdAt)', 'year')
+      .addSelect(
+        'SUM(CASE WHEN YEAR(student.createdAt) = YEAR(student.createdAt) THEN 1 ELSE 0 END)',
+        'new',
+      )
+      .addSelect(
+        "SUM(CASE WHEN student.status = 'P' AND YEAR(student.passedAt) = YEAR(student.createdAt) THEN 1 ELSE 0 END)",
+        'passed',
+      )
+      .addSelect(
+        "SUM(CASE WHEN (student.status ='S') AND YEAR(student.deletedAt) = YEAR(student.createdAt) THEN 1 ELSE 0 END)",
+        'disabled',
+      )
+      .addSelect('COUNT(student.id)', 'total')
+      .where(`student.createdAt >= DATE_SUB(CURDATE(), INTERVAL ${years} YEAR)`)
+      .groupBy('YEAR(student.createdAt)')
+      .orderBy('year', 'DESC')
+      .getRawMany();
 
-  return result.map(r => ({
-    year: Number(r.year),
-    new: Number(r.new),
-    passed: Number(r.passed),
-    disabled: Number(r.disabled),
-    total: Number(r.total)
-  }));
-}
+    return result.map((r) => ({
+      year: Number(r.year),
+      new: Number(r.new),
+      passed: Number(r.passed),
+      disabled: Number(r.disabled),
+      total: Number(r.total),
+    }));
+  }
 }

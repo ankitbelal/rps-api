@@ -8,10 +8,10 @@ import {
   MaxDate,
   IsOptional,
   IsBoolean,
+  Max,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { Gender, StudentStatus } from 'utils/enums/general-enums';
-import { Optional } from '@nestjs/common';
 
 export class CreateStudentDto {
   @IsNotEmpty({ message: 'First Name is required.' })
@@ -117,4 +117,12 @@ export class PromoteStudentDto {
   @IsNotEmpty({ message: 'Program is required.' })
   @Type(() => Number)
   programId: number;
+}
+
+export class StudentStatsDto {
+  @IsOptional()
+  @IsNumber({}, { message: 'The year must be in number.' })
+  @Type(() => Number)
+  @Max(5)
+  years?: number = 3;
 }

@@ -41,10 +41,6 @@ export class DashboardService {
     };
   }
 
-  async threeYearStudentStats() {
-    return await this.studentService.threeYearStudentStats();
-  }
-
   async getTeacherDashboardData(userId: number) {
     const teacher = await this.teacherService.findTeacherByUserId(userId);
     const [subjects, assignedPrograms, students] = await Promise.all([

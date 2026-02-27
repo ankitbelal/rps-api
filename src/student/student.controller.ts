@@ -18,6 +18,7 @@ import {
   CreateStudentDto,
   PromoteStudentDto,
   StudentQueryDto,
+  StudentStatsDto,
 } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { ApiResponse } from 'utils/api-response';
@@ -76,5 +77,15 @@ export class StudentController {
   async promoteStudents(@Body() promoteStudentDto: PromoteStudentDto) {
     await this.studentService.promoteStudent(promoteStudentDto);
     return ApiResponse.success('Student promoted successfully.', 200);
+  }
+
+  @HttpCode(200)
+  @Get('student-report')
+  async threeYearsStudentData(@Query() studentStatsDto: StudentStatsDto) {
+    return ApiResponse.successSingleData(
+      await this.studentService.threeYearStudentStats(studentStatsDto),
+      'Student report fetched successfully.',
+      200,
+    );
   }
 }

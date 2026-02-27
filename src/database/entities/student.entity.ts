@@ -12,6 +12,7 @@ import {
   JoinColumn,
   DeleteDateColumn,
   BeforeUpdate,
+  BeforeSoftRemove,
 } from 'typeorm';
 import { StudentSubjectMarks } from './student-marks.entity';
 import { StudentAttendance } from './student-attendance.entity';
@@ -108,10 +109,9 @@ export class Student {
   passedAt: Date;
 
   @BeforeUpdate()
-  setPassedAt() {
-    if (this.status === StudentStatus.PASSED && !this.passedAt) {
+  handleStudentStatus() {
+    if (this.status === StudentStatus.PASSED && !this.passedAt)
       this.passedAt = new Date();
-    }
   }
 
   @UpdateDateColumn({ type: 'timestamp', name: 'updated_at', nullable: true })
