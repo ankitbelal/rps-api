@@ -971,12 +971,13 @@ export class StudentService {
       .orderBy('year', 'DESC')
       .getRawMany();
 
-    return result.map((r) => ({
+    const data = result.map((r) => ({
       year: Number(r.year),
       new: Number(r.new),
       passed: Number(r.passed),
       disabled: Number(r.disabled),
       total: Number(r.total),
     }));
+    return { toYear, fromYear, data };
   }
 }

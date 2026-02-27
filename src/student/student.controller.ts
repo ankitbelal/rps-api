@@ -82,7 +82,7 @@ export class StudentController {
   @HttpCode(200)
   @Get('student-report')
   async threeYearsStudentData(@Query() studentStatsDto: StudentStatsDto) {
-    return ApiResponse.successSingleData(
+    return ApiResponse.successData(
       await this.studentService.threeYearStudentStats(studentStatsDto),
       'Student report fetched successfully.',
       200,
