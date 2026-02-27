@@ -12,7 +12,6 @@ import {
   JoinColumn,
   DeleteDateColumn,
   BeforeUpdate,
-  BeforeSoftRemove,
 } from 'typeorm';
 import { StudentSubjectMarks } from './student-marks.entity';
 import { StudentAttendance } from './student-attendance.entity';
@@ -134,6 +133,7 @@ export class Student {
     'student.enrollmentDate',
     'program.id',
     'program.name',
+    'student.createdAt',
     // reg no - roll-no
     //status
     //program
@@ -157,5 +157,6 @@ export class Student {
     'program.name',
     'program.id',
     'student.enrollmentDate',
+    'student.createdAt',
   ];
 }

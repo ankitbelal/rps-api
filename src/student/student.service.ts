@@ -941,7 +941,7 @@ export class StudentService {
 
   async StudentStats(studentStatsDto: StudentStatsDto) {
     const currentYear = new Date().getFullYear();
-    const { fromYear = currentYear - 2, toYear = currentYear } =
+    const { fromYear = currentYear - 3, toYear = currentYear } =
       studentStatsDto;
 
     if (fromYear >= toYear)
