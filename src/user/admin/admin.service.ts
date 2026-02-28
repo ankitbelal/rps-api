@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AdminUsers } from 'src/database/entities/admin-users.entity';
-import { Brackets, Repository } from 'typeorm';
+import { Admin, Brackets, Not, Repository } from 'typeorm';
 import {
   AdminQueryDto,
   CreateAdminDto,
@@ -33,8 +33,8 @@ export class AdminService {
 
     if (!valid) {
       const errors: any = {};
-      if (emailUsed) errors.email = 'Already used.';
-      if (phoneUsed) errors.phone = 'Already used.';
+      if (emailUsed) errors.email = 'Email is already used.';
+      if (phoneUsed) errors.phone = 'Phone is already used.';
 
       throw new ConflictException({
         success: false,
@@ -128,21 +128,19 @@ export class AdminService {
         message: `Admin with id: ${id} does not exists.`,
       });
     }
-    const isEmailChanged =
-      updateAdminDto.email && updateAdminDto.email !== admin.email;
 
-    const isPhoneChanged =
-      updateAdminDto.phone && updateAdminDto.phone !== admin.phone;
-    if (isEmailChanged || isPhoneChanged) {
+    const changedData = await this.detectChangeValidate(updateAdminDto, admin);
+
+    if (changedData) {
       const { emailUsed, phoneUsed, valid } =
-        await this.validateAdminContact(updateAdminDto);
+        await this.validateAdminContact(changedData);
 
       if (!valid) {
         const errors: any = {};
         if (emailUsed && updateAdminDto.email !== admin.email)
-          errors.email = 'Already used';
+          errors.email = 'Email is already used.';
         if (phoneUsed && updateAdminDto.phone !== admin.phone)
-          errors.phone = 'Already used';
+          errors.phone = 'Phone is already used.';
 
         if (Object.keys(errors).length > 0) {
           throw new ConflictException({
@@ -161,9 +159,27 @@ export class AdminService {
     return !!(await this.adminRepo.save(admin));
   }
 
+  private async detectChangeValidate(
+    updateAdminDto: UpdateAdminDto,
+    adminUsers: AdminUsers,
+  ) {
+    const changedFields: any = { id: adminUsers.id };
+
+    if (updateAdminDto.email && updateAdminDto.email !== adminUsers.email) {
+      changedFields.email = updateAdminDto.email;
+    }
+
+    if (updateAdminDto.phone && updateAdminDto.phone !== adminUsers.phone) {
+      changedFields.phone = updateAdminDto.phone;
+    }
+
+    return Object.keys(changedFields).length > 1 ? changedFields : null;
+  }
+
   async validateAdminContact(data: {
     email?: string;
     phone?: string;
+    id?: number;
   }): Promise<{
     emailUsed: boolean;
     phoneUsed: boolean;
@@ -173,17 +189,23 @@ export class AdminService {
     let phoneUsed = false;
 
     if (data.email) {
-      const email = await this.adminRepo.findOne({
-        where: { email: data.email },
-      });
-      emailUsed = !!email;
+      emailUsed = !!(await this.adminRepo.findOne({
+        where: {
+          email: data.email,
+          ...(data.id ? { id: Not(data.id) } : {}),
+        },
+        withDeleted: true,
+      }));
     }
 
     if (data.phone) {
-      const phone = await this.adminRepo.findOne({
-        where: { phone: data.phone },
-      });
-      phoneUsed = !!phone;
+      phoneUsed = !!(await this.adminRepo.findOne({
+        where: {
+          phone: data.phone,
+          ...(data.id ? { id: Not(data.id) } : {}),
+        },
+        withDeleted: true,
+      }));
     }
     const valid = !emailUsed && !phoneUsed;
     return { emailUsed, phoneUsed, valid };

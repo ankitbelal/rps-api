@@ -12,7 +12,7 @@ import {
 } from './dto/teacher.dto';
 import { Teacher } from 'src/database/entities/teacher.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, Not, Repository } from 'typeorm';
 import { UserService } from 'src/user/user.service';
 import { UserStatus, UserType } from 'utils/enums/general-enums';
 import { SelectQueryBuilder } from 'typeorm/browser';
@@ -37,8 +37,8 @@ export class TeacherService {
 
     if (!valid) {
       const errors: any = {};
-      if (emailUsed) errors.email = 'Already used.';
-      if (phoneUsed) errors.phone = 'Already used.';
+      if (emailUsed) errors.email = 'Email is already used.';
+      if (phoneUsed) errors.phone = 'Phone is already used.';
 
       throw new ConflictException({
         success: false,
@@ -147,36 +147,48 @@ export class TeacherService {
         message: `Teacher with id: ${id} does not exists.`,
       });
     }
-    const isEmailChanged =
-      updateTeacherDto.email && updateTeacherDto.email !== teacher.email;
 
-    const isPhoneChanged =
-      updateTeacherDto.phone && updateTeacherDto.phone !== teacher.phone;
-
-    if (isEmailChanged || isPhoneChanged) {
+    const changedData = await this.detectChangeValidate(
+      updateTeacherDto,
+      teacher,
+    );
+    if (changedData) {
       const { emailUsed, phoneUsed, valid } =
-        await this.validateTeacherContact(updateTeacherDto);
-
+        await this.validateTeacherContact(changedData);
       if (!valid) {
         const errors: any = {};
-        if (emailUsed && updateTeacherDto.email !== teacher.email)
-          errors.email = 'Already used';
-        if (phoneUsed && updateTeacherDto.phone !== teacher.phone)
-          errors.phone = 'Already used';
+        if (emailUsed) errors.email = 'Email is already used.';
+        if (phoneUsed) errors.phone = 'Phone is already used.';
 
-        if (Object.keys(errors).length > 0) {
-          throw new ConflictException({
-            success: false,
-            statusCode: 409,
-            message: 'Validation failed',
-            errors,
-          });
-        }
+        throw new ConflictException({
+          success: false,
+          statusCode: 409,
+          message: 'Validation failed',
+          errors,
+        });
       }
     }
+
     await this.syncWithUser(updateTeacherDto, teacher);
     Object.assign(teacher, updateTeacherDto);
     return !!(await this.teacherRepo.save(teacher));
+  }
+
+  private async detectChangeValidate(
+    updateTeacherDto: UpdateTeacherDto,
+    teacher: Teacher,
+  ) {
+    const changedFields: any = { id: teacher.id };
+
+    if (updateTeacherDto.email && updateTeacherDto.email !== teacher.email) {
+      changedFields.email = updateTeacherDto.email;
+    }
+
+    if (updateTeacherDto.phone && updateTeacherDto.phone !== teacher.phone) {
+      changedFields.phone = updateTeacherDto.phone;
+    }
+
+    return Object.keys(changedFields).length > 1 ? changedFields : null;
   }
 
   async remove(id: number): Promise<Boolean> {
@@ -193,6 +205,7 @@ export class TeacherService {
   async validateTeacherContact(data: {
     email?: string;
     phone?: string;
+    id?: number;
   }): Promise<{
     emailUsed: boolean;
     phoneUsed: boolean;
@@ -202,17 +215,23 @@ export class TeacherService {
     let phoneUsed = false;
 
     if (data.email) {
-      const email = await this.teacherRepo.findOne({
-        where: { email: data.email },
-      });
-      emailUsed = !!email;
+      emailUsed = !!(await this.teacherRepo.findOne({
+        where: {
+          email: data.email,
+          ...(data.id ? { id: Not(data.id) } : {}),
+        },
+        withDeleted: true,
+      }));
     }
 
     if (data.phone) {
-      const phone = await this.teacherRepo.findOne({
-        where: { phone: data.phone },
-      });
-      phoneUsed = !!phone;
+      phoneUsed = !!(await this.teacherRepo.findOne({
+        where: {
+          phone: data.phone,
+          ...(data.id ? { id: Not(data.id) } : {}),
+        },
+        withDeleted: true,
+      }));
     }
     const valid = !emailUsed && !phoneUsed;
     return { emailUsed, phoneUsed, valid };

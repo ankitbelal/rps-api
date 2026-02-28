@@ -14,7 +14,7 @@ import {
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Student } from 'src/database/entities/student.entity';
-import { Brackets, LessThan, Repository } from 'typeorm';
+import { Brackets, LessThan, Not, Repository } from 'typeorm';
 import { UserService } from 'src/user/user.service';
 import {
   statusLabels,
@@ -53,11 +53,11 @@ export class StudentService {
 
     if (!valid) {
       const errors: any = {};
-      if (emailUsed) errors.email = 'Already used.';
-      if (phoneUsed) errors.phone = 'Alread used.';
-      if (rollNumberExists) errors.rollNumber = 'Already exists.';
+      if (emailUsed) errors.email = 'Email is already used.';
+      if (phoneUsed) errors.phone = 'Phone is already used.';
+      if (rollNumberExists) errors.rollNumber = 'Roll number is already used.';
       if (registrationNumberExists)
-        errors.registrationNumber = 'Already exists.';
+        errors.registrationNumber = 'Registration number is already exists.';
 
       throw new ConflictException({
         success: false,
@@ -206,37 +206,72 @@ export class StudentService {
       });
     }
 
-    const isEmailChanged =
-      updateStudentDto.email && updateStudentDto.email !== student.email;
-
-    const isPhoneChanged =
-      updateStudentDto.phone && updateStudentDto.phone !== student.phone;
-
-    if (isEmailChanged || isPhoneChanged) {
-      const { emailUsed, phoneUsed, valid } =
-        await this.validateStudentContact(updateStudentDto);
+    const changedData = await this.detectChangeValidate(
+      updateStudentDto,
+      student,
+    );
+    if (changedData) {
+      const {
+        emailUsed,
+        phoneUsed,
+        rollNumberExists,
+        registrationNumberExists,
+        valid,
+      } = await this.validateStudentContact(changedData);
 
       if (!valid) {
         const errors: any = {};
-        if (emailUsed && updateStudentDto.email !== student.email)
-          errors.email = 'Already used';
-        if (phoneUsed && updateStudentDto.phone !== student.phone)
-          errors.phone = 'Already used';
+        if (emailUsed) errors.email = 'Email is already used.';
+        if (phoneUsed) errors.phone = 'Phone is already used.';
+        if (rollNumberExists)
+          errors.rollNumber = 'Roll number is already used.';
+        if (registrationNumberExists)
+          errors.registrationNumber = 'Registration number is already exists.';
 
-        if (Object.keys(errors).length > 0) {
-          throw new ConflictException({
-            success: false,
-            statusCode: 409,
-            message: 'Validation failed',
-            errors,
-          });
-        }
+        throw new ConflictException({
+          success: false,
+          statusCode: 409,
+          message: 'Validation failed',
+          errors,
+        });
       }
     }
+
     if (student.userId) await this.syncWithUser(updateStudentDto, student);
     Object.assign(student, updateStudentDto);
     await this.studentRepo.save(student);
     return true;
+  }
+
+  private async detectChangeValidate(
+    updateStudentDto: UpdateStudentDto,
+    student: Student,
+  ) {
+    const changedFields: any = { id: student.id };
+
+    if (updateStudentDto.email && updateStudentDto.email !== student.email) {
+      changedFields.email = updateStudentDto.email;
+    }
+
+    if (updateStudentDto.phone && updateStudentDto.phone !== student.phone) {
+      changedFields.phone = updateStudentDto.phone;
+    }
+
+    if (
+      updateStudentDto.rollNumber &&
+      updateStudentDto.rollNumber !== student.rollNumber
+    ) {
+      changedFields.rollNumber = updateStudentDto.rollNumber;
+    }
+
+    if (
+      updateStudentDto.registrationNumber &&
+      updateStudentDto.registrationNumber !== student.registrationNumber
+    ) {
+      changedFields.registrationNumber = updateStudentDto.registrationNumber;
+    }
+
+    return Object.keys(changedFields).length > 1 ? changedFields : null;
   }
 
   async remove(id: number): Promise<Boolean> {
@@ -270,6 +305,7 @@ export class StudentService {
     phone?: string;
     rollNumber?: string;
     registrationNumber?: string;
+    id?: number;
   }): Promise<{
     emailUsed: boolean;
     phoneUsed: boolean;
@@ -283,28 +319,42 @@ export class StudentService {
     let registrationNumberExists = false;
 
     if (data.email) {
-      const email = await this.findDeletedWithCondition({ email: data.email });
-      console.log(email);
-      emailUsed = !!email;
+      emailUsed = !!(await this.studentRepo.findOne({
+        where: {
+          email: data.email,
+          ...(data.id ? { id: Not(data.id) } : {}),
+        },
+        withDeleted: true,
+      }));
     }
-
     if (data.phone) {
-      const phone = await this.findDeletedWithCondition({ phone: data.phone });
-      phoneUsed = !!phone;
+      phoneUsed = !!(await this.studentRepo.findOne({
+        where: {
+          phone: data.phone,
+          ...(data.id ? { id: Not(data.id) } : {}),
+        },
+        withDeleted: true,
+      }));
     }
 
     if (data.rollNumber) {
-      const rollNumber = await this.findDeletedWithCondition({
-        rollNumber: data.rollNumber,
-      });
-      rollNumberExists = !!rollNumber;
+      rollNumberExists = !!(await this.studentRepo.findOne({
+        where: {
+          rollNumber: data.rollNumber,
+          ...(data.id ? { id: Not(data.id) } : {}),
+        },
+        withDeleted: true,
+      }));
     }
 
     if (data.registrationNumber) {
-      const registrationNumber = await this.findDeletedWithCondition({
-        registrationNumber: data.registrationNumber,
-      });
-      registrationNumberExists = !!registrationNumber;
+      registrationNumberExists = !!(await this.studentRepo.findOne({
+        where: {
+          registrationNumber: data.registrationNumber,
+          ...(data.id ? { id: Not(data.id) } : {}),
+        },
+        withDeleted: true,
+      }));
     }
     const valid =
       !emailUsed &&
@@ -318,11 +368,6 @@ export class StudentService {
       registrationNumberExists,
       valid,
     };
-  }
-
-  private async findDeletedWithCondition(condition): Promise<Student | null> {
-    const query = { where: condition, withDeleted: true };
-    return await this.studentRepo.findOne(query);
   }
 
   async getAllStudentList(
