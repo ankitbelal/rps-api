@@ -554,7 +554,7 @@ export class ResultService {
       order: { maxGPA: 'ASC' },
       select: ['id', 'minGPA', 'maxGPA', 'grade', 'remarks', 'createdAt'],
     });
-    return system ? [system] : [];
+    return { data: system };
   }
 
   async addGradingSystem(dto: CreateGradingSystemDto): Promise<Boolean> {

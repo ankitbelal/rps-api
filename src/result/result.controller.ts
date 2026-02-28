@@ -121,7 +121,7 @@ export class ResultController {
   @HttpCode(200)
   @Get('grading-system')
   async getGradingSystem() {
-    return ApiResponse.successSingleData(
+    return ApiResponse.successData(
       await this.resultService.getGradingSystem(),
       'Grading system fetched successfully',
       200,
