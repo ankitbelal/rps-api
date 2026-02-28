@@ -283,10 +283,15 @@ export class StudentService {
         message: `Student with id: ${id} does not exists.`,
       });
 
+    if (student.status === StudentStatus.SUSPENDED)
+      throw new BadRequestException({
+        status: 'false',
+        statusCode: 400,
+        message: `Student is already removed.`,
+      });
     if (student.userId) {
       await this.userService.removeUser(student.userId);
     }
-    student.status = StudentStatus.SUSPENDED;
     this.studentRepo
       .createQueryBuilder()
       .update(Student)
@@ -296,8 +301,29 @@ export class StudentService {
     return !!(await this.studentRepo.softRemove(student));
   }
 
+  async restoreDeletedStudent(id: number): Promise<Boolean> {
+    const student = await this.findStudentById(id);
+    if (!student)
+      throw new NotFoundException({
+        status: 'false',
+        statusCode: 404,
+        message: `Student with id: ${id} does not exists.`,
+      });
+
+    await this.studentRepo.restore(student.id);
+    const status: StudentStatus = student.passedAt
+      ? StudentStatus.PASSED
+      : StudentStatus.ACTIVE;
+    this.studentRepo
+      .createQueryBuilder()
+      .update(Student)
+      .set({ status })
+      .where('id = :id', { id: student.id })
+      .execute();
+    return true;
+  }
   async findStudentById(id: number): Promise<Student | null> {
-    return await this.studentRepo.findOne({ where: { id } });
+    return await this.studentRepo.findOne({ where: { id }, withDeleted: true });
   }
 
   async validateStudentContact(data: {

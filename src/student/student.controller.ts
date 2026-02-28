@@ -72,6 +72,13 @@ export class StudentController {
     return ApiResponse.success('Student removed successfully.', 200);
   }
 
+  @Patch('restore/:id')
+  @HttpCode(200)
+  async restore(@Param('id') id: string) {
+    await this.studentService.restoreDeletedStudent(+id);
+    return ApiResponse.success('Student restored successfully.', 200);
+  }
+
   @Post('promote-student')
   @HttpCode(200)
   async promoteStudents(@Body() promoteStudentDto: PromoteStudentDto) {
