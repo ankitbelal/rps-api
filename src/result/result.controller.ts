@@ -134,10 +134,4 @@ export class ResultController {
     await this.resultService.addGradingSystem(dto);
     return ApiResponse.success('Grading system added successfully.', 201);
   }
-
-  @Delete('delete-grading')
-  async deleteGradingSystem() {
-    await this.resultService.deleteGradingSystem();
-    ApiResponse.success('Grading system deleted successfully.', 200);
-  }
 }

@@ -39,3 +39,15 @@ export const statusLabels: Record<StudentStatus, string> = {
   [StudentStatus.PASSED]: 'Passed',
   [StudentStatus.SUSPENDED]: 'Suspended',
 };
+
+export enum AuditActCodes {
+  STUDENT_ENROLL = 'SENROLL',
+  STUDENT_PROMOTION = 'SPROMO',
+  RESULT_PUBLISH = 'RESPUB',
+}
+
+export enum LogType {
+  STUDENT_PROMOTION = 'promotion',
+  RESULT_PUBLISH = 'result',
+  MIXED = 'mixed',
+}

@@ -208,23 +208,15 @@ export class ResultService {
   }
 
   private calculateGPA(percentage: number): number {
-    if (percentage >= 90) return 4.0;
-    if (percentage >= 80) return 3.7;
-    if (percentage >= 70) return 3.3;
-    if (percentage >= 60) return 3.0;
-    if (percentage >= 50) return 2.0;
-    if (percentage >= 40) return 1.0;
-    return 0.0;
+    return Number((percentage / 25).toFixed(2));
   }
 
-  private calculateGrade(gpa: number): string {
-    if (gpa >= 4.0) return 'A+';
-    if (gpa >= 3.7) return 'A';
-    if (gpa >= 3.3) return 'B+';
-    if (gpa >= 3.0) return 'B';
-    if (gpa >= 2.0) return 'C';
-    if (gpa >= 1.0) return 'D';
-    return 'F';
+  private async calculateGrade(gpa: number): Promise<string> {
+    const gradingSystem = await this.gradingSystemRepo
+      .createQueryBuilder('grade')
+      .where(':gpa BETWEEN grade.minRange AND grade.maxRange', { gpa })
+      .getOne();
+    return gradingSystem?.grade ?? 'F';
   }
 
   // ─── CORE CALCULATION (reusable private method) ─────────────────────
@@ -282,7 +274,7 @@ export class ResultService {
         subjectCode: subject.code!,
         subjectObtainedOutOf50: parseFloat(subjectObtainedOutOf50.toFixed(2)),
         extraParamObtainedOutOf50: parseFloat(extraObtained.toFixed(2)),
-        grade: this.calculateGrade(this.calculateGPA(finalMarkOutOf100)),
+        grade: await this.calculateGrade(this.calculateGPA(finalMarkOutOf100)),
         finalMarkOutOf100: parseFloat(finalMarkOutOf100.toFixed(2)),
       });
     }
@@ -403,28 +395,36 @@ export class ResultService {
     );
     const finalTotalFull = Number(firstTerm.totalFull);
 
-    const subjectBreakdown = firstTerm.subjectBreakdown.map((fs) => {
-      const ss = secondTerm.subjectBreakdown.find(
-        (s) => s.subjectId === fs.subjectId,
-      );
-      const finalMarkOutOf100 = parseFloat(
-        (
-          (Number(fs.finalMarkOutOf100) + Number(ss?.finalMarkOutOf100 ?? 0)) /
-          2
-        ).toFixed(2),
-      );
-      return {
-        subjectId: fs.subjectId,
-        subjectName: fs.subjectName,
-        subjectCode: fs.subjectCode,
-        firstTermMark: Number(fs.finalMarkOutOf100),
-        secondTermMark: Number(ss?.finalMarkOutOf100 ?? 0),
-        finalMarkOutOf100: finalMarkOutOf100,
-        grade: this.calculateGrade(this.calculateGPA(finalMarkOutOf100)),
-        subjectObtainedOutOf50: Number(fs.subjectObtainedOutOf50),
-        extraParamObtainedOutOf50: Number(fs.extraParamObtainedOutOf50),
-      };
-    });
+    const subjectBreakdown = await Promise.all(
+      firstTerm.subjectBreakdown.map(async (fs) => {
+        const ss = secondTerm.subjectBreakdown.find(
+          (s) => s.subjectId === fs.subjectId,
+        );
+
+        const finalMarkOutOf100 = parseFloat(
+          (
+            (Number(fs.finalMarkOutOf100) +
+              Number(ss?.finalMarkOutOf100 ?? 0)) /
+            2
+          ).toFixed(2),
+        );
+
+        const gpa = this.calculateGPA(finalMarkOutOf100);
+        const grade = await this.calculateGrade(gpa);
+
+        return {
+          subjectId: fs.subjectId,
+          subjectName: fs.subjectName,
+          subjectCode: fs.subjectCode,
+          firstTermMark: Number(fs.finalMarkOutOf100),
+          secondTermMark: Number(ss?.finalMarkOutOf100 ?? 0),
+          finalMarkOutOf100,
+          grade,
+          subjectObtainedOutOf50: Number(fs.subjectObtainedOutOf50),
+          extraParamObtainedOutOf50: Number(fs.extraParamObtainedOutOf50),
+        };
+      }),
+    );
 
     await this.publishedResultRepo.upsert(
       {
@@ -550,53 +550,17 @@ export class ResultService {
   }
 
   async getGradingSystem() {
-    const system = await this.gradingSystemRepo
-      .createQueryBuilder('gs')
-      .leftJoinAndSelect('gs.gradeRanges', 'gr')
-      .select([
-        'gs.id',
-        'gs.name',
-        'gr.id',
-        'gr.minGPA',
-        'gr.maxGPA',
-        'gr.grade',
-        'gr.remarks',
-        'gs.createdAt',
-      ])
-      .orderBy('gr.maxGPA', 'DESC')
-      .getOne();
-
+    const system = await this.gradingSystemRepo.find({
+      order: { maxGPA: 'ASC' },
+      select: ['id', 'minGPA', 'maxGPA', 'grade', 'remarks', 'createdAt'],
+    });
     return system ? [system] : [];
   }
 
   async addGradingSystem(dto: CreateGradingSystemDto): Promise<Boolean> {
-    const existing = await this.gradingSystemRepo.find();
-    if (existing) await this.gradingSystemRepo.softRemove(existing);
-
-    const gradingSystem = this.gradingSystemRepo.create({
-      name: dto.name,
-      gradeRanges: dto.gradeRanges.map((range) => ({
-        minGPA: range.minGPA,
-        maxGPA: range.maxGPA,
-        grade: range.grade,
-        remarks: range.remarks,
-      })),
-    });
-
-    return !!(await this.gradingSystemRepo.save(gradingSystem));
-  }
-
-  async deleteGradingSystem(): Promise<Boolean> {
-    const system = await this.gradingSystemRepo.find();
-
-    if (!system) {
-      throw new NotFoundException({
-        success: false,
-        statusCode: 404,
-        message: `Active grading system does not exists.`,
-      });
-    }
-
-    return !!(await this.gradingSystemRepo.softDelete(system));
+    await this.gradingSystemRepo.deleteAll();
+    const gradingSystem = this.gradingSystemRepo.create(dto.gradeRanges);
+    this.gradingSystemRepo.save(gradingSystem);
+    return true;
   }
 }

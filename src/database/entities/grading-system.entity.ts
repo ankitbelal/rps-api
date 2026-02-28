@@ -3,28 +3,39 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
-  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { gradeRange } from './grade-ranges.entity';
 
 @Entity('grading_system')
 export class GradingSystem {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
-  name: string;
-
-  @OneToMany(() => gradeRange, (range) => range.gradingSystem, {
-    cascade: true,
+  @Column({
+    name: 'min_gpa',
+    type: 'decimal',
+    precision: 3,
+    scale: 2,
+    nullable: false,
   })
-  gradeRanges: gradeRange[];
+  minGPA: Number;
 
-  @Column({ name: 'is_active', default: false })
-  isActive: boolean;
-  
+  @Column({
+    name: 'max_gpa',
+    type: 'decimal',
+    precision: 3,
+    scale: 2,
+    nullable: false,
+  })
+  maxGPA: Number;
+
+  @Column({ length: 5 })
+  grade: string;
+
+  @Column({ nullable: true })
+  remarks: string;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamp', nullable: true })
   createdAt: Date;
 

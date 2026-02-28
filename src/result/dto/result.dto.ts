@@ -46,10 +46,6 @@ export class CreateGradeRangeDto {
 }
 
 export class CreateGradingSystemDto {
-  @IsNotEmpty({ message: 'Name is required.' })
-  @IsString()
-  name: string;
-
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateGradeRangeDto)
