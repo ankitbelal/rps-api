@@ -551,7 +551,7 @@ export class ResultService {
 
   async getGradingSystem() {
     const system = await this.gradingSystemRepo.find({
-      order: { maxGPA: 'ASC' },
+      order: { maxGPA: 'DESC' },
       select: ['id', 'minGPA', 'maxGPA', 'grade', 'remarks', 'createdAt'],
     });
     return { data: system };
