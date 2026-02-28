@@ -283,30 +283,26 @@ export class StudentService {
     let registrationNumberExists = false;
 
     if (data.email) {
-      const email = await this.studentRepo.findOne({
-        where: { email: data.email },
-      });
+      const email = await this.findDeletedWithCondition({ email: data.email });
+      console.log(email);
       emailUsed = !!email;
     }
 
     if (data.phone) {
-      const phone = await this.studentRepo.findOne({
-        where: { phone: data.phone },
-      });
+      const phone = await this.findDeletedWithCondition({ phone: data.phone });
       phoneUsed = !!phone;
     }
 
     if (data.rollNumber) {
-      const rollNumber = await this.studentRepo.findOne({
-        where: { rollNumber: data.rollNumber },
+      const rollNumber = await this.findDeletedWithCondition({
+        rollNumber: data.rollNumber,
       });
-
       rollNumberExists = !!rollNumber;
     }
 
     if (data.registrationNumber) {
-      const registrationNumber = await this.studentRepo.findOne({
-        where: { registrationNumber: data.registrationNumber },
+      const registrationNumber = await this.findDeletedWithCondition({
+        registrationNumber: data.registrationNumber,
       });
       registrationNumberExists = !!registrationNumber;
     }
@@ -322,6 +318,11 @@ export class StudentService {
       registrationNumberExists,
       valid,
     };
+  }
+
+  private async findDeletedWithCondition(condition): Promise<Student | null> {
+    const query = { where: condition, withDeleted: true };
+    return await this.studentRepo.findOne(query);
   }
 
   async getAllStudentList(
@@ -943,7 +944,6 @@ export class StudentService {
     const currentYear = new Date().getFullYear();
     const { fromYear = currentYear - 3, toYear = currentYear } =
       studentStatsDto;
-
     if (fromYear >= toYear)
       throw new BadRequestException({
         success: false,
@@ -960,9 +960,11 @@ export class StudentService {
       .addSelect('YEAR(student.passedAt)', 'passedYear')
       .addSelect('YEAR(student.deletedAt)', 'deletedYear')
       .where(
-        `(YEAR(student.enrollmentDate) BETWEEN :fromYear AND :toYear)
-       OR (student.status = 'P' AND YEAR(student.passedAt) BETWEEN :fromYear AND :toYear)
-       OR (student.status = 'S' AND YEAR(student.deletedAt) BETWEEN :fromYear AND :toYear)`,
+        `(
+      (YEAR(student.enrollmentDate) BETWEEN :fromYear AND :toYear)
+      OR (student.status = 'P' AND YEAR(student.passedAt) BETWEEN :fromYear AND :toYear)
+      OR (student.status = 'S' AND YEAR(student.deletedAt) BETWEEN :fromYear AND :toYear)
+    )`,
         { fromYear, toYear },
       );
     if (studentStatsDto.programId)
