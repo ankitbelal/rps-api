@@ -1,6 +1,6 @@
 export interface AuditLogs {
   actCode: string;
   action: string;
-  comment: string;
+  comment?: string;
   userId: number;
 }

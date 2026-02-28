@@ -29,8 +29,11 @@ export class StudentController {
 
   @Post()
   @HttpCode(201)
-  async create(@Body() createStudentDto: CreateStudentDto) {
-    await this.studentService.create(createStudentDto);
+  async create(@Body() createStudentDto: CreateStudentDto, @Req() req) {
+    await this.studentService.create({
+      ...createStudentDto,
+      userId: req.user.userId, //logging action who perform when
+    });
     return ApiResponse.success('Student created successfully', 200);
   }
 
@@ -81,8 +84,14 @@ export class StudentController {
 
   @Post('promote-student')
   @HttpCode(200)
-  async promoteStudents(@Body() promoteStudentDto: PromoteStudentDto) {
-    await this.studentService.promoteStudent(promoteStudentDto);
+  async promoteStudents(
+    @Query() promoteStudentDto: PromoteStudentDto,
+    @Req() req,
+  ) {
+    await this.studentService.promoteStudent({
+      ...promoteStudentDto,
+      userId: req.user.userId,
+    });
     return ApiResponse.success('Student promoted successfully.', 200);
   }
 

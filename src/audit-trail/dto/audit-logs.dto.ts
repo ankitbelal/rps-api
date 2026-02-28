@@ -4,7 +4,7 @@ import { LogType } from 'utils/enums/general-enums';
 
 export class AuditLogQueryDto {
   @IsOptional()
-  @IsEnum({ enum: LogType })
+  @IsEnum(LogType, { message: 'Type must be valid.' })
   type?: LogType = LogType.MIXED;
 
   @IsOptional()

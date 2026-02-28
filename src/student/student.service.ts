@@ -17,6 +17,7 @@ import { Student } from 'src/database/entities/student.entity';
 import { Brackets, LessThan, Not, Repository } from 'typeorm';
 import { UserService } from 'src/user/user.service';
 import {
+  AuditActCodes,
   statusLabels,
   StudentStatus,
   UserStatus,
@@ -31,6 +32,8 @@ import type { Response } from 'express';
 import { join } from 'path';
 import { SubjectService } from 'src/subject/subject.service';
 import { ProgramService } from 'src/program/program.service';
+import { AuditTrailService } from 'src/audit-trail/audit-trail.service';
+import { AuditLogs } from 'src/audit-trail/interfaces/audit-trails-interface';
 
 @Injectable()
 export class StudentService {
@@ -40,6 +43,7 @@ export class StudentService {
     private readonly userService: UserService,
     private readonly subjectService: SubjectService,
     private readonly programService: ProgramService,
+    private readonly auditLogService: AuditTrailService,
   ) {}
 
   async create(createStudentDto: CreateStudentDto): Promise<Boolean> {
@@ -72,10 +76,14 @@ export class StudentService {
     if (createStudentDto.createUser) {
       studentData.userId = (await this.createUser(createStudentDto)).id;
     }
-
-    return !!(await this.studentRepo.save(
-      this.studentRepo.create(studentData),
-    ));
+    const logDetails: AuditLogs = {
+      userId: createStudentDto.userId!,
+      actCode: AuditActCodes.STUDENT_ENROLL,
+      action: 'student enrolled.',
+      comment: `The student with roll number :${createStudentDto.rollNumber} is added in the system.`,
+    };
+    this.auditLogService.createLog(logDetails);
+    return !!this.studentRepo.save(this.studentRepo.create(studentData));
   }
 
   async findAll(studentQueryDto: StudentQueryDto): Promise<{
@@ -505,7 +513,7 @@ export class StudentService {
         message: `Program does not exists.`,
       });
 
-    await this.studentRepo.update(
+    this.studentRepo.update(
       {
         programId: promoteStudentDto.programId,
         currentSemester: program.totalSemesters,
@@ -516,7 +524,15 @@ export class StudentService {
       },
     );
 
-    await this.studentRepo.increment(
+    const logDetails: AuditLogs = {
+      userId: promoteStudentDto.userId!,
+      actCode: AuditActCodes.STUDENT_PROMOTION,
+      action: `${program.code} students are promoted to new semester.`,
+      comment: `Students are promoted to new semesters and final semester students are termed as passed.`,
+    };
+    this.auditLogService.createLog(logDetails);
+
+    this.studentRepo.increment(
       {
         programId: promoteStudentDto.programId,
         currentSemester: LessThan(program.totalSemesters),

@@ -72,6 +72,9 @@ export class CreateStudentDto {
   @IsOptional()
   @IsBoolean()
   createUser?: boolean = false; //by default dont create the user
+
+  @IsOptional()
+  userId?: number;
 }
 
 export class StudentQueryDto {
@@ -116,8 +119,13 @@ export class SearchStudentListDto {
 
 export class PromoteStudentDto {
   @IsNotEmpty({ message: 'Program is required.' })
+  @IsNumber({}, { message: 'Program must be a number.' })
   @Type(() => Number)
   programId: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  userId?: number;
 }
 
 export class StudentStatsDto {
