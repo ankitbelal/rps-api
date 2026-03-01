@@ -515,6 +515,19 @@ export class StudentService {
         message: `Program does not exists.`,
       });
 
+    const students = await this.studentRepo.count({
+      where: {
+        programId: promoteStudentDto.programId,
+        status: StudentStatus.ACTIVE,
+      },
+    });
+    if (!students)
+      throw new NotFoundException({
+        success: false,
+        statusCode: 404,
+        message: 'No student found to promote.',
+      });
+
     this.studentRepo.update(
       {
         programId: promoteStudentDto.programId,
@@ -526,14 +539,6 @@ export class StudentService {
       },
     );
 
-    const logDetails: AuditLogs = {
-      userId: promoteStudentDto.userId!,
-      actCode: AuditActCodes.STUDENT_PROMOTION,
-      action: `${program.code} students are promoted to new semester.`,
-      comment: `Students are promoted to new semesters and final semester students are termed as passed.`,
-    };
-    this.auditLogService.createLog(logDetails);
-
     this.studentRepo.increment(
       {
         programId: promoteStudentDto.programId,
@@ -544,6 +549,13 @@ export class StudentService {
       1,
     );
 
+    const logDetails: AuditLogs = {
+      userId: promoteStudentDto.userId!,
+      actCode: AuditActCodes.STUDENT_PROMOTION,
+      action: `${program.code} students are promoted to new semester.`,
+      comment: `Students are promoted to new semesters and final semester students are termed as passed.`,
+    };
+    this.auditLogService.createLog(logDetails);
     return true;
   }
 
