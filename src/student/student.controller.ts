@@ -85,7 +85,7 @@ export class StudentController {
   @Post('promote-students')
   @HttpCode(200)
   async promoteStudents(
-    @Query() promoteStudentDto: PromoteStudentDto,
+    @Param() promoteStudentDto: PromoteStudentDto,
     @Req() req,
   ) {
     await this.studentService.promoteStudent({
