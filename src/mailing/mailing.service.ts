@@ -3,7 +3,11 @@ import { Injectable } from '@nestjs/common';
 import * as Handlebars from 'handlebars';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { CreatedUser, PasswordResetUser } from './interfaces/mailing-interface';
+import {
+  CreatedUser,
+  PasswordResetUser,
+  StudentResultEmail,
+} from './interfaces/mailing-interface';
 
 const isProd = process.env.NODE_ENV === 'production';
 const templatesDir = isProd
@@ -16,8 +20,8 @@ const layoutContent = readFileSync(layoutPath, 'utf-8');
 export class MailingService {
   // Hardcoded mock data
   private readonly Company = {
-    name: 'RPS@2025.',
-    website: 'https://rps.yubrajdhungana.com.np/',
+    name: process.env.SYSTEM_NAME,
+    website: process.env.RPS_URL,
     supportEmail: 'support@rps.com',
     helpCenter: 'https://rps.yubrajdhungana.com.np/help',
     privacyPolicyUrl: 'https://rps.yubrajdhungana.com.np/privacy',
@@ -81,7 +85,7 @@ export class MailingService {
           },
           subject: 'Reset Your Password - RPS Account',
           otp: user.otp,
-          verifyUrl: user.verifyUrl || 'https://rps.yubrajdhungana.com.np',
+          verifyUrl: process.env.RPS_URL,
           company: this.Company,
           currentYear: new Date().getFullYear(),
           expiryMinutes: user.expiryMinutes,
@@ -104,7 +108,7 @@ export class MailingService {
         context: {
           user: user,
           subject: 'Account Created - RPS Account',
-          loginUrl: user.loginUrl || 'https://rps.yubrajdhungana.com.np',
+          loginUrl: this.Company.website,
           company: this.Company,
           currentYear: new Date().getFullYear(),
         },
@@ -112,6 +116,41 @@ export class MailingService {
       return true;
     } catch (error) {
       console.error('Error sending password reset email:', error);
+      throw error;
+    }
+  }
+
+  async sendStudentsResultEmail(data: StudentResultEmail): Promise<boolean> {
+    try {
+      await this.mailingService.sendMail({
+        to: data.student.email,
+        subject: `📢 Your Result is Published — ${data.result.examName}`,
+        template: 'student-result',
+        layout: 'layouts/main',
+        context: {
+          subject: `📢 Your Result is Published — ${data.result.examName}`,
+          student: {
+            name: data.student.name,
+            rollNumber: data.student.rollNumber,
+            registrationNumber: data.student.registrationNumber,
+          },
+          result: {
+            examName: data.result.examName,
+            semester: data.result.semester,
+            publishedDate: new Date().toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            }),
+          },
+          dashboardLink: this.Company.website,
+          company: this.Company,
+          currentYear: new Date().getFullYear(),
+        },
+      } as any);
+
+      return true;
+    } catch (error) {
       throw error;
     }
   }

@@ -16,9 +16,22 @@ export class MailingController {
   @HttpCode(200)
   @Post('welcome')
   async sendWelcomeEmail() {
-    return await this.mailingService.sendWelcomeEmail(
-      'aankitbelal@gmail.com',
-      'ankit',
-    );
+    // return await this.mailingService.sendWelcomeEmail(
+    //   'aankitbelal@gmail.com',
+    //   'ankit',
+    // );
+
+    await this.mailingService.sendStudentsResultEmail({
+      student: {
+        name: 'Ankit Belal',
+        rollNumber: '045',
+        registrationNumber: 'REG-2021-BCA-045',
+        email: 'aankitbelal@gmail.com',
+      },
+      result: {
+        examName: 'Mid-Term Examination 2024',
+        semester: 'Second Semester',
+      },
+    });
   }
 }

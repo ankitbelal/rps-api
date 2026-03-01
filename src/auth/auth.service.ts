@@ -188,7 +188,6 @@ export class AuthService {
       name: user.name,
       otp: otp,
       expiryMinutes: 10,
-      verifyUrl: 'https://rps.yubrajdhungana.com.np/',
     };
     const otpSent = await this.mailingService.sendPasswordResetEmail(resetUser);
 

@@ -1,0 +1,136 @@
+{{#> main}}
+  {{#*inline "content"}}
+  {{! ── BODY ── }}
+  <div style="padding: 36px 32px; background: #ffffff;">
+
+    {{! Greeting }}
+    <p style="
+      font-size: 18px;
+      font-weight: 700;
+      color: #1e3a8a;
+      margin: 0 0 14px;
+    ">Hello, {{student.name}}! 👋</p>
+
+    <p style="
+      font-size: 14.5px;
+      line-height: 1.85;
+      color: #475569;
+      margin: 0 0 26px;
+    ">
+      We are pleased to inform you that your
+      <strong style="color: #1e293b;">{{result.examName}}</strong>
+      result for <strong style="color: #1e293b;">{{result.semester}}</strong>
+      has been officially published. You can now view your detailed result,
+      grade sheet, and performance summary directly from your student dashboard.
+    </p>
+
+    {{! ── INFO CARD ── }}
+    <div style="
+      background: #f8faff;
+      border: 1px solid #dbeafe;
+      border-left: 4px solid #1a56db;
+      border-radius: 8px;
+      padding: 6px 0;
+      margin-bottom: 28px;
+    ">
+
+      <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+
+        <tr style="border-bottom: 1px solid #e0eaff;">
+          <td style="padding: 12px 20px; font-size: 13px; color: #64748b; width: 45%;">
+            👤 &nbsp;Student Name
+          </td>
+          <td style="padding: 12px 20px; font-size: 13px; font-weight: 700; color: #1e293b;">
+            {{student.name}}
+          </td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #e0eaff;">
+          <td style="padding: 12px 20px; font-size: 13px; color: #64748b;">
+            🎯 &nbsp;Exam / Result Type
+          </td>
+          <td style="padding: 12px 20px; font-size: 13px; font-weight: 700; color: #1e293b;">
+            {{result.examName}}
+          </td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #e0eaff;">
+          <td style="padding: 12px 20px; font-size: 13px; color: #64748b;">
+            📚 &nbsp;Semester
+          </td>
+          <td style="padding: 12px 20px; font-size: 13px; font-weight: 700; color: #1e293b;">
+            {{result.semester}}
+          </td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #e0eaff;">
+          <td style="padding: 12px 20px; font-size: 13px; color: #64748b;">
+            🔖 &nbsp;Roll Number
+          </td>
+          <td style="padding: 12px 20px; font-size: 13px; font-weight: 700; color: #1e293b;">
+            {{student.rollNumber}}
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding: 12px 20px; font-size: 13px; color: #64748b;">
+            🪪 &nbsp;Registration No.
+          </td>
+          <td style="padding: 12px 20px; font-size: 13px; font-weight: 700; color: #1e293b;">
+            {{student.registrationNumber}}
+          </td>
+        </tr>
+
+      </table>
+    </div>
+
+    {{! ── PUBLISHED DATE PILL ── }}
+    <p style="margin: 0 0 28px;">
+      <span style="
+        display: inline-block;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1d4ed8;
+        border-radius: 20px;
+        padding: 6px 16px;
+        font-size: 13px;
+        font-weight: 600;
+      ">📅 Published On: {{result.publishedDate}}</span>
+    </p>
+
+    {{! ── CTA BUTTON ── }}
+    <div style="text-align: center; margin-bottom: 32px;">
+      <a href="{{dashboardLink}}" style="
+        display: inline-block;
+        background: linear-gradient(135deg, #1a56db, #1e3a8a);
+        color: #ffffff;
+        text-decoration: none;
+        padding: 15px 40px;
+        border-radius: 50px;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        box-shadow: 0 6px 20px rgba(26,86,219,0.35);
+      ">📊 View Your Result on Dashboard</a>
+    </div>
+
+    {{! ── DIVIDER ── }}
+    <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+
+    {{! ── FALLBACK LINK ── }}
+    <p style="font-size: 12.5px; color: #94a3b8; line-height: 1.8; margin: 0 0 12px;">
+      If the button above doesn't work, copy and paste the link below into your browser:<br/>
+      <a href="{{dashboardLink}}" style="color: #1a56db; text-decoration: none;">{{dashboardLink}}</a>
+    </p>
+
+    {{! ── NOTICE ── }}
+    <p style="font-size: 12.5px; color: #94a3b8; line-height: 1.8; margin: 0;">
+      ⚠️ If you believe there is an error in your result, please contact your
+      class teacher or the examination department within <strong>7 days</strong>
+      of this notification.
+    </p>
+
+  </div>
+  {{/inline}}
+
+{{/main}}

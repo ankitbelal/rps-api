@@ -180,7 +180,6 @@ export class UserService {
       email: user.email,
       password: randomPass,
       name: user.name,
-      loginUrl: process.env.RPS_URL ?? '',
     };
     this.mailingService.sendUserCreatedEmail(createdUser);
     return await this.userRepo.save(user);
