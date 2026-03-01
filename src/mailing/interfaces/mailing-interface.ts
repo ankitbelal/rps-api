@@ -27,3 +27,15 @@ export interface StudentResultEmail {
     dashboardLink?: string;
   };
 }
+
+export interface BulkPublishResultEmail {
+  email: string;
+  publisherName: string;
+  program: { name: string; code: string };
+  examName: string;
+  semesters: string; // e.g. "1, 2, 3"
+  totalStudents: number;
+  successCount: number;
+  errorCount: number;
+  hasErrors: boolean;
+}

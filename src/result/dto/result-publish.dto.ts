@@ -1,5 +1,12 @@
 import { Transform, Type } from 'class-transformer';
-import { IsEnum, IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+} from 'class-validator';
 import { ExamTerm } from 'utils/enums/general-enums';
 export class PublishSingleDto {
   @IsNotEmpty()
@@ -18,19 +25,28 @@ export class PublishSingleDto {
 }
 
 export class PublishBulkDto {
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Program is required.' })
   @IsNumber()
   @Type(() => Number)
   programId: number;
 
-  @IsNotEmpty()
-  @IsNumber()
+  @IsNotEmpty({ message: 'Semester must be specified.' })
+  @IsArray()
+  @IsNumber({}, { each: true })
   @Type(() => Number)
-  semester: number;
+  semesters: number[];
 
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Exam term is required.' })
   @IsEnum(ExamTerm)
   examTerm: ExamTerm;
+
+  @IsOptional()
+  @IsBoolean()
+  withReport?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  publishedBy?: number;
 }
 
 export class FinalizeSingleDto {

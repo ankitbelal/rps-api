@@ -4,6 +4,7 @@ import * as Handlebars from 'handlebars';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import {
+  BulkPublishResultEmail,
   CreatedUser,
   PasswordResetUser,
   StudentResultEmail,
@@ -27,6 +28,9 @@ export class MailingService {
     privacyPolicyUrl: 'https://rps.yubrajdhungana.com.np/privacy',
     termsUrl: 'https://rps.yubrajdhungana.com.np/terms',
     unsubscribeUrl: 'https://rps.yubrajdhungana.com.np/unsubscribe',
+    emailCc: process.env.EMAIL_CC?.split(',')
+      .map((e) => e.trim())
+      .filter(Boolean),
     address: {
       street: 'Hasanpur-05',
       city: 'Dhangadhi',
@@ -151,6 +155,44 @@ export class MailingService {
 
       return true;
     } catch (error) {
+      throw error;
+    }
+  }
+
+  async sendBulkPublishSummaryEmail(
+    data: BulkPublishResultEmail,
+  ): Promise<boolean> {
+    try {
+      await this.mailingService.sendMail({
+        to: data.email,
+        cc: this.Company.emailCc,
+        subject: `📢 Result Published — ${data.program.name} | ${data.examName}`,
+        template: 'bulk-publish-result',
+        layout: 'layouts/main',
+        context: {
+          subject: `📢 Result Published — ${data.program.name} | ${data.examName}`,
+          publisherName: data.publisherName,
+          program: data.program,
+          examName: data.examName,
+          semesters: data.semesters,
+          totalStudents: data.totalStudents,
+          successCount: data.successCount,
+          errorCount: data.errorCount,
+          hasErrors: data.errorCount > 0,
+          publishedDate: new Date().toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          }),
+          dashboardLink: this.Company.website,
+          company: this.Company,
+          currentYear: new Date().getFullYear(),
+        },
+      } as any);
+
+      return true;
+    } catch (error) {
+      console.error('Error sending bulk publish summary email:', error);
       throw error;
     }
   }

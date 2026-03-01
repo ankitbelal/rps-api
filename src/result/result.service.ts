@@ -10,16 +10,33 @@ import { Repository } from 'typeorm';
 import { AddMarksDTO, MarkFetchQueryDto } from './dto/marks.dto';
 import { SubjectService } from 'src/subject/subject.service';
 import { StudentService } from 'src/student/student.service';
-import { ExamTerm, UserType } from 'utils/enums/general-enums';
+import { AuditActCodes, ExamTerm, UserType } from 'utils/enums/general-enums';
 import { PublishedResult } from 'src/database/entities/published-result.entity';
-import { StudentQueryDto } from 'src/student/dto/create-student.dto';
 import { UserService } from 'src/user/user.service';
 import { TeacherService } from 'src/teacher/teacher.service';
 import { CreateGradingSystemDto, TopStudentQueryDto } from './dto/result.dto';
 import { GradingSystem } from 'src/database/entities/grading-system.entity';
+import {
+  BulkPublishResultEmail,
+  StudentResultEmail,
+} from 'src/mailing/interfaces/mailing-interface';
+import { MailingService } from 'src/mailing/mailing.service';
+import { PublishBulkDto } from './dto/result-publish.dto';
+import { Student } from 'src/database/entities/student.entity';
+import type { Response } from 'express';
+import pLimit from 'p-limit';
+import { AuditLogs } from 'src/audit-trail/interfaces/audit-trails-interface';
+import { AuditTrailService } from 'src/audit-trail/audit-trail.service';
+import { ProgramService } from 'src/program/program.service';
+import { Program } from 'src/database/entities/program.entity';
 
 @Injectable()
 export class ResultService {
+  examNameMap = {
+    [ExamTerm.FIRST]: 'First Term',
+    [ExamTerm.SECOND]: 'Second Term',
+    [ExamTerm.FINAL]: 'Final',
+  };
   public constructor(
     @InjectRepository(StudentSubjectMarks)
     private readonly studentSubjectMarks: Repository<StudentSubjectMarks>,
@@ -37,6 +54,9 @@ export class ResultService {
     private readonly studentService: StudentService,
     private readonly userService: UserService,
     private readonly teacherService: TeacherService,
+    private readonly mailingService: MailingService,
+    private readonly logService: AuditTrailService,
+    private readonly programService: ProgramService,
   ) {}
 
   async getMarks(
@@ -249,10 +269,18 @@ export class ResultService {
         (ep) => ep.subjectId === subject.id,
       );
 
-      const extraObtained = subjectExtraMarks.reduce(
+      // ✅ AFTER — scale total ep marks to 50 regardless of param count
+      const extraTotalObtained = subjectExtraMarks.reduce(
         (sum, ep) => sum + Number(ep.obtainedMarks),
         0,
       );
+      const extraTotalFull = subjectExtraMarks.reduce(
+        (sum, ep) => sum + Number(ep.fullMarks),
+        0,
+      );
+
+      const extraObtained =
+        extraTotalFull > 0 ? (extraTotalObtained / extraTotalFull) * 50 : 0;
 
       const finalMarkOutOf100 = subjectObtainedOutOf50 + extraObtained;
 
@@ -294,34 +322,73 @@ export class ResultService {
   ): Promise<boolean> {
     const student = await this.studentService.findStudentById(studentId);
     if (!student)
-      throw new NotFoundException(
-        `Student with id: ${studentId} does not exist.`,
+      throw new NotFoundException({
+        success: false,
+        statusCode: 404,
+        message: 'Student does not exists.',
+      });
+
+    if (examTerm == ExamTerm.FINAL) {
+      await this.finalizeSingle(studentId, semester, publishedBy);
+    } else {
+      const studentsBySemester = new Map<number, Student[]>();
+      studentsBySemester.set(semester, [student]);
+
+      const incomplete = await this.collectIncompleteMarks(
+        studentsBySemester,
+        student.programId,
+        examTerm,
       );
 
-    if (examTerm == ExamTerm.FINAL)
-      return this.finalizeSingle(studentId, semester, publishedBy);
+      if (incomplete.length) {
+        throw new ConflictException({
+          success: false,
+          statusCode: 409,
+          message: `Failed to publish result. Missing marks entry for some subjects.`,
+        });
+      }
+      const calculated = await this.calculateResult(
+        studentId,
+        student.programId,
+        semester,
+        examTerm,
+      );
 
-    const calculated = await this.calculateResult(
-      studentId,
-      student.programId,
-      semester,
-      examTerm,
-    );
+      // ✅ manual upsert — find existing to get id, then save
+      const existing = await this.publishedResultRepo.findOne({
+        where: { studentId, semester, examTerm },
+      });
 
-    // ✅ manual upsert — find existing to get id, then save
-    const existing = await this.publishedResultRepo.findOne({
-      where: { studentId, semester, examTerm },
-    });
+      await this.publishedResultRepo.save({
+        ...(existing ?? {}), // spreads id if exists → update, else insert
+        studentId,
+        programId: student.programId,
+        semester,
+        examTerm,
+        publishedBy: await this.getUserName(publishedBy),
+        ...calculated,
+      });
+    }
 
-    await this.publishedResultRepo.save({
-      ...(existing ?? {}), // spreads id if exists → update, else insert
-      studentId,
-      programId: student.programId,
-      semester,
-      examTerm,
-      publishedBy: await this.getUserName(publishedBy),
-      ...calculated,
-    });
+    const examNameMap = {
+      [ExamTerm.FIRST]: 'First Term Examination',
+      [ExamTerm.SECOND]: 'Second Term Examination',
+      [ExamTerm.FINAL]: 'Finalized (First + Second term)',
+    };
+    const emailData: StudentResultEmail = {
+      student: {
+        name: `${student.firstName} ${student.lastName}`,
+        rollNumber: student.rollNumber,
+        registrationNumber: student.registrationNumber,
+        email: student.email,
+      },
+      result: {
+        examName: examNameMap[examTerm],
+        semester: `Semester ${semester}`,
+      },
+    };
+
+    this.mailingService.sendStudentsResultEmail(emailData).catch(() => {});
 
     return true;
   }
@@ -342,14 +409,18 @@ export class ResultService {
     ]);
 
     if (!firstTerm)
-      throw new NotFoundException(
-        `First term result not published yet for student: ${studentId}`,
-      );
+      throw new NotFoundException({
+        success: false,
+        statusCode: 404,
+        message: `First term result not published yet.`,
+      });
 
     if (!secondTerm)
-      throw new NotFoundException(
-        `Second term result not published yet for student: ${studentId}`,
-      );
+      throw new NotFoundException({
+        success: false,
+        statusCode: 404,
+        message: `Second term result not published yet.`,
+      });
 
     const finalPercentage = parseFloat(
       (
@@ -419,53 +490,267 @@ export class ResultService {
   publish bulk will handle bulk publish for both terminal and also
   for final terminal if passed terminal as final
   */
-  async publishBulk(
+  async publishBulk(dto: PublishBulkDto, res: Response) {
+    const {
+      programId,
+      semesters,
+      examTerm,
+      publishedBy,
+      withReport = false,
+    } = dto;
+
+    const program = await this.programService.findProgramById(programId);
+    if (!program)
+      throw new NotFoundException({
+        success: false,
+        statusCode: 404,
+        message: 'Program does not exists.',
+      });
+    const studentsBySemester = await this.studentService.findActiveStudents({
+      programId,
+      semesters,
+    });
+
+    const allMissingTerms =
+      examTerm === ExamTerm.FINAL
+        ? await this.collectMissingTermResults(studentsBySemester)
+        : [];
+
+    if (allMissingTerms.length) {
+      if (withReport)
+        return this.generateMissingResultReport(allMissingTerms, res);
+      else
+        throw new ConflictException({
+          success: false,
+          statusCode: 409,
+          message:
+            'Failed to publish result. Some students are missing term results.',
+          missingCount: allMissingTerms.length,
+        });
+    }
+
+    const allIncomplete = await this.collectIncompleteMarks(
+      studentsBySemester,
+      programId,
+      examTerm,
+    );
+
+    if (allIncomplete.length) {
+      if (withReport) {
+        return this.generateIncompleteMarksReport(allIncomplete, examTerm, res);
+      } else {
+        throw new ConflictException({
+          success: false,
+          statusCode: 409,
+          message:
+            'Failed to publish result. Some students have incomplete marks.',
+          incompleteCount: allIncomplete.length,
+        });
+      }
+    }
+
+    void this.firePublishAll(
+      studentsBySemester,
+      examTerm,
+      publishedBy!,
+      program,
+    );
+
+    return {
+      success: true,
+      message: 'Result publish started. You will be notified when completed.',
+    };
+  }
+
+  private async collectIncompleteMarks(
+    studentsBySemester: Map<number, Student[]>,
+    programId: number,
+    examTerm: ExamTerm,
+  ): Promise<{ student: any; missingSubjects: string[]; semester: number }[]> {
+    const allIncomplete: {
+      student: any;
+      missingSubjects: string[];
+      semester: number;
+    }[] = [];
+
+    for (const [semester, students] of studentsBySemester) {
+      if (!students.length) continue;
+
+      const incomplete = await this.checkIncompleteMarks(
+        students,
+        programId,
+        semester,
+        examTerm,
+      );
+
+      incomplete.forEach((item) => allIncomplete.push({ ...item, semester }));
+    }
+
+    return allIncomplete;
+  }
+
+  private async checkIncompleteMarks(
+    students: Student[],
     programId: number,
     semester: number,
     examTerm: ExamTerm,
+  ): Promise<{ student: Student; missingSubjects: string[] }[]> {
+    const subjects = await this.subjectService.getSubjectsInternal({
+      programId,
+      semester,
+    });
+
+    if (!subjects.length) return [];
+
+    const incomplete: { student: Student; missingSubjects: string[] }[] = [];
+
+    await Promise.all(
+      students.map(async (student) => {
+        const enteredMarks = await this.studentSubjectMarks.find({
+          where: { studentId: student.id, semester, examTerm },
+        });
+
+        const enteredSubjectIds = new Set(enteredMarks.map((m) => m.subjectId));
+
+        const missingSubjects = subjects
+          .filter((sub) => !enteredSubjectIds.has(sub.id!))
+          .map((sub) => `${sub.name} (${sub.code})`);
+
+        if (missingSubjects.length) {
+          incomplete.push({ student, missingSubjects });
+        }
+      }),
+    );
+
+    return incomplete;
+  }
+
+  // ─── COLLECT MISSING TERM RESULTS (FINAL only) ───────────────────────────────
+  private async collectMissingTermResults(
+    studentsBySemester: Map<number, Student[]>,
+  ): Promise<
+    {
+      student: any;
+      missingFirst: boolean;
+      missingSecond: boolean;
+      semester: number;
+    }[]
+  > {
+    const allMissing: {
+      student: any;
+      missingFirst: boolean;
+      missingSecond: boolean;
+      semester: number;
+    }[] = [];
+
+    for (const [semester, students] of studentsBySemester) {
+      if (!students.length) continue;
+
+      await Promise.all(
+        students.map(async (student) => {
+          const [firstTerm, secondTerm] = await Promise.all([
+            this.publishedResultRepo.findOne({
+              where: {
+                studentId: student.id,
+                semester,
+                examTerm: ExamTerm.FIRST,
+              },
+            }),
+            this.publishedResultRepo.findOne({
+              where: {
+                studentId: student.id,
+                semester,
+                examTerm: ExamTerm.SECOND,
+              },
+            }),
+          ]);
+
+          if (!firstTerm || !secondTerm) {
+            allMissing.push({
+              student,
+              semester,
+              missingFirst: !firstTerm,
+              missingSecond: !secondTerm,
+            });
+          }
+        }),
+      );
+    }
+
+    return allMissing;
+  }
+
+  private async firePublishAll(
+    studentsBySemester: Map<number, Student[]>,
+    examTerm: ExamTerm,
     publishedBy: number,
-  ): Promise<boolean> {
-    const students = await this.studentService.findAll({
-      programId: programId,
-      currentSemester: semester,
-      limit: 1000,
-    }); // dont include passed or deleted
+    program: Program,
+  ): Promise<void> {
+    const limit = pLimit(5);
 
-    for (const student of students.data) {
-      try {
-        this.publishSingle(student.id, semester, examTerm, publishedBy);
-      } catch (e) {}
+    const tasks: Promise<void>[] = [];
+
+    const semesters = Array.from(studentsBySemester.keys());
+    const totalStudents = Array.from(studentsBySemester.values()).flat().length;
+    let successCount = 0;
+    let errorCount = 0;
+    for (const [semester, students] of studentsBySemester) {
+      for (const student of students) {
+        // 2. Wrap the logic in the limit function
+
+        const task = limit(async () => {
+          try {
+            await this.publishSingle(
+              student.id,
+              semester,
+              examTerm,
+              publishedBy,
+            );
+            successCount++;
+            console.log(`Successfully processed student ${student.id}`);
+          } catch (error) {
+            errorCount++;
+            console.error(`Failed for student ${student.id}:`, error);
+          }
+        });
+
+        tasks.push(task);
+      }
     }
 
-    return true;
-  }
+    // 3. Wait for the limited execution to complete
 
-  /*  // ─── FINALIZE BULK ───────────────────────────────────────────
-  async finalizeBulk(
-    programId: number,
-    semester: number,
-    publishedBy: number, // ← add
-  ): Promise<boolean> {
-    const studentFetchData: StudentQueryDto = {
-      programId: programId,
-      currentSemester: semester,
-      page: 1,
-      limit: 10000,
+    await Promise.all(tasks);
+
+    const logData: AuditLogs = {
+      actCode: AuditActCodes.RESULT_PUBLISH,
+      action: ` ${program.code} ${this.examNameMap[examTerm]} result Published`,
+      comment: `Program: ${program.name} | Semesters: ${semesters.join(', ')} | Total Students: ${totalStudents} | Success: ${successCount} | Failed: ${errorCount}`,
+      userId: publishedBy,
     };
-    const students = await this.studentService.findAll(studentFetchData);
 
-    for (const student of students.data) {
-      try {
-        await this.finalizeSingle(student.id, semester, publishedBy);
-      } catch (e) {}
-    }
+    this.logService.createLog(logData);
 
-    return true;
+    const user = await this.userService.findUserById(publishedBy);
+    const emailData: BulkPublishResultEmail = {
+      email: user?.email ?? process.env.FALLBACK_NOTIFY_EMAIL ?? '',
+      publisherName: user?.name ?? 'Admin',
+      program: {
+        name: program.name,
+        code: program.code,
+      },
+      examName: this.examNameMap[examTerm],
+      semesters: semesters.join(', '),
+      totalStudents,
+      successCount,
+      errorCount,
+      hasErrors: errorCount > 0,
+    };
+
+    this.mailingService.sendBulkPublishSummaryEmail(emailData).catch(() => {});
+
+    console.log('Bulk publish background task completed.');
   }
-
-*/
-
-  // ─── GET PUBLISHED RESULT ────────────────────────────────────────────
 
   async getPublishedResult(
     studentId: number,
@@ -545,6 +830,419 @@ export class ResultService {
       totalFull: Number(r.totalFull),
     }));
   }
+
+  private async generateIncompleteMarksReport(
+    incompleteData: {
+      student: Student;
+      missingSubjects: string[];
+      semester: number;
+    }[],
+    examTerm: ExamTerm,
+    res: Response,
+  ): Promise<void> {
+    const ExcelJS = require('exceljs');
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'LMS System';
+    workbook.created = new Date();
+
+    const styleHeader = (row: any) => {
+      /* same as before */
+    };
+    const styleCell = (cell: any, index: number, center = false) => {
+      /* same as before */
+    };
+
+    const sheet = workbook.addWorksheet('Incomplete Marks', {
+      properties: { tabColor: { argb: 'FF8B0000' } },
+      pageSetup: { paperSize: 9, orientation: 'landscape' },
+    });
+
+    sheet.columns = [
+      { key: 'id', width: 8 },
+      { key: 'name', width: 24 },
+      { key: 'rollNumber', width: 14 },
+      { key: 'regNumber', width: 20 },
+      { key: 'semester', width: 10 },
+      { key: 'missingSubjects', width: 55 },
+    ];
+
+    let cr = 1;
+
+    // ── TITLE ──
+    sheet.mergeCells(`A${cr}:F${cr + 5}`);
+    const titleCell = sheet.getCell(`A${cr}`);
+    titleCell.value = {
+      richText: [
+        {
+          font: {
+            name: 'Calibri',
+            size: 20,
+            bold: true,
+            color: { argb: 'FF008080' },
+          },
+          text: '\n\nRESULT PROCESSING SYSTEM - LMS\n',
+        },
+        {
+          font: {
+            name: 'Calibri',
+            size: 15,
+            bold: true,
+            color: { argb: 'FF8B0000' },
+          },
+          text: `Incomplete Marks Report — ${this.examNameMap[examTerm]}`,
+        },
+      ],
+    };
+    titleCell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFFFF9E6' },
+    };
+    titleCell.alignment = {
+      horizontal: 'center',
+      vertical: 'bottom',
+      wrapText: true,
+    };
+    titleCell.border = {
+      top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+      left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+      bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+      right: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+    };
+    cr += 6;
+
+    sheet.getRow(cr).height = 8;
+    cr++;
+
+    // ── HEADER ROW ──
+    const headerRow = sheet.getRow(cr);
+    headerRow.values = [
+      'ID',
+      'Full Name',
+      'Roll No',
+      'Reg No',
+      'Semester',
+      'Missing Subjects',
+    ];
+    styleHeader(headerRow);
+    sheet.autoFilter = {
+      from: { row: cr, column: 1 },
+      to: { row: cr, column: 6 },
+    };
+    sheet.views = [
+      { state: 'frozen', xSplit: 0, ySplit: cr, activeCell: 'A1' },
+    ];
+    cr++;
+
+    // ── DATA ROWS ──
+    incompleteData.forEach((item, index) => {
+      const row = sheet.getRow(cr);
+      row.height = 20;
+      const values = [
+        item.student.id,
+        `${item.student.firstName} ${item.student.lastName}`.trim(),
+        item.student.rollNumber ?? '',
+        item.student.registrationNumber ?? '',
+        `Semester ${item.semester}`,
+        item.missingSubjects.join(', '),
+      ];
+      values.forEach((val, colIndex) => {
+        const cell = row.getCell(colIndex + 1);
+        cell.value = val;
+        styleCell(cell, index, colIndex === 0 || colIndex === 4);
+        if (colIndex === 5) {
+          cell.font = {
+            color: { argb: 'FFCC0000' },
+            bold: true,
+            name: 'Calibri',
+            size: 10,
+          };
+          cell.alignment = {
+            horizontal: 'left',
+            vertical: 'middle',
+            wrapText: true,
+          };
+        }
+      });
+      cr++;
+    });
+
+    // ── FOOTER ──
+    cr++;
+    sheet.mergeCells(`A${cr}:C${cr}`);
+    sheet.getRow(cr).getCell(1).value =
+      `Total Incomplete: ${incompleteData.length} students`;
+    sheet.getRow(cr).getCell(1).font = {
+      bold: true,
+      size: 11,
+      color: { argb: 'FF1F4A7A' },
+    };
+    for (let i = 1; i <= 6; i++) {
+      sheet.getRow(cr).getCell(i).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE6F0FA' },
+      };
+    }
+    cr++;
+    sheet.mergeCells(`A${cr}:C${cr}`);
+    const now = new Date();
+    sheet.getRow(cr).getCell(1).value =
+      `Generated: ${now.toLocaleDateString('en-US')}, ${now.toLocaleTimeString('en-US')}`;
+    sheet.getRow(cr).getCell(1).font = {
+      italic: true,
+      size: 10,
+      color: { argb: 'FF666666' },
+    };
+    for (let i = 1; i <= 6; i++) {
+      sheet.getRow(cr).getCell(i).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE6F0FA' },
+      };
+    }
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=incomplete_marks_${examTerm}_${Date.now()}.xlsx`,
+    );
+    await workbook.xlsx.write(res);
+    res.end();
+  }
+
+  // ─── GENERATE MISSING RESULT REPORT ──────────────────────────────────────────
+  // ─── GENERATE MISSING RESULT REPORT ──────────────────────────────────────────
+  private async generateMissingResultReport(
+    missingData: {
+      student: Student;
+      missingFirst: boolean;
+      missingSecond: boolean;
+      semester: number;
+    }[],
+    res: Response,
+  ): Promise<void> {
+    const ExcelJS = require('exceljs');
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'LMS System';
+    workbook.created = new Date();
+
+    const styleHeader = (row: any) => {
+      row.height = 24;
+      row.eachCell((cell: any) => {
+        cell.font = {
+          bold: true,
+          size: 11,
+          color: { argb: 'FFFFFFFF' },
+          name: 'Calibri',
+        };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF244062' },
+        };
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FF000000' } },
+          left: { style: 'thin', color: { argb: 'FF000000' } },
+          bottom: { style: 'thin', color: { argb: 'FF000000' } },
+          right: { style: 'thin', color: { argb: 'FF000000' } },
+        };
+      });
+    };
+
+    const styleCell = (cell: any, index: number, center = false) => {
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: index % 2 === 0 ? 'FFF5F5F5' : 'FFFFFFFF' },
+      };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+        left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+        bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+        right: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+      };
+      cell.alignment = {
+        horizontal: center ? 'center' : 'left',
+        vertical: 'middle',
+      };
+    };
+
+    const sheet = workbook.addWorksheet('Missing Term Results', {
+      properties: { tabColor: { argb: 'FF8B0000' } },
+      pageSetup: { paperSize: 9, orientation: 'landscape' },
+    });
+
+    sheet.columns = [
+      { key: 'id', width: 8 },
+      { key: 'name', width: 24 },
+      { key: 'rollNumber', width: 14 },
+      { key: 'regNumber', width: 20 },
+      { key: 'semester', width: 10 },
+      { key: 'firstTerm', width: 14 },
+      { key: 'secondTerm', width: 15 },
+    ];
+
+    let cr = 1;
+
+    // ── TITLE ──
+    sheet.mergeCells(`A${cr}:G${cr + 5}`);
+    const titleCell = sheet.getCell(`A${cr}`);
+    titleCell.value = {
+      richText: [
+        {
+          font: {
+            name: 'Calibri',
+            size: 20,
+            bold: true,
+            color: { argb: 'FF008080' },
+          },
+          text: '\n\nRESULT PROCESSING SYSTEM - LMS\n',
+        },
+        {
+          font: {
+            name: 'Calibri',
+            size: 15,
+            bold: true,
+            color: { argb: 'FF8B0000' },
+          },
+          text: 'Missing Term Results Report',
+        },
+      ],
+    };
+    titleCell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFFFF9E6' },
+    };
+    titleCell.alignment = {
+      horizontal: 'center',
+      vertical: 'bottom',
+      wrapText: true,
+    };
+    titleCell.border = {
+      top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+      left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+      bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+      right: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+    };
+    cr += 6;
+
+    sheet.getRow(cr).height = 8;
+    cr++;
+
+    // ── HEADER ROW ──
+    const headerRow = sheet.getRow(cr);
+    headerRow.values = [
+      'ID',
+      'Full Name',
+      'Roll No',
+      'Reg No',
+      'Semester',
+      'First Term',
+      'Second Term',
+    ];
+    styleHeader(headerRow);
+    sheet.autoFilter = {
+      from: { row: cr, column: 1 },
+      to: { row: cr, column: 7 },
+    };
+    sheet.views = [
+      { state: 'frozen', xSplit: 0, ySplit: cr, activeCell: 'A1' },
+    ];
+    cr++;
+
+    // ── DATA ROWS ──
+    missingData.forEach((item, index) => {
+      const row = sheet.getRow(cr);
+      row.height = 20;
+      const values = [
+        item.student.id,
+        `${item.student.firstName} ${item.student.lastName}`.trim(),
+        item.student.rollNumber ?? '',
+        item.student.registrationNumber ?? '',
+        `Semester ${item.semester}`,
+        item.missingFirst ? '❌ Missing' : '✅ Done',
+        item.missingSecond ? '❌ Missing' : '✅ Done',
+      ];
+      values.forEach((val, colIndex) => {
+        const cell = row.getCell(colIndex + 1);
+        cell.value = val;
+        styleCell(cell, index, colIndex === 0 || colIndex >= 4);
+
+        if (colIndex === 5) {
+          cell.font = {
+            color: { argb: item.missingFirst ? 'FFCC0000' : 'FF16a34a' },
+            bold: true,
+            name: 'Calibri',
+            size: 10,
+          };
+        }
+        if (colIndex === 6) {
+          cell.font = {
+            color: { argb: item.missingSecond ? 'FFCC0000' : 'FF16a34a' },
+            bold: true,
+            name: 'Calibri',
+            size: 10,
+          };
+        }
+      });
+      cr++;
+    });
+
+    // ── FOOTER ──
+    cr++;
+    sheet.mergeCells(`A${cr}:D${cr}`);
+    sheet.getRow(cr).getCell(1).value =
+      `Total Missing: ${missingData.length} students`;
+    sheet.getRow(cr).getCell(1).font = {
+      bold: true,
+      size: 11,
+      color: { argb: 'FF1F4A7A' },
+    };
+    for (let i = 1; i <= 7; i++) {
+      sheet.getRow(cr).getCell(i).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE6F0FA' },
+      };
+    }
+
+    cr++;
+    sheet.mergeCells(`A${cr}:D${cr}`);
+    const now = new Date();
+    sheet.getRow(cr).getCell(1).value =
+      `Generated: ${now.toLocaleDateString('en-US')}, ${now.toLocaleTimeString('en-US')}`;
+    sheet.getRow(cr).getCell(1).font = {
+      italic: true,
+      size: 10,
+      color: { argb: 'FF666666' },
+    };
+    for (let i = 1; i <= 7; i++) {
+      sheet.getRow(cr).getCell(i).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE6F0FA' },
+      };
+    }
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=missing_results_${Date.now()}.xlsx`,
+    );
+    await workbook.xlsx.write(res);
+    res.end();
+  }
+
+  //grading system related
 
   async getGradingSystem() {
     const system = await this.gradingSystemRepo.find({

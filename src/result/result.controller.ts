@@ -8,18 +8,19 @@ import {
   Post,
   Query,
   Req,
+  Res,
 } from '@nestjs/common';
 import { ResultService } from './result.service';
 import { AddMarksDTO, MarkFetchQueryDto } from './dto/marks.dto';
 import { ApiResponse } from 'utils/api-response';
+import type { Response } from 'express';
+import { CreateGradingSystemDto, TopStudentQueryDto } from './dto/result.dto';
+
 import {
-  FinalizeBulkDto,
-  FinalizeSingleDto,
   GetPublishedResultDto,
   PublishBulkDto,
   PublishSingleDto,
 } from './dto/result-publish.dto';
-import { CreateGradingSystemDto, TopStudentQueryDto } from './dto/result.dto';
 
 @Controller('result')
 export class ResultController {
@@ -62,37 +63,19 @@ export class ResultController {
 
   @HttpCode(201)
   @Post('bulk-publish')
-  async publishBulk(@Body() dto: PublishBulkDto, @Req() req) {
-    await this.resultService.publishBulk(
-      dto.programId,
-      dto.semester,
-      dto.examTerm,
-      req.user.userId,
+  async publishBulk(
+    @Body() dto: PublishBulkDto,
+    @Req() req,
+    @Res() res: Response,
+  ) {
+    return await this.resultService.publishBulk(
+      {
+        ...dto,
+        publishedBy: req.user.id,
+      },
+      res,
     );
-    return ApiResponse.success('Bulk publish completed.', 201);
   }
-
-  // @HttpCode(201)
-  // @Post('finalize-single')
-  // async finalizeSingle(@Body() dto: FinalizeSingleDto, @Req() req) {
-  //   await this.resultService.finalizeSingle(
-  //     dto.studentId,
-  //     dto.semester,
-  //     req.user.userId,
-  //   );
-  //   return ApiResponse.success('Result finalized successfully.', 201);
-  // }
-
-  // @HttpCode(201)
-  // @Post('finalize-bulk')
-  // async finalizeBulk(@Body() dto: FinalizeBulkDto, @Req() req) {
-  //   await this.resultService.finalizeBulk(
-  //     dto.programId,
-  //     dto.semester,
-  //     req.user.userId,
-  //   );
-  //   return ApiResponse.success('Bulk finalize completed.', 201);
-  // }
 
   @HttpCode(200)
   @Get('get-published-result')

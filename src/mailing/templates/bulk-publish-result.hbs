@@ -1,0 +1,181 @@
+{{#> main}}
+  {{#*inline "content"}}
+
+  {{! ── BODY ── }}
+  <div style="padding: 36px 32px; background: #ffffff;">
+
+    {{! ── GREETING ── }}
+    <p style="
+      font-size: 18px;
+      font-weight: 700;
+      color: #1e3a8a;
+      margin: 0 0 14px;
+    ">Hello, {{publisherName}}! 👋</p>
+
+    <p style="
+      font-size: 14.5px;
+      line-height: 1.85;
+      color: #475569;
+      margin: 0 0 26px;
+    ">
+      The bulk result publish job for
+      <strong style="color: #1e293b;">{{program.name}}</strong>
+      has been completed. Here is a quick summary of the publish operation
+      for <strong style="color: #1e293b;">{{examName}}</strong>.
+    </p>
+
+    {{! ── STATUS BANNER ── }}
+    {{#if hasErrors}}
+    <div style="
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+      border-left: 4px solid #d97706;
+      border-radius: 8px;
+      padding: 14px 20px;
+      margin-bottom: 26px;
+    ">
+      <p style="margin: 0; font-size: 13px; font-weight: 700; color: #b45309;">
+        ⚠️ &nbsp;Completed with Errors
+      </p>
+      <p style="margin: 6px 0 0; font-size: 13px; color: #92400e; line-height: 1.6;">
+        <strong>{{errorCount}} student(s)</strong> could not be published.
+        Visit the dashboard for detailed error logs and to retry failed entries.
+      </p>
+    </div>
+    {{else}}
+    <div style="
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      border-left: 4px solid #16a34a;
+      border-radius: 8px;
+      padding: 14px 20px;
+      margin-bottom: 26px;
+    ">
+      <p style="margin: 0; font-size: 13px; font-weight: 700; color: #15803d;">
+        ✅ &nbsp;All Results Published Successfully
+      </p>
+      <p style="margin: 6px 0 0; font-size: 13px; color: #166534; line-height: 1.6;">
+        All <strong>{{totalStudents}} students</strong> have been published without any errors.
+      </p>
+    </div>
+    {{/if}}
+
+    {{! ── INFO CARD ── }}
+    <div style="
+      background: #f8faff;
+      border: 1px solid #dbeafe;
+      border-left: 4px solid #1a56db;
+      border-radius: 8px;
+      padding: 6px 0;
+      margin-bottom: 28px;
+    ">
+      <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+
+        <tr style="border-bottom: 1px solid #e0eaff;">
+          <td style="padding: 12px 20px; font-size: 13px; color: #64748b; width: 45%;">
+            🏫 &nbsp;Program
+          </td>
+          <td style="padding: 12px 20px; font-size: 13px; font-weight: 700; color: #1e293b;">
+            {{program.name}} ({{program.code}})
+          </td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #e0eaff;">
+          <td style="padding: 12px 20px; font-size: 13px; color: #64748b;">
+            🎯 &nbsp;Exam / Result Type
+          </td>
+          <td style="padding: 12px 20px; font-size: 13px; font-weight: 700; color: #1e293b;">
+            {{examName}}
+          </td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #e0eaff;">
+          <td style="padding: 12px 20px; font-size: 13px; color: #64748b;">
+            📚 &nbsp;Semesters
+          </td>
+          <td style="padding: 12px 20px; font-size: 13px; font-weight: 700; color: #1e293b;">
+            {{semesters}}
+          </td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #e0eaff;">
+          <td style="padding: 12px 20px; font-size: 13px; color: #64748b;">
+            👥 &nbsp;Total Students
+          </td>
+          <td style="padding: 12px 20px; font-size: 13px; font-weight: 700; color: #1e293b;">
+            {{totalStudents}}
+          </td>
+        </tr>
+
+        <tr style="border-bottom: 1px solid #e0eaff;">
+          <td style="padding: 12px 20px; font-size: 13px; color: #64748b;">
+            ✅ &nbsp;Success
+          </td>
+          <td style="padding: 12px 20px; font-size: 13px; font-weight: 700; color: #16a34a;">
+            {{successCount}} published
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding: 12px 20px; font-size: 13px; color: #64748b;">
+            ❌ &nbsp;Failed
+          </td>
+          <td style="padding: 12px 20px; font-size: 13px; font-weight: 700; color: {{#if hasErrors}}#dc2626{{else}}#94a3b8{{/if}};">
+            {{#if hasErrors}}{{errorCount}} failed{{else}}0 failed{{/if}}
+          </td>
+        </tr>
+
+      </table>
+    </div>
+
+    {{! ── PUBLISHED DATE PILL ── }}
+    <p style="margin: 0 0 28px;">
+      <span style="
+        display: inline-block;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1d4ed8;
+        border-radius: 20px;
+        padding: 6px 16px;
+        font-size: 13px;
+        font-weight: 600;
+      ">📅 Published On: {{publishedDate}}</span>
+    </p>
+
+    {{! ── CTA BUTTON ── }}
+    <div style="text-align: center; margin-bottom: 32px;">
+      <a href="{{dashboardLink}}" style="
+        display: inline-block;
+        background: linear-gradient(135deg, #1a56db, #1e3a8a);
+        color: #ffffff;
+        text-decoration: none;
+        padding: 15px 40px;
+        border-radius: 50px;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        box-shadow: 0 6px 20px rgba(26,86,219,0.35);
+      ">📊 View Full Details on Dashboard</a>
+    </div>
+
+    {{! ── DIVIDER ── }}
+    <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+
+    {{! ── FALLBACK LINK ── }}
+    <p style="font-size: 12.5px; color: #94a3b8; line-height: 1.8; margin: 0 0 12px;">
+      If the button above doesn't work, copy and paste the link below into your browser:<br/>
+      <a href="{{dashboardLink}}" style="color: #1a56db; text-decoration: none;">{{dashboardLink}}</a>
+    </p>
+
+    {{! ── NOTICE ── }}
+    {{#if hasErrors}}
+    <p style="font-size: 12.5px; color: #94a3b8; line-height: 1.8; margin: 0;">
+      ⚠️ For failed entries, please review the audit logs in the dashboard
+      and re-trigger the publish for affected students individually.
+    </p>
+    {{/if}}
+
+  </div>
+
+  {{/inline}}
+{{/main}}

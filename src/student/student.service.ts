@@ -14,7 +14,7 @@ import {
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Student } from 'src/database/entities/student.entity';
-import { Brackets, LessThan, Not, Repository } from 'typeorm';
+import { Brackets, In, LessThan, Not, Repository } from 'typeorm';
 import { UserService } from 'src/user/user.service';
 import {
   AuditActCodes,
@@ -34,6 +34,7 @@ import { SubjectService } from 'src/subject/subject.service';
 import { ProgramService } from 'src/program/program.service';
 import { AuditTrailService } from 'src/audit-trail/audit-trail.service';
 import { AuditLogs } from 'src/audit-trail/interfaces/audit-trails-interface';
+import { StudentListForResult } from './interfaces/student.interface';
 
 @Injectable()
 export class StudentService {
@@ -1091,5 +1092,30 @@ export class StudentService {
 
     const data = Object.values(dataMap).sort((a, b) => b.year - a.year);
     return { fromYear, toYear, data };
+  }
+
+  //internal service used api
+  async findActiveStudents(
+    filters: StudentListForResult,
+  ): Promise<Map<number, Student[]>> {
+    const students = await this.studentRepo.find({
+      where: {
+        programId: filters.programId,
+        currentSemester: In(filters.semesters), // ← typeorm In operator
+        status: StudentStatus.ACTIVE,
+      },
+      relations: ['program'],
+    });
+
+    // group by semester so caller can easily iterate
+    const grouped = new Map<number, Student[]>();
+    for (const semester of filters.semesters) {
+      grouped.set(
+        semester,
+        students.filter((s) => s.currentSemester === semester),
+      );
+    }
+
+    return grouped;
   }
 }
