@@ -82,7 +82,7 @@ export class StudentController {
     return ApiResponse.success('Student restored successfully.', 200);
   }
 
-  @Post('promote-student')
+  @Post('promote-students')
   @HttpCode(200)
   async promoteStudents(
     @Query() promoteStudentDto: PromoteStudentDto,
