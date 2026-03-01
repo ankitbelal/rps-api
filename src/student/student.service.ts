@@ -83,7 +83,8 @@ export class StudentService {
       comment: `The student with roll number :${createStudentDto.rollNumber} is added in the system.`,
     };
     this.auditLogService.createLog(logDetails);
-    return !!this.studentRepo.save(this.studentRepo.create(studentData));
+    this.studentRepo.save(this.studentRepo.create(studentData));
+    return true;
   }
 
   async findAll(studentQueryDto: StudentQueryDto): Promise<{
@@ -247,7 +248,7 @@ export class StudentService {
 
     if (student.userId) await this.syncWithUser(updateStudentDto, student);
     Object.assign(student, updateStudentDto);
-    await this.studentRepo.save(student);
+    this.studentRepo.save(student);
     return true;
   }
 

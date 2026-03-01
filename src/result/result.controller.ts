@@ -72,27 +72,27 @@ export class ResultController {
     return ApiResponse.success('Bulk publish completed.', 201);
   }
 
-  @HttpCode(201)
-  @Post('finalize-single')
-  async finalizeSingle(@Body() dto: FinalizeSingleDto, @Req() req) {
-    await this.resultService.finalizeSingle(
-      dto.studentId,
-      dto.semester,
-      req.user.userId,
-    );
-    return ApiResponse.success('Result finalized successfully.', 201);
-  }
+  // @HttpCode(201)
+  // @Post('finalize-single')
+  // async finalizeSingle(@Body() dto: FinalizeSingleDto, @Req() req) {
+  //   await this.resultService.finalizeSingle(
+  //     dto.studentId,
+  //     dto.semester,
+  //     req.user.userId,
+  //   );
+  //   return ApiResponse.success('Result finalized successfully.', 201);
+  // }
 
-  @HttpCode(201)
-  @Post('finalize-bulk')
-  async finalizeBulk(@Body() dto: FinalizeBulkDto, @Req() req) {
-    await this.resultService.finalizeBulk(
-      dto.programId,
-      dto.semester,
-      req.user.userId,
-    );
-    return ApiResponse.success('Bulk finalize completed.', 201);
-  }
+  // @HttpCode(201)
+  // @Post('finalize-bulk')
+  // async finalizeBulk(@Body() dto: FinalizeBulkDto, @Req() req) {
+  //   await this.resultService.finalizeBulk(
+  //     dto.programId,
+  //     dto.semester,
+  //     req.user.userId,
+  //   );
+  //   return ApiResponse.success('Bulk finalize completed.', 201);
+  // }
 
   @HttpCode(200)
   @Get('get-published-result')

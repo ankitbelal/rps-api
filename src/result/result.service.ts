@@ -207,18 +207,6 @@ export class ResultService {
     ]));
   }
 
-  private calculateGPA(percentage: number): number {
-    return Number((percentage / 25).toFixed(2));
-  }
-
-  private async calculateGrade(gpa: number): Promise<string> {
-    const gradingSystem = await this.gradingSystemRepo
-      .createQueryBuilder('grade')
-      .where(':gpa BETWEEN grade.minRange AND grade.maxRange', { gpa })
-      .getOne();
-    return gradingSystem?.grade ?? 'F';
-  }
-
   // ─── CORE CALCULATION (reusable private method) ─────────────────────
 
   private async calculateResult(
@@ -310,6 +298,9 @@ export class ResultService {
         `Student with id: ${studentId} does not exist.`,
       );
 
+    if (examTerm == ExamTerm.FINAL)
+      return this.finalizeSingle(studentId, semester, publishedBy);
+
     const calculated = await this.calculateResult(
       studentId,
       student.programId,
@@ -334,30 +325,9 @@ export class ResultService {
 
     return true;
   }
-  // ─── PUBLISH BULK ────────────────────────────────────────────
-  async publishBulk(
-    programId: number,
-    semester: number,
-    examTerm: ExamTerm,
-    publishedBy: number, // ← add
-  ): Promise<boolean> {
-    const students = await this.studentService.findAll({
-      programId: programId,
-      currentSemester: semester,
-      limit: 1000,
-    });
-
-    for (const student of students.data) {
-      try {
-        await this.publishSingle(student.id, semester, examTerm, publishedBy);
-      } catch (e) {}
-    }
-
-    return true;
-  }
 
   // ─── FINALIZE SINGLE ─────────────────────────────────────────
-  async finalizeSingle(
+  private async finalizeSingle(
     studentId: number,
     semester: number,
     publishedBy: number,
@@ -445,7 +415,32 @@ export class ResultService {
     return true;
   }
 
-  // ─── FINALIZE BULK ───────────────────────────────────────────
+  /* 
+  publish bulk will handle bulk publish for both terminal and also
+  for final terminal if passed terminal as final
+  */
+  async publishBulk(
+    programId: number,
+    semester: number,
+    examTerm: ExamTerm,
+    publishedBy: number,
+  ): Promise<boolean> {
+    const students = await this.studentService.findAll({
+      programId: programId,
+      currentSemester: semester,
+      limit: 1000,
+    }); // dont include passed or deleted
+
+    for (const student of students.data) {
+      try {
+        this.publishSingle(student.id, semester, examTerm, publishedBy);
+      } catch (e) {}
+    }
+
+    return true;
+  }
+
+  /*  // ─── FINALIZE BULK ───────────────────────────────────────────
   async finalizeBulk(
     programId: number,
     semester: number,
@@ -467,6 +462,8 @@ export class ResultService {
 
     return true;
   }
+
+*/
 
   // ─── GET PUBLISHED RESULT ────────────────────────────────────────────
 
@@ -562,5 +559,17 @@ export class ResultService {
     const gradingSystem = this.gradingSystemRepo.create(dto.gradeRanges);
     this.gradingSystemRepo.save(gradingSystem);
     return true;
+  }
+
+  private calculateGPA(percentage: number): number {
+    return Number((percentage / 25).toFixed(2));
+  }
+
+  private async calculateGrade(gpa: number): Promise<string> {
+    const gradingSystem = await this.gradingSystemRepo
+      .createQueryBuilder('grade')
+      .where(':gpa BETWEEN grade.minGPA AND grade.maxGPA', { gpa })
+      .getOne();
+    return gradingSystem?.grade ?? 'F';
   }
 }
