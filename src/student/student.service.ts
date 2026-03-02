@@ -84,7 +84,7 @@ export class StudentService {
       comment: `The student with roll number :${createStudentDto.rollNumber} is added in the system.`,
     };
     this.auditLogService.createLog(logDetails);
-    this.studentRepo.save(this.studentRepo.create(studentData));
+    await this.studentRepo.save(this.studentRepo.create(studentData));
     return true;
   }
 
@@ -249,7 +249,7 @@ export class StudentService {
 
     if (student.userId) await this.syncWithUser(updateStudentDto, student);
     Object.assign(student, updateStudentDto);
-    this.studentRepo.save(student);
+    await this.studentRepo.save(student);
     return true;
   }
 

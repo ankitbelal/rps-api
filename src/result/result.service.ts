@@ -549,15 +549,11 @@ export class ResultService {
       }
     }
 
-    void this.firePublishAll(
-      studentsBySemester,
-      examTerm,
-      publishedBy!,
-      program,
-    );
+    this.firePublishAll(studentsBySemester, examTerm, publishedBy!, program);
 
     return {
       success: true,
+      statusCode: 200,
       message: 'Result publish started. You will be notified when completed.',
     };
   }

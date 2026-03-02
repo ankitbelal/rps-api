@@ -66,7 +66,7 @@ export class ResultController {
   async publishBulk(
     @Body() dto: PublishBulkDto,
     @Req() req,
-    @Res() res: Response,
+    @Res({ passthrough: true }) res: Response,
   ) {
     return await this.resultService.publishBulk(
       {
