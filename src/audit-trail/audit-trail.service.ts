@@ -122,6 +122,13 @@ export class AuditTrailService {
           break;
       }
     }
+    if (filters.dateFrom && filters.dateTo) {
+      query.andWhere('log.createdAt BETWEEN :dateFrom AND :dateTo', {
+        dateFrom: new Date(filters.dateFrom),
+        dateTo: new Date(filters.dateTo),
+      });
+    }
+
     return query;
   }
 }

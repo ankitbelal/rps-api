@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsEnum, IsNumber, IsOptional } from 'class-validator';
+import { IsDate, IsEnum, IsNumber, IsOptional } from 'class-validator';
 import { LogType } from 'utils/enums/general-enums';
 
 export class AuditLogQueryDto {
@@ -19,4 +19,14 @@ export class AuditLogQueryDto {
 
   @IsOptional()
   userId?: number;
+
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate({ message: 'DOB must be a valid date.' })
+  dateFrom?: Date;
+
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate({ message: 'DOB must be a valid date.' })
+  dateTo?: Date;
 }

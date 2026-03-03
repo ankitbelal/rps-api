@@ -118,7 +118,7 @@ export class ProgramService {
   ): Promise<{ data: Program[] }> {
     const query = this.programRepo
       .createQueryBuilder('program')
-      .select(['program.id', 'program.code', 'program.name']);
+      .select(['program.id', 'program.code', 'program.name','program.totalSemesters']);
 
     if (searchProgramsListDto.code) {
       query.andWhere('program.code LIKE :code', {
