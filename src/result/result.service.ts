@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -510,6 +511,23 @@ export class ResultService {
       programId,
       semesters,
     });
+
+    // Check if the Map has any students at all
+    let hasAnyStudents = false;
+    for (const [semester, students] of studentsBySemester.entries()) {
+      if (students && students.length > 0) {
+        hasAnyStudents = true;
+        break;
+      }
+    }
+
+    if (!hasAnyStudents) {
+      throw new BadRequestException({
+        success: false,
+        statusCode: 404,
+        message: 'There are no students found to publish result.',
+      });
+    }
 
     const allMissingTerms =
       examTerm === ExamTerm.FINAL

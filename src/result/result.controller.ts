@@ -19,6 +19,7 @@ import { CreateGradingSystemDto, TopStudentQueryDto } from './dto/result.dto';
 import {
   GetPublishedResultDto,
   PublishBulkDto,
+  PublishBulkReporDto,
   PublishSingleDto,
 } from './dto/result-publish.dto';
 
@@ -68,6 +69,23 @@ export class ResultController {
     @Req() req,
     @Res({ passthrough: true }) res: Response,
   ) {
+    return await this.resultService.publishBulk(
+      {
+        ...dto,
+        publishedBy: req.user.userId,
+      },
+      res,
+    );
+  }
+
+  @HttpCode(201)
+  @Get('bulk-publish-missing-report')
+  async bulkPublishMissingReport(
+    @Query() dto: PublishBulkReporDto,
+    @Req() req,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    dto.withReport = true;
     return await this.resultService.publishBulk(
       {
         ...dto,

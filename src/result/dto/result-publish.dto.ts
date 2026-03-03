@@ -42,6 +42,41 @@ export class PublishBulkDto {
 
   @IsOptional()
   @IsBoolean()
+  @Type(() => Boolean)
+  withReport?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  publishedBy?: number;
+}
+
+export class PublishBulkReporDto {
+  @IsNotEmpty({ message: 'Program is required.' })
+  @IsNumber()
+  @Type(() => Number)
+  programId: number;
+
+  @IsNotEmpty({ message: 'Semester must be specified.' })
+  @IsArray()
+  @IsNumber({}, { each: true })
+  @Transform(({ value }) => {
+    if (Array.isArray(value)) {
+      return value.map((v) => parseInt(v, 10));
+    }
+    if (typeof value === 'string') {
+      return value.split(',').map((v) => parseInt(v.trim(), 10));
+    }
+    return [];
+  })
+  semesters: number[];
+
+  @IsNotEmpty({ message: 'Exam term is required.' })
+  @IsEnum(ExamTerm)
+  examTerm: ExamTerm;
+
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
   withReport?: boolean;
 
   @IsOptional()
