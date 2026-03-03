@@ -20,10 +20,10 @@ export class BulkNotice {
   @Column({ name: 'recipient_type', type: 'enum', enum: NoticeUserType })
   recipientType: NoticeUserType;
 
-  @Column({ name: 'programs', type: 'simple-json', nullable: true })
+  @Column({ name: 'programs', type: 'json', nullable: true })
   programs: number[] | null;
 
-  @Column({ name: 'semesters', type: 'simple-json', nullable: true })
+  @Column({ name: 'semesters', type: 'json', nullable: true })
   semesters: number[] | null;
 
   @Column({ length: 255 })

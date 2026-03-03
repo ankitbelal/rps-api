@@ -65,10 +65,10 @@ export class Student {
   address2: string;
 
   @Column({ name: 'current_semester', default: 1, type: 'int' })
-  currentSemester: Number;
+  currentSemester: number;
 
   @Column({ name: 'is_passsed', default: 0, type: 'int' })
-  isPassed: Number;
+  isPassed: number;
 
   @Column({ name: 'program_id' })
   programId: number;

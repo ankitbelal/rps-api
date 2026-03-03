@@ -14,12 +14,9 @@ export class SingleNoticeDto {
 
   @IsNotEmpty({ message: 'Descriptioin is required.' })
   description: string;
-
-  @IsNotEmpty({ message: 'Receipent user type is required' })
-  @IsEnum({
-    enum: NoticeUserType,
-    message: 'Receipent user type must e  valid.',
-  })
+  
+  @IsNotEmpty({ message: 'Recipient user type is required.' })
+  @IsEnum(NoticeUserType, { message: 'Recipient user type must be valid.' })
   recipientType: NoticeUserType;
 
   @IsNotEmpty({ message: 'Receipent is required.' })
@@ -46,7 +43,7 @@ export class SingleNoticeDto {
 
 export class NoticeQueryDto {
   @IsOptional()
-  @IsEnum({ enum: NoticeType, message: 'Notice type must me valid.' })
+  @IsEnum(NoticeType, { message: 'Notice type must be valid.' })
   type?: NoticeType;
 
   @IsOptional()

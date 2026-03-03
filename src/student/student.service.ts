@@ -337,6 +337,11 @@ export class StudentService {
     return await this.studentRepo.findOne({ where: { id }, withDeleted: true });
   }
 
+  async findStudentByUserId(userId: number) {
+    return await this.studentRepo.findOne({
+      where: { userId },
+    });
+  }
   async validateStudentContact(data: {
     email?: string;
     phone?: string;
