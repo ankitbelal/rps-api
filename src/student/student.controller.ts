@@ -32,7 +32,7 @@ export class StudentController {
   async create(@Body() createStudentDto: CreateStudentDto, @Req() req) {
     await this.studentService.create({
       ...createStudentDto,
-      userId: req.user.userId, //logging action who perform when
+      loggedInUserId: req.user.userId, //logging action who perform when
     });
     return ApiResponse.success('Student created successfully', 200);
   }

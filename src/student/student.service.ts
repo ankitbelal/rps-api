@@ -35,6 +35,7 @@ import { ProgramService } from 'src/program/program.service';
 import { AuditTrailService } from 'src/audit-trail/audit-trail.service';
 import { AuditLogs } from 'src/audit-trail/interfaces/audit-trails-interface';
 import { StudentListForResult } from './interfaces/student.interface';
+import { error } from 'console';
 
 @Injectable()
 export class StudentService {
@@ -78,7 +79,7 @@ export class StudentService {
       studentData.userId = (await this.createUser(createStudentDto)).id;
     }
     const logDetails: AuditLogs = {
-      userId: createStudentDto.userId!,
+      userId: createStudentDto.loggedInUserId!,
       actCode: AuditActCodes.STUDENT_ENROLL,
       action: 'student enrolled.',
       comment: `The student with roll number :${createStudentDto.rollNumber} is added in the system.`,

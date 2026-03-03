@@ -74,7 +74,7 @@ export class CreateStudentDto {
   createUser?: boolean = false; //by default dont create the user
 
   @IsOptional()
-  userId?: number;
+  loggedInUserId?: number;
 }
 
 export class StudentQueryDto {
