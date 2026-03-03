@@ -196,4 +196,6 @@ export class MailingService {
       throw error;
     }
   }
+
+  async sendNoticeEmail() {}
 }

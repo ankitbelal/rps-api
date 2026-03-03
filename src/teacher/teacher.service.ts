@@ -770,4 +770,8 @@ export class TeacherService {
   async findTeacherByUserId(userId: number) {
     return await this.teacherRepo.findOne({ where: { userId } });
   }
+
+  async findTeacherById(id: number) {
+    return await this.teacherRepo.findOne({ where: { id } });
+  }
 }

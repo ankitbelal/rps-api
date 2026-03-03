@@ -1284,4 +1284,6 @@ export class ResultService {
       .getOne();
     return gradingSystem?.grade ?? 'F';
   }
+
+  async getStudentResultLegder() {}
 }

@@ -51,3 +51,15 @@ export enum LogType {
   RESULT_PUBLISH = 'result',
   MIXED = 'mixed',
 }
+
+export enum NoticeUserType {
+  ADMIN = 'A',
+  TEACHER = 'T',
+  STUDENT = 'S',
+  ALL = 'ALL',
+}
+
+export enum SingleNoticeStatus {
+  READ = 'R',
+  UNREAD = 'U',
+}

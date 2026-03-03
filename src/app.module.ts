@@ -16,6 +16,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { AuditTrailModule } from './audit-trail/audit-trail.module';
 import { EvaluationParametersModule } from './evaluation-parameters/evaluation-parameters.module';
 import { ResultModule } from './result/result.module';
+import { NoticeModule } from './notice/notice.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { ResultModule } from './result/result.module';
     AuditTrailModule,
     EvaluationParametersModule,
     ResultModule,
+    NoticeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

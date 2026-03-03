@@ -39,3 +39,10 @@ export interface BulkPublishResultEmail {
   errorCount: number;
   hasErrors: boolean;
 }
+
+export interface NoticeEmailData {
+  email: string;
+  subject: string;
+  description: string;
+  
+}
