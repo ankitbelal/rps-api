@@ -16,6 +16,7 @@ import { UserOTP } from './user-otps.entity';
 import { UserStatus, UserType } from 'utils/enums/general-enums';
 import { AuditTrails } from './audit-trails.entity';
 import { AdminUsers } from './admin-users.entity';
+import { SingleUserNotice } from './single-user-notice.entity';
 
 @Entity('users')
 export class User {
@@ -74,4 +75,11 @@ export class User {
     onDelete: 'CASCADE',
   })
   auditTrails: AuditTrails;
+
+  @OneToMany(() => SingleUserNotice, (notice) => notice.publisher)
+  publishedNotices: SingleUserNotice[];
+
+  // notices this user has received
+  @OneToMany(() => SingleUserNotice, (notice) => notice.recipient)
+  receivedNotices: SingleUserNotice[];
 }

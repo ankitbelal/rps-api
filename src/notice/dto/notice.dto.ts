@@ -1,6 +1,12 @@
 import { Type } from 'class-transformer';
-import { IsDate, IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
-import { NoticeUserType } from 'utils/enums/general-enums';
+import {
+  IsDate,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+} from 'class-validator';
+import { NoticeType, NoticeUserType } from 'utils/enums/general-enums';
 
 export class SingleNoticeDto {
   @IsNotEmpty({ message: 'Subject is required.' })
@@ -32,5 +38,27 @@ export class SingleNoticeDto {
 
   @IsOptional()
   @Type(() => Boolean)
-  sendEmail: boolean;
+  sendEmail?: boolean;
+
+  @IsOptional()
+  email?: string;
+}
+
+export class NoticeQueryDto {
+  @IsOptional()
+  @IsEnum({ enum: NoticeType, message: 'Notice type must me valid.' })
+  type?: NoticeType;
+
+  @IsOptional()
+  userId: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  page?: number = 1;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  limit?: number = 10;
 }

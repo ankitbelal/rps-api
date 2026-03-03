@@ -63,3 +63,8 @@ export enum SingleNoticeStatus {
   READ = 'R',
   UNREAD = 'U',
 }
+
+export enum NoticeType {
+  SINGLE = 'S',
+  BULK = 'B',
+}

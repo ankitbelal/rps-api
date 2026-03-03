@@ -42,7 +42,7 @@ export class StudentController {
   async findAll(@Query() studentQueryDto: StudentQueryDto, @Req() req) {
     const students = await this.studentService.findAll({
       ...studentQueryDto,
-      userId: req.user.userId,
+      loggedInUserId: req.user.userId,
     });
     return ApiResponse.successData(
       students,
@@ -90,7 +90,7 @@ export class StudentController {
   ) {
     await this.studentService.promoteStudent({
       ...promoteStudentDto,
-      userId: req.user.userId,
+      loggedInUserId: req.user.userId,
     });
     return ApiResponse.success('Student promoted successfully.', 200);
   }

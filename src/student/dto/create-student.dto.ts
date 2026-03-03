@@ -109,7 +109,7 @@ export class StudentQueryDto {
   search?: string;
 
   @IsOptional()
-  userId?: number;
+  loggedInUserId?: number;
 }
 
 export class SearchStudentListDto {
@@ -125,7 +125,7 @@ export class PromoteStudentDto {
 
   @IsOptional()
   @Type(() => Number)
-  userId?: number;
+  loggedInUserId?: number;
 }
 
 export class StudentStatsDto {

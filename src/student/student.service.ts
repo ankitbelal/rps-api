@@ -116,10 +116,10 @@ export class StudentService {
     }
 
     //handle the query if fetched fromt the teacher dashboard
-    if (filters.userId) {
-      const user = await this.userService.findUserById(filters.userId);
+    if (filters.loggedInUserId) {
+      const user = await this.userService.findUserById(filters.loggedInUserId);
       if (user?.userType == UserType.TEACHER) {
-        await this.teacherWiseFilter(filters.userId, query);
+        await this.teacherWiseFilter(filters.loggedInUserId, query);
       }
     }
 
@@ -551,7 +551,7 @@ export class StudentService {
     );
 
     const logDetails: AuditLogs = {
-      userId: promoteStudentDto.userId!,
+      userId: promoteStudentDto.loggedInUserId!,
       actCode: AuditActCodes.STUDENT_PROMOTION,
       action: `${program.code} students are promoted to new semester.`,
       comment: `Students are promoted to new semesters and final semester students are termed as passed.`,
