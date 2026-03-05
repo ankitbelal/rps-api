@@ -71,7 +71,7 @@ export class CreateStudentDto {
 
   @IsOptional()
   @IsBoolean()
-  createUser?: boolean = false; //by default dont create the user
+  createUser?: boolean = true; //by default dont create the user
 
   @IsOptional()
   loggedInUserId?: number;

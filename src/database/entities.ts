@@ -17,7 +17,6 @@ import { SubjectTeachers } from './entities/subject-teacher.entity';
 import { PublishedResult } from './entities/published-result.entity';
 import { GradingSystem } from './entities/grading-system.entity';
 import { SingleUserNotice } from './entities/single-user-notice.entity';
-import { BulkNotice } from './entities/bulk-notice.entity';
 export const entities = [
   User,
   UserActivity,
@@ -38,5 +37,4 @@ export const entities = [
   PublishedResult,
   GradingSystem,
   SingleUserNotice,
-  BulkNotice,
 ];

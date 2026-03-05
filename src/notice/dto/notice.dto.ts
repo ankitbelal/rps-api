@@ -14,7 +14,7 @@ export class SingleNoticeDto {
 
   @IsNotEmpty({ message: 'Descriptioin is required.' })
   description: string;
-  
+
   @IsNotEmpty({ message: 'Recipient user type is required.' })
   @IsEnum(NoticeUserType, { message: 'Recipient user type must be valid.' })
   recipientType: NoticeUserType;
@@ -30,7 +30,7 @@ export class SingleNoticeDto {
 
   @IsOptional()
   @Type(() => Date)
-  @IsDate({ message: 'DOB must be a valid date.' })
+  @IsDate({ message: 'Expired at must be a valid date.' })
   expiredAt?: Date;
 
   @IsOptional()
