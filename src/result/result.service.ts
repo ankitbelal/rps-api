@@ -1372,6 +1372,7 @@ export class ResultService {
         registrationNumber: r.registrationNumber,
         currentSemester: r.currentSemester,
         semester: Number(r.semester),
+        programId:Number(r.programId),
         examTerm: r.examTerm,
         totalObtained: Number(r.totalObtained),
         totalFull: Number(r.totalFull),
