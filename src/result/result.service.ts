@@ -1324,6 +1324,7 @@ export class ResultService {
         'pr.gpa                      AS gpa',
         'pr.subjectBreakdown         AS subjectBreakdown',
         'pr.publishedAt              AS publishedAt',
+        'pr.programId                As programId',
         'student.firstName           AS firstName',
         'student.lastName            AS lastName',
         'student.rollNumber          AS rollNumber',
