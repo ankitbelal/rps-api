@@ -1,10 +1,12 @@
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  IsEnum,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
+  Max,
   MaxLength,
   ValidateNested,
 } from 'class-validator';
@@ -82,4 +84,42 @@ export class UpdateGradeRangeDto {
   @IsString()
   @IsOptional()
   remarks?: string;
+}
+
+export class GetStudentResultDto {
+  @Type(() => Number)
+  studentId: number;
+
+  @IsOptional()
+  @IsEnum(ExamTerm)
+  examTerm?: ExamTerm;
+
+  @IsOptional()
+  @Type(() => Number)
+  semester?: number;
+}
+
+export class GetClassResultsDto {
+  @IsOptional()
+  @Type(() => Number)
+  programId?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  semester?: number;
+
+  @IsOptional()
+  @IsEnum(ExamTerm)
+  examTerm?: ExamTerm;
+
+  @IsOptional()
+  @Type(() => Number)
+  page?: number = 1;
+
+  @IsOptional()
+  @Type(() => Number)
+  limit?: number = 20;
+
+  @IsOptional()
+  search?: string;
 }

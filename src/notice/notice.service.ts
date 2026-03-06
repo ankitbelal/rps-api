@@ -16,7 +16,6 @@ import {
 import { MailingService } from 'src/mailing/mailing.service';
 import { TeacherService } from 'src/teacher/teacher.service';
 import { StudentService } from 'src/student/student.service';
-import { User } from 'src/database/entities/user.entity';
 
 @Injectable()
 export class NoticeService {

@@ -11,11 +11,20 @@ import { Repository } from 'typeorm';
 import { AddMarksDTO, MarkFetchQueryDto } from './dto/marks.dto';
 import { SubjectService } from 'src/subject/subject.service';
 import { StudentService } from 'src/student/student.service';
-import { AuditActCodes, ExamTerm, UserType } from 'utils/enums/general-enums';
+import {
+  AuditActCodes,
+  ExamTerm,
+  StudentStatus,
+  UserType,
+} from 'utils/enums/general-enums';
 import { PublishedResult } from 'src/database/entities/published-result.entity';
 import { UserService } from 'src/user/user.service';
 import { TeacherService } from 'src/teacher/teacher.service';
-import { CreateGradingSystemDto, TopStudentQueryDto } from './dto/result.dto';
+import {
+  CreateGradingSystemDto,
+  GetClassResultsDto,
+  TopStudentQueryDto,
+} from './dto/result.dto';
 import { GradingSystem } from 'src/database/entities/grading-system.entity';
 import {
   BulkPublishResultEmail,
@@ -1285,5 +1294,134 @@ export class ResultService {
     return gradingSystem?.grade ?? 'F';
   }
 
-  async getStudentResultLegder() {}
+  async getClassResults(dto: GetClassResultsDto) {
+    const { programId, semester, examTerm, page = 1, limit = 20, search } = dto;
+
+    const sortMap: Record<string, string> = {
+      gpa: 'pr.gpa',
+      percentage: 'pr.percentage',
+      rollNumber: 'student.roll_no',
+      name: 'student.first_name',
+    };
+
+    const qb = this.publishedResultRepo
+      .createQueryBuilder('pr')
+      // ─── JOIN only active students AND match result to their current semester
+      .innerJoin(
+        'pr.student',
+        'student',
+        'student.status NOT IN (:...excluded) AND pr.semester = student.current_semester',
+        { excluded: [StudentStatus.PASSED, StudentStatus.SUSPENDED] },
+      )
+      .select([
+        'pr.id                       AS id',
+        'pr.studentId                AS studentId',
+        'pr.semester                 AS semester',
+        'pr.examTerm                 AS examTerm',
+        'pr.totalObtained            AS totalObtained',
+        'pr.totalFull                AS totalFull',
+        'pr.percentage               AS percentage',
+        'pr.gpa                      AS gpa',
+        'pr.subjectBreakdown         AS subjectBreakdown',
+        'pr.publishedAt              AS publishedAt',
+        'student.firstName           AS firstName',
+        'student.lastName            AS lastName',
+        'student.rollNumber          AS rollNumber',
+        'student.registrationNumber  AS registrationNumber',
+        'student.currentSemester     AS currentSemester',
+      ]);
+
+    // ─── OPTIONAL FILTERS (all andWhere so join condition is never overridden)
+    if (programId) qb.andWhere('pr.programId = :programId', { programId });
+    if (semester) qb.andWhere('pr.semester = :semester', { semester });
+    if (examTerm) qb.andWhere('pr.examTerm = :examTerm', { examTerm });
+
+    // ─── SEARCH: roll number, registration number, full name
+    if (search?.trim()) {
+      const term = `%${search.trim()}%`;
+      qb.andWhere(
+        `(
+          student.roll_no         LIKE :term OR
+          student.registration_no LIKE :term OR
+          CONCAT(student.first_name, ' ', student.last_name) LIKE :term
+        )`,
+        { term },
+      );
+    }
+
+    // ─── ORDER: FINAL before SECOND before FIRST, then by roll number
+    qb.orderBy(
+      `CASE WHEN pr.examTerm = '${ExamTerm.FINAL}' THEN 0 WHEN pr.examTerm = '${ExamTerm.SECOND}' THEN 1 ELSE 2 END`,
+      'ASC',
+    ).addOrderBy(sortMap['rollNumber'] ?? 'student.roll_no', 'ASC');
+
+    const total = await qb.getCount();
+
+    const raw = await qb
+      .offset((page - 1) * limit)
+      .limit(limit)
+      .getRawMany();
+
+    return {
+      data: raw.map((r) => ({
+        studentId: Number(r.studentId),
+        firstName: r.firstName,
+        lastName: r.lastName,
+        rollNumber: r.rollNumber,
+        registrationNumber: r.registrationNumber,
+        currentSemester: r.currentSemester,
+        semester: Number(r.semester),
+        examTerm: r.examTerm,
+        totalObtained: Number(r.totalObtained),
+        totalFull: Number(r.totalFull),
+        percentage: Number(r.percentage),
+        gpa: Number(r.gpa),
+        publishedAt: r.publishedAt,
+        subjectBreakdown: r.subjectBreakdown,
+      })),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        ...(programId ? { programId } : {}),
+        ...(semester ? { semester } : {}),
+        ...(examTerm ? { examTerm } : {}),
+      },
+    };
+  }
+  
+  async getClassSemesterSummary(programId: number, examTerm: ExamTerm) {
+    const rows = await this.publishedResultRepo
+      .createQueryBuilder('pr')
+      .select('pr.semester', 'semester')
+      .addSelect('pr.examTerm', 'examTerm')
+      .addSelect('COUNT(pr.id)', 'totalStudents')
+      .addSelect('ROUND(AVG(pr.gpa), 2)', 'avgGpa')
+      .addSelect('ROUND(AVG(pr.percentage), 2)', 'avgPercentage')
+      .addSelect('MAX(pr.gpa)', 'topGpa')
+      .addSelect('MIN(pr.percentage)', 'lowestPercentage')
+      .addSelect(
+        `SUM(CASE WHEN pr.percentage >= 60 THEN 1 ELSE 0 END)`,
+        'passCount',
+      )
+      .where('pr.programId = :programId', { programId })
+      .andWhere('pr.examTerm = :examTerm', { examTerm })
+      .groupBy('pr.semester')
+      .addGroupBy('pr.examTerm')
+      .orderBy('pr.semester', 'ASC')
+      .getRawMany();
+
+    return rows.map((r) => ({
+      semester: Number(r.semester),
+      examTerm: r.examTerm,
+      totalStudents: Number(r.totalStudents),
+      avgGpa: Number(r.avgGpa),
+      avgPercentage: Number(r.avgPercentage),
+      topGpa: Number(r.topGpa),
+      lowestPercentage: Number(r.lowestPercentage),
+      passCount: Number(r.passCount),
+      failCount: Number(r.totalStudents) - Number(r.passCount),
+    }));
+  }
 }

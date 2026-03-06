@@ -14,7 +14,11 @@ import { ResultService } from './result.service';
 import { AddMarksDTO, MarkFetchQueryDto } from './dto/marks.dto';
 import { ApiResponse } from 'utils/api-response';
 import type { Response } from 'express';
-import { CreateGradingSystemDto, TopStudentQueryDto } from './dto/result.dto';
+import {
+  CreateGradingSystemDto,
+  GetClassResultsDto,
+  TopStudentQueryDto,
+} from './dto/result.dto';
 
 import {
   GetPublishedResultDto,
@@ -22,6 +26,8 @@ import {
   PublishBulkReporDto,
   PublishSingleDto,
 } from './dto/result-publish.dto';
+import { ExamTerm } from 'utils/enums/general-enums';
+import { Public } from 'src/auth/jwt/public.decorator';
 
 @Controller('result')
 export class ResultController {
@@ -134,5 +140,14 @@ export class ResultController {
   async addGradingSystem(@Body() dto: CreateGradingSystemDto) {
     await this.resultService.addGradingSystem(dto);
     return ApiResponse.success('Grading system added successfully.', 201);
+  }
+  @HttpCode(200)
+  @Get('bulk-result')
+  async getBulkResult(@Query() getClassResultsDto: GetClassResultsDto) {
+    return ApiResponse.successData(
+      await this.resultService.getClassResults(getClassResultsDto),
+      'Result fetched successfully.',
+      200,
+    );
   }
 }
