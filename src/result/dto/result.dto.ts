@@ -91,7 +91,7 @@ export class GetStudentResultDto {
   studentId: number;
 
   @IsOptional()
-  @IsEnum(ExamTerm)
+  // @IsEnum(ExamTerm)
   examTerm?: ExamTerm;
 
   @IsOptional()
@@ -109,7 +109,7 @@ export class GetClassResultsDto {
   semester?: number;
 
   @IsOptional()
-  @IsEnum(ExamTerm)
+  // @IsEnum(ExamTerm)
   examTerm?: ExamTerm;
 
   @IsOptional()
