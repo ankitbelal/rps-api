@@ -1379,18 +1379,17 @@ export class ResultService {
         publishedAt: r.publishedAt,
         subjectBreakdown: r.subjectBreakdown,
       })),
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-        ...(programId ? { programId } : {}),
-        ...(semester ? { semester } : {}),
-        ...(examTerm ? { examTerm } : {}),
-      },
+
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+      // ...(programId ? { programId } : {}),
+      // ...(semester ? { semester } : {}),
+      // ...(examTerm ? { examTerm } : {}),
     };
   }
-  
+
   async getClassSemesterSummary(programId: number, examTerm: ExamTerm) {
     const rows = await this.publishedResultRepo
       .createQueryBuilder('pr')
