@@ -1295,7 +1295,14 @@ export class ResultService {
   }
 
   async getClassResults(dto: GetClassResultsDto) {
-    const { programId, semester, examTerm, page = 1, limit = 20, search } = dto;
+    const {
+      programId,
+      semester,
+      examTerm = ExamTerm.FINAL,
+      page = 1,
+      limit = 20,
+      search,
+    } = dto;
 
     const sortMap: Record<string, string> = {
       gpa: 'pr.gpa',
@@ -1372,7 +1379,7 @@ export class ResultService {
         registrationNumber: r.registrationNumber,
         currentSemester: r.currentSemester,
         semester: Number(r.semester),
-        programId:Number(r.programId),
+        programId: Number(r.programId),
         examTerm: r.examTerm,
         totalObtained: Number(r.totalObtained),
         totalFull: Number(r.totalFull),
