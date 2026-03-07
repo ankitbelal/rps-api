@@ -104,4 +104,14 @@ export class StudentController {
       200,
     );
   }
+
+  //student dashboard
+
+  @HttpCode(200)
+  @Get('student-details')
+  async getStudentDetails(@Req() req) {
+    return ApiResponse.successData(
+      await this.studentService.getStudentDetails(req.user.userId),
+    );
+  }
 }

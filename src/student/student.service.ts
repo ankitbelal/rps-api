@@ -1136,4 +1136,9 @@ export class StudentService {
 
     return grouped;
   }
+
+  async getStudentDetails(userId) {
+    const student = await this.studentRepo.findOne({ where: { userId } });
+    return await this.findAll({ id: student?.id });
+  }
 }
