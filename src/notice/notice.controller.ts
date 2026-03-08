@@ -9,7 +9,11 @@ import {
 } from '@nestjs/common';
 import { ApiResponse } from 'utils/api-response';
 import { NoticeService } from './notice.service';
-import { NoticeQueryDto, SingleNoticeDto } from './dto/notice.dto';
+import {
+  markAsReadDto,
+  NoticeQueryDto,
+  SingleNoticeDto,
+} from './dto/notice.dto';
 
 @Controller('notice')
 export class NoticeController {
@@ -36,5 +40,16 @@ export class NoticeController {
       'Notices fetched successully.',
       200,
     );
+  }
+
+  @HttpCode(200)
+  @Post('mark-as-read')
+  async markAsRead(@Body() dto: markAsReadDto, @Req() req) {
+    await this.noticeService.markAsRead({
+      ...dto,
+      userId: req.user.userId,
+    });
+
+    return ApiResponse.success('Notice marked as read.', 200);
   }
 }

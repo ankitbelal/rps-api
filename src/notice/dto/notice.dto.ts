@@ -1,12 +1,21 @@
 import { Type } from 'class-transformer';
 import {
+  IsBoolean,
   IsDate,
   IsEnum,
+  IsIn,
   IsNotEmpty,
   IsNumber,
   IsOptional,
+  ValidateIf,
 } from 'class-validator';
 import { NoticeType, NoticeUserType } from 'utils/enums/general-enums';
+
+import {
+  registerDecorator,
+  ValidationOptions,
+  ValidationArguments,
+} from 'class-validator';
 
 export class SingleNoticeDto {
   @IsNotEmpty({ message: 'Subject is required.' })
@@ -41,21 +50,76 @@ export class SingleNoticeDto {
   email?: string;
 }
 
+export enum NoticeFilter {
+  UNREAD = 'unread',
+  ADMIN = 'admin',
+  TEACHER = 'teacher',
+}
+
 export class NoticeQueryDto {
   @IsOptional()
-  @IsEnum(NoticeType, { message: 'Notice type must be valid.' })
-  type?: NoticeType;
-
-  @IsOptional()
-  userId: number;
-
-  @IsOptional()
-  @IsNumber()
   @Type(() => Number)
-  page?: number = 1;
+  @IsNumber()
+  page?: number;
 
   @IsOptional()
-  @IsNumber()
   @Type(() => Number)
-  limit?: number = 10;
+  @IsNumber()
+  limit?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  userId?: number;
+
+  @IsOptional()
+  @IsEnum(NoticeFilter)
+  filter?: NoticeFilter;
+}
+
+export function AtLeastOne(
+  properties: string[],
+  validationOptions?: ValidationOptions,
+) {
+  return function (object: Object, propertyName: string) {
+    registerDecorator({
+      name: 'atLeastOne',
+      target: object.constructor,
+      propertyName: propertyName,
+      options: validationOptions,
+      validator: {
+        validate(_: any, args: ValidationArguments) {
+          const obj = args.object as any;
+          return properties.some(
+            (prop) => obj[prop] !== undefined && obj[prop] !== null,
+          );
+        },
+        defaultMessage(args: ValidationArguments) {
+          return `At least one of [${properties.join(', ')}] must be provided`;
+        },
+      },
+    });
+  };
+}
+
+export class markAsReadDto {
+  @IsOptional()
+  id?: number;
+
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  all?: boolean;
+
+  @ValidateIf((o) => o.all === true)
+  @IsIn(['A', 'T'], {
+    message: 'Type must be either A (Admin) or T (Teacher) when all is true',
+  })
+  type?: 'A' | 'T';
+
+  @IsOptional()
+  userId?: number;
+
+  @AtLeastOne(['id', 'all'], { message: 'Either id or all must be provided.' })
+  dummy?: any;
 }

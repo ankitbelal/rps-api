@@ -3,7 +3,11 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { NoticeQueryDto, SingleNoticeDto } from './dto/notice.dto';
+import {
+  markAsReadDto,
+  NoticeQueryDto,
+  SingleNoticeDto,
+} from './dto/notice.dto';
 import { UserService } from 'src/user/user.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SingleUserNotice } from 'src/database/entities/single-user-notice.entity';
@@ -11,6 +15,7 @@ import { Brackets, Repository } from 'typeorm';
 import {
   NoticeType,
   NoticeUserType,
+  SingleNoticeStatus,
   UserType,
 } from 'utils/enums/general-enums';
 import { MailingService } from 'src/mailing/mailing.service';
@@ -63,6 +68,7 @@ export class NoticeService {
         });
       dto.email = student.email;
       dto.recipientId = student.userId;
+      if (dto.sendEmail) await this.handleMailing(dto);
     }
 
     if (dto.recipientType === NoticeUserType.TEACHER) {
@@ -77,14 +83,17 @@ export class NoticeService {
         });
       dto.email = teacher.email!;
       dto.recipientId = teacher.userId;
+
+      if (dto.sendEmail) await this.handleMailing(dto);
     }
 
-    if (dto.sendEmail) await this.handleMailing(dto);
     await this.singleNoticeRepo.save(this.singleNoticeRepo.create(dto));
-    return { success: true, statusCode: 201, message: 'Notice sent.' };
+    return true;
   }
 
   async handleMailing(dto: SingleNoticeDto) {
+    const notificationData = { email: dto.email, subject: dto.subject };
+
     // await this.mailingService.sendNoticeEmail({ ... });
   }
 
@@ -93,10 +102,15 @@ export class NoticeService {
   }
 
   async getNoticesForMe(noticeQueryDto: NoticeQueryDto) {
-    const { page = 1, limit = 10, userId } = noticeQueryDto;
-    const query = this.singleNoticeRepo
-      .createQueryBuilder('notice')
-      .leftJoinAndSelect('notice.publisher', 'p')
+    const { page = 1, limit = 10, userId, filter } = noticeQueryDto;
+
+    const baseQuery = () =>
+      this.singleNoticeRepo
+        .createQueryBuilder('notice')
+        .leftJoinAndSelect('notice.publisher', 'p')
+        .where('notice.recipientId = :userId', { userId });
+
+    const dataQuery = baseQuery()
       .select([
         'notice.id',
         'notice.subject',
@@ -110,13 +124,107 @@ export class NoticeService {
         'p.name',
         'p.email',
       ])
-      .where('notice.recipientId = :userId', { userId })
       .orderBy('notice.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit);
 
-    const [data, total] = await query.getManyAndCount();
+    if (filter === 'unread') {
+      dataQuery.andWhere('notice.status = :status', {
+        status: SingleNoticeStatus.UNREAD,
+      });
+    } else if (filter === 'admin') {
+      dataQuery.andWhere('notice.publisherType = :type', {
+        type: NoticeUserType.ADMIN,
+      });
+    } else if (filter === 'teacher') {
+      dataQuery.andWhere('notice.publisherType = :type', {
+        type: NoticeUserType.TEACHER,
+      });
+    }
+
+    const [data, total] = await dataQuery.getManyAndCount();
+
+    const [unreadCount, adminCount, teacherCount, allCount] = await Promise.all(
+      [
+        baseQuery()
+          .andWhere('notice.status = :status', {
+            status: SingleNoticeStatus.UNREAD,
+          })
+          .getCount(),
+        baseQuery()
+          .andWhere('notice.publisherType = :type', {
+            type: NoticeUserType.ADMIN,
+          })
+          .getCount(),
+        baseQuery()
+          .andWhere('notice.publisherType = :type', {
+            type: NoticeUserType.TEACHER,
+          })
+          .getCount(),
+        baseQuery().getCount(),
+      ],
+    );
+
+    const counts = {
+      all: allCount,
+      unread: unreadCount,
+      admin: adminCount,
+      teacher: teacherCount,
+    };
+
     const lastPage = Math.ceil(total / limit);
-    return { data, total, page, limit, lastPage };
+    return { data, total, page, limit, lastPage, counts };
+  }
+
+  async markAsRead(dto: markAsReadDto) {
+    const { id, all, type, userId } = dto;
+
+    if (all) {
+      const qb = this.singleNoticeRepo
+        .createQueryBuilder()
+        .update(SingleUserNotice)
+        .set({ status: SingleNoticeStatus.READ })
+        .where('recipientId = :userId', { userId })
+        .andWhere('status = :status', { status: SingleNoticeStatus.UNREAD });
+
+      if (type === 'A') {
+        qb.andWhere('publisherType = :pType', { pType: NoticeUserType.ADMIN });
+      } else if (type === 'T') {
+        qb.andWhere('publisherType = :pType', {
+          pType: NoticeUserType.TEACHER,
+        });
+      }
+
+      const result = await qb.execute();
+
+      return {
+        success: true,
+        message:
+          type === 'A'
+            ? 'All admin notices marked as read.'
+            : type === 'T'
+              ? 'All teacher notices marked as read.'
+              : 'All notices marked as read.',
+        affected: result.affected ?? 0,
+      };
+    }
+
+    if (id) {
+      const notice = await this.singleNoticeRepo.findOne({
+        where: { id },
+      });
+
+      if (!notice) {
+        throw new NotFoundException({
+          success: false,
+          statusCode: 404,
+          message: 'Notice not found.',
+        });
+      }
+
+      notice.status = SingleNoticeStatus.READ;
+      await this.singleNoticeRepo.save(notice);
+      return true;
+    }
   }
 }
