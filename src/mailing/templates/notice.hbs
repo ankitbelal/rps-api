@@ -1,0 +1,32 @@
+{{#> main}}
+  {{#*inline "content"}}
+
+  <div style="padding: 32px; background: #ffffff; font-family: Arial, sans-serif;">
+
+    <p style="font-size: 15px; color: #111827; margin: 0 0 4px 0;">
+      Hi <strong>{{receiver.name}}</strong>,
+    </p>
+    <p style="font-size: 13px; color: #6b7280; margin: 0 0 28px 0;">
+      {{receiver.email}}
+    </p>
+
+    <p style="font-size: 16px; font-weight: 700; color: #111827; margin: 0 0 12px 0;">
+      {{subject}}
+    </p>
+
+    <p style="font-size: 14px; color: #374151; line-height: 1.8; white-space: pre-line; margin: 0 0 32px 0;">
+      {{description}}
+    </p>
+
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 0 0 24px 0;" />
+
+    <p style="font-size: 13px; color: #6b7280; margin: 0 0 4px 0;">Sent by:</p>
+    <p style="font-size: 14px; font-weight: 600; color: #111827; margin: 0;">{{sender.name}}</p>
+    <p style="font-size: 13px; color: #6b7280; margin: 2px 0 0 0;">{{sender.email}}</p>
+
+    <p style="font-size: 12px; color: #9ca3af; margin: 24px 0 0 0;">{{sentAt}}</p>
+
+  </div>
+
+  {{/inline}}
+{{/main}}

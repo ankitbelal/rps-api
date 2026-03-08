@@ -68,3 +68,14 @@ export enum NoticeType {
   SINGLE = 'S',
   BULK = 'B',
 }
+
+export function mapUserType(code: string): string {
+  const mapper: Record<string, string> = {
+    a: 'ADMIN',
+    s: 'SUPERADMIN',
+    t: 'TEACHER',
+    st: 'STUDENT',
+  };
+
+  return mapper[code.toLowerCase()] || 'UNKNOWN';
+}

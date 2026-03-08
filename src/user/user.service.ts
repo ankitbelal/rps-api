@@ -8,7 +8,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { loginDTO, PasswordResetDto } from 'src/auth/dto/login.dto';
 import { User } from '../database/entities/user.entity';
-import { IsNull, Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 import { UserActivity } from '../database/entities/user-activity.entity';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
@@ -189,14 +189,18 @@ export class UserService {
     const user = await this.findUserById(userSync?.id!);
     if (!user)
       throw new NotFoundException({
-        message: 'Failed to update login details.',
+        success: false,
+        statusCode: 404,
+        message: 'Failed to update login details. User not found.',
         error: 'User not found.',
       });
 
     if (userSync.email && userSync.email !== user.email)
       if (await this.checkDuplicate(userSync.email))
-        throw new NotFoundException({
-          message: 'Failed to update login details.',
+        throw new BadRequestException({
+          success: false,
+          statusCode: 422,
+          message: 'Failed to update login details. Email already used,',
           error: 'Email already used.',
         });
 
@@ -265,5 +269,15 @@ export class UserService {
       password: await bcrypt.hash(userPasswordChange.password, 10),
     };
     return !!(await this.updateUser(syncData));
+  }
+
+  async findAllAdminEmails() {
+    return await this.userRepo.find({
+      where: {
+        status: UserStatus.ACTIVE,
+        userType: In([UserType.ADMIN, UserType.SUPERADMIN]),
+      },
+      select: ['email', 'userType'],
+    });
   }
 }

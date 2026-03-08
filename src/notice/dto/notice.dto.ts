@@ -59,6 +59,7 @@ export enum NoticeFilter {
   UNREAD = 'unread',
   ADMIN = 'admin',
   TEACHER = 'teacher',
+  STUDENT = 'student',
 }
 
 export class NoticeQueryDto {

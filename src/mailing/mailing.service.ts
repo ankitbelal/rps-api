@@ -4,8 +4,10 @@ import * as Handlebars from 'handlebars';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import {
+  AdminNotificationEmail,
   BulkPublishResultEmail,
   CreatedUser,
+  NoticeEmail,
   PasswordResetUser,
   StudentResultEmail,
 } from './interfaces/mailing-interface';
@@ -155,6 +157,7 @@ export class MailingService {
 
       return true;
     } catch (error) {
+      console.log(error);
       throw error;
     }
   }
@@ -197,5 +200,78 @@ export class MailingService {
     }
   }
 
-  async sendNoticeEmail() {}
+  async sendNoticeEmail(data: NoticeEmail): Promise<boolean> {
+    try {
+      await this.mailingService.sendMail({
+        to: data.toEmail,
+        subject: data.subject,
+        template: 'notice',
+        layout: 'layouts/main',
+        context: {
+          subject: data.subject,
+          description: data.description,
+          receiver: {
+            name: data.receiver.name,
+            email: data.receiver.email,
+          },
+          sender: {
+            name: data.sender.name,
+            email: data.sender.email,
+          },
+          sentAt: new Date().toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
+          dashboardLink: this.Company.website,
+          company: this.Company,
+          currentYear: new Date().getFullYear(),
+        },
+      } as any);
+
+      return true;
+    } catch (error) {
+      console.error('Error sending notice email:', error);
+      throw error;
+    }
+  }
+  async sendAdminNotification(data: AdminNotificationEmail): Promise<boolean> {
+    try {
+      await this.mailingService.sendMail({
+        to: data.toEmail,
+        cc: data.ccEmails.length ? data.ccEmails : undefined,
+        bcc: data.bccEmails.length ? data.bccEmails : undefined,
+        subject: data.subject,
+        template: 'notification-email',
+        layout: 'layouts/main',
+        context: {
+          subject: data.subject,
+          message: data.description,
+          sender: {
+            name: data.sender.name,
+            email: data.sender.email,
+          },
+          sentAt: new Date().toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
+          dashboardLink: this.Company.website,
+          company: this.Company,
+          currentYear: new Date().getFullYear(),
+        },
+      } as any);
+
+      return true;
+    } catch (error) {
+      console.log(error);
+
+      console.error('Error sending admin notification email:', error);
+      throw error;
+    }
+  }
 }

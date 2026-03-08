@@ -44,5 +44,29 @@ export interface NoticeEmailData {
   email: string;
   subject: string;
   description: string;
-  
+}
+export interface AdminNotificationEmail {
+  toEmail: string;
+  ccEmails: string[];
+  bccEmails: string[];
+  subject: string;
+  description: string;
+  sender: {
+    name: string;
+    email: string;
+  };
+}
+
+export interface NoticeEmail {
+  toEmail: string;
+  subject: string;
+  description: string;
+  receiver: {
+    name: string;
+    email: string;
+  };
+  sender: {
+    name: string;
+    email: string;
+  };
 }

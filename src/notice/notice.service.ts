@@ -21,6 +21,9 @@ import {
 import { MailingService } from 'src/mailing/mailing.service';
 import { TeacherService } from 'src/teacher/teacher.service';
 import { StudentService } from 'src/student/student.service';
+import { User } from 'src/database/entities/user.entity';
+import { Student } from 'src/database/entities/student.entity';
+import { Teacher } from 'src/database/entities/teacher.entity';
 
 @Injectable()
 export class NoticeService {
@@ -74,7 +77,7 @@ export class NoticeService {
         });
       dto.email = student.email;
       dto.recipientId = student.userId;
-      if (dto.sendEmail) await this.handleMailing(dto);
+      if (dto.sendEmail) await this.handleMailing(user, dto, student);
     }
 
     if (dto.recipientType === NoticeUserType.TEACHER) {
@@ -90,21 +93,77 @@ export class NoticeService {
       dto.email = teacher.email!;
       dto.recipientId = teacher.userId;
 
-      if (dto.sendEmail) await this.handleMailing(dto);
+      if (dto.sendEmail) await this.handleMailing(user, dto, teacher);
     }
 
     if (dto.recipientType === NoticeUserType.ADMIN) {
-      // this.handleMailing();
+      this.handleAdminNotification(user, dto).catch((err) =>
+        console.error('Admin notification failed:', err),
+      );
     }
 
     await this.singleNoticeRepo.save(this.singleNoticeRepo.create(dto));
     return true;
   }
 
-  async handleMailing(dto: SingleNoticeDto) {
-    const notificationData = { email: dto.email, subject: dto.subject };
+  async handleMailing(
+    user: User,
+    dto: SingleNoticeDto,
+    receiver: Student | Teacher,
+  ) {
+    const receiverName = `${receiver.firstName} ${receiver.lastName}`.trim();
 
-    // await this.mailingService.sendNoticeEmail({ ... });
+    this.mailingService
+      .sendNoticeEmail({
+        toEmail: receiver.email,
+        subject: dto.subject,
+        description: dto.description,
+        receiver: {
+          name: receiverName,
+          email: receiver.email,
+        },
+        sender: {
+          name: user.name,
+          email: user.email,
+        },
+      })
+      .catch((err) => console.error('Notice mailing failed:', err));
+  }
+
+  async handleAdminNotification(user: User, dto: SingleNoticeDto) {
+    const admins = await this.userService.findAllAdminEmails();
+
+    let toEmail: string = '';
+    let ccEmails: string[] = [];
+    let bccEmails: string[] = [];
+    let firstSuperAdminFound = false;
+
+    admins.forEach((admin) => {
+      if (admin.userType === UserType.SUPERADMIN && !firstSuperAdminFound) {
+        toEmail = admin.email;
+        firstSuperAdminFound = true;
+      } else if (admin.userType === UserType.SUPERADMIN) {
+        ccEmails.push(admin.email);
+      } else if (admin.userType === UserType.ADMIN) {
+        bccEmails.push(admin.email);
+      }
+    });
+
+    if (!toEmail) return;
+
+    this.mailingService
+      .sendAdminNotification({
+        toEmail,
+        ccEmails,
+        bccEmails,
+        subject: dto.subject,
+        description: dto.description,
+        sender: {
+          name: user.name,
+          email: user.email,
+        },
+      })
+      .catch((err) => console.error('Admin mailing failed:', err));
   }
 
   async findUserById(id: number) {
