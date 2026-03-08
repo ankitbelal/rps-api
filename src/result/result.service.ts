@@ -1442,9 +1442,7 @@ export class ResultService {
     dto: GradeSheetQueryDto,
     res: Response,
   ): Promise<void> {
-    // 1. Fetch student
-
-    const { studentId, semester, examTerm } = dto;
+    const { examTerm, studentId, semester } = dto;
     const student = await this.studentService.findStudentById(studentId);
     if (!student)
       throw new NotFoundException({
@@ -1453,7 +1451,6 @@ export class ResultService {
         message: 'Student does not exist.',
       });
 
-    // 2. Fetch published result
     const result = await this.publishedResultRepo.findOne({
       where: { studentId, semester, examTerm },
     });
@@ -1469,13 +1466,16 @@ export class ResultService {
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
 
     res.setHeader('Content-Type', 'application/pdf');
+    const studentName = `${student.firstName ?? ''} ${student.lastName ?? ''}`
+      .trim()
+      .replace(/\s+/g, '_');
     res.setHeader(
       'Content-Disposition',
-      `attachment; filename=gradesheet_${student.rollNumber ?? studentId}_sem${semester}_${examTerm}.pdf`,
+      `attachment; filename=${studentName}_gradesheet.pdf`,
     );
     doc.pipe(res);
 
-    const pageWidth = doc.page.width - 100; // left+right margin = 100
+    const pageWidth = doc.page.width - 100;
     const LEFT = 50;
 
     const drawHRule = (y: number, color = '#CCCCCC') => {
@@ -1533,14 +1533,12 @@ export class ResultService {
       .lineWidth(0.8)
       .stroke();
 
-    // Section label
     doc
       .fontSize(9)
       .font('Helvetica-Bold')
       .fillColor('#888888')
       .text('STUDENT INFORMATION', LEFT + 12, infoY + 10);
 
-    // Two-column layout for student details
     const colLeft = LEFT + 12;
     const colRight = LEFT + pageWidth / 2 + 10;
     let infoRowY = infoY + 26;
@@ -1560,7 +1558,6 @@ export class ResultService {
         .text(value || '—', x + 105, y, { width: pageWidth / 2 - 115 });
     };
 
-    // Left column
     infoField(
       'Full Name',
       `${student.firstName ?? ''} ${student.lastName ?? ''}`.trim(),
@@ -1581,7 +1578,6 @@ export class ResultService {
     );
     infoField('Email', student.email ?? '—', colLeft, infoRowY + rowGap * 3);
 
-    // Right column
     infoField('Semester', `Semester ${semester}`, colRight, infoRowY);
     infoField(
       'Exam Term',
@@ -1595,17 +1591,16 @@ export class ResultService {
       colRight,
       infoRowY + rowGap * 2,
     );
-    // infoField(
-    //   'Published By',
-    //   result.publishedBy ?? '—',
-    //   colRight,
-    //   infoRowY + rowGap * 3,
-    // );
-
+    result.publishedAt
+      ? new Date(result.publishedAt).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        })
+      : '—';
     doc.y = infoY + 138;
     doc.moveDown(1);
 
-    // ─── SUBJECT MARKS TABLE ──────────────────────────────────────────────────
     doc
       .fontSize(10)
       .font('Helvetica-Bold')
@@ -1622,7 +1617,7 @@ export class ResultService {
       practical: 85,
       total: 70,
       grade: 55,
-      gpa: 0, // fills remaining
+      gpa: 0,
     };
     colWidths.gpa =
       pageWidth - Object.values(colWidths).reduce((a, b) => a + b, 0);
@@ -1657,10 +1652,8 @@ export class ResultService {
 
     const HEADER_H = 22;
 
-    // Table header background
     doc.rect(LEFT, tableTop, pageWidth, HEADER_H).fillColor('#2C3E50').fill();
 
-    // Header labels
     const headerStyle = () =>
       doc.fontSize(8.5).font('Helvetica-Bold').fillColor('#FFFFFF');
 
@@ -1682,12 +1675,10 @@ export class ResultService {
     let rowY = tableTop + HEADER_H;
     const ROW_H = 22;
 
-    // Data rows
     result.subjectBreakdown.forEach((subject: any, idx: number) => {
       const isEven = idx % 2 === 0;
       const subjectGpa = this.calculateGPA(subject.finalMarkOutOf100);
 
-      // Row background
       doc
         .rect(LEFT, rowY, pageWidth, ROW_H)
         .fillColor(isEven ? '#FFFFFF' : '#F6F8FA')
@@ -1731,7 +1722,6 @@ export class ResultService {
       cellText(subject.grade, cols.grade, colWidths.grade, true);
       cellText(subjectGpa.toFixed(2), cols.gpa, colWidths.gpa, true);
 
-      // Row bottom border
       doc
         .moveTo(LEFT, rowY + ROW_H)
         .lineTo(LEFT + pageWidth, rowY + ROW_H)
@@ -1739,7 +1729,6 @@ export class ResultService {
         .lineWidth(0.3)
         .stroke();
 
-      // Vertical dividers
       [
         cols.name,
         cols.written,
@@ -1760,7 +1749,6 @@ export class ResultService {
       rowY += ROW_H;
     });
 
-    // Table outer border
     doc
       .rect(LEFT, tableTop, pageWidth, rowY - tableTop)
       .strokeColor('#CCCCCC')
@@ -1770,7 +1758,6 @@ export class ResultService {
     doc.y = rowY;
     doc.moveDown(1.2);
 
-    // ─── SUMMARY BLOCK ────────────────────────────────────────────────────────
     const summaryY = doc.y;
     const summaryW = 210;
     const summaryX = LEFT + pageWidth - summaryW;
@@ -1817,7 +1804,6 @@ export class ResultService {
       summaryY + 62,
     );
 
-    // Overall grade on the left
     doc
       .fontSize(9)
       .font('Helvetica')
@@ -1839,7 +1825,6 @@ export class ResultService {
     doc.y = summaryY + 96;
     doc.moveDown(1.5);
 
-    // ─── FOOTER ───────────────────────────────────────────────────────────────
     drawHRule(doc.y, '#AAAAAA');
     doc.moveDown(0.5);
 
