@@ -1671,7 +1671,7 @@ export class ResultService {
 
     drawHeaderCell('Code', cols.code, colWidths.code);
     drawHeaderCell('Subject Name', cols.name, colWidths.name);
-    drawHeaderCell('Written (/50)', cols.written, colWidths.written);
+    drawHeaderCell('Theory (/50)', cols.written, colWidths.written);
     drawHeaderCell('Practical (/50)', cols.practical, colWidths.practical);
     drawHeaderCell('Total (/100)', cols.total, colWidths.total);
     drawHeaderCell('Grade', cols.grade, colWidths.grade);
