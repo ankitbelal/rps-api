@@ -120,18 +120,7 @@ export class NoticeService {
       user?.userType === UserType.SUPERADMIN;
     const isStudent = user?.userType === UserType.STUDENT;
 
-    const baseCountQuery = () =>
-      this.singleNoticeRepo
-        .createQueryBuilder('notice')
-        .leftJoinAndSelect('notice.publisher', 'p');
-
-    if (isAdmin)
-      baseCountQuery().where('notice.recipientType = :type', {
-        type: NoticeUserType.ADMIN,
-      });
-    else baseCountQuery().where('notice.recipientId = :userId', { userId });
-
-    const baseDataQuery = () => {
+    const createBaseQuery = () => {
       const qb = this.singleNoticeRepo
         .createQueryBuilder('notice')
         .leftJoinAndSelect('notice.publisher', 'p');
@@ -147,7 +136,7 @@ export class NoticeService {
       return qb;
     };
 
-    const dataQuery = baseDataQuery()
+    const dataQuery = createBaseQuery()
       .select([
         'notice.id',
         'notice.subject',
@@ -187,27 +176,27 @@ export class NoticeService {
 
     const [unreadCount, adminCount, teacherCount, studentCount, allCount] =
       await Promise.all([
-        baseCountQuery()
+        createBaseQuery()
           .andWhere('notice.status = :status', {
             status: SingleNoticeStatus.UNREAD,
           })
           .getCount(),
-        baseCountQuery()
+        createBaseQuery()
           .andWhere('notice.publisherType = :type', {
             type: NoticeUserType.ADMIN,
           })
           .getCount(),
-        baseCountQuery()
+        createBaseQuery()
           .andWhere('notice.publisherType = :type', {
             type: NoticeUserType.TEACHER,
           })
           .getCount(),
-        baseCountQuery()
+        createBaseQuery()
           .andWhere('notice.publisherType = :type', {
             type: NoticeUserType.STUDENT,
           })
           .getCount(),
-        baseCountQuery().getCount(),
+        createBaseQuery().getCount(),
       ]);
 
     const counts = {
@@ -218,6 +207,7 @@ export class NoticeService {
     };
 
     const lastPage = Math.ceil(total / limit);
+
     return { data, total, page, limit, lastPage, counts };
   }
 
@@ -237,7 +227,6 @@ export class NoticeService {
 
       if (type === 'A') {
         qb.andWhere('publisherType = :pType', { pType: NoticeUserType.ADMIN });
-        
       } else if (type === 'T') {
         qb.andWhere('publisherType = :pType', {
           pType: NoticeUserType.TEACHER,
