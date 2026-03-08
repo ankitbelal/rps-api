@@ -123,8 +123,13 @@ export class NoticeService {
     const baseCountQuery = () =>
       this.singleNoticeRepo
         .createQueryBuilder('notice')
-        .leftJoinAndSelect('notice.publisher', 'p')
-        .where('notice.recipientId = :userId', { userId });
+        .leftJoinAndSelect('notice.publisher', 'p');
+
+    if (isAdmin)
+      baseCountQuery().where('notice.recipientType = :type', {
+        type: NoticeUserType.ADMIN,
+      });
+    else baseCountQuery().where('notice.recipientId = :userId', { userId });
 
     const baseDataQuery = () => {
       const qb = this.singleNoticeRepo
@@ -218,17 +223,21 @@ export class NoticeService {
 
   async markAsRead(dto: markAsReadDto) {
     const { id, all, type, userId } = dto;
-
+    const user = await this.findUserById(userId!);
     if (all) {
       const qb = this.singleNoticeRepo
         .createQueryBuilder()
         .update(SingleUserNotice)
         .set({ status: SingleNoticeStatus.READ })
-        .where('recipientId = :userId', { userId })
         .andWhere('status = :status', { status: SingleNoticeStatus.UNREAD });
+      if (user?.userType === UserType.ADMIN)
+        qb.andWhere('recipientType = :type', {
+          type: NoticeUserType.ADMIN,
+        }).where('recipientId = :userId', { userId });
 
       if (type === 'A') {
         qb.andWhere('publisherType = :pType', { pType: NoticeUserType.ADMIN });
+        
       } else if (type === 'T') {
         qb.andWhere('publisherType = :pType', {
           pType: NoticeUserType.TEACHER,

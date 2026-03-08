@@ -116,15 +116,17 @@ export class markAsReadDto {
   @IsBoolean()
   all?: boolean;
 
-  @ValidateIf((o) => o.all === true)
+  @IsOptional()
   @IsIn(['A', 'T'], {
-    message: 'Type must be either A (Admin) or T (Teacher) when all is true',
+    message: 'Type must be either A (Admin) or T (Teacher)',
   })
   type?: 'A' | 'T';
 
   @IsOptional()
   userId?: number;
 
-  @AtLeastOne(['id', 'all'], { message: 'Either id or all must be provided.' })
+  @AtLeastOne(['id', 'all'], {
+    message: 'Either id or all must be provided.',
+  })
   dummy?: any;
 }
