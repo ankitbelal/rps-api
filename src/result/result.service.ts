@@ -179,13 +179,11 @@ export class ResultService {
       );
 
       if (existing) {
-        // record exists — update only if value changed
-        if (existing.obtainedMarks !== subject.obtainedMarks) {
+        if (Number(existing.obtainedMarks) !== Number(subject.obtainedMarks)) {
           existing.obtainedMarks = subject.obtainedMarks!;
           subjectMarksUpdate.push(existing);
         }
       } else {
-        // no record — insert
         subjectMarksInsert.push(
           this.studentSubjectMarks.create({
             studentId,
@@ -206,14 +204,14 @@ export class ResultService {
           );
 
           if (existingParamMarks) {
-            // record exists — update only if value changed
-            if (existingParamMarks.obtainedMarks !== params.mark) {
+            if (
+              Number(existingParamMarks.obtainedMarks) !== Number(params.mark)
+            ) {
               existingParamMarks.obtainedMarks = params.mark;
               existingParamMarks.fullMarks = params.fullMarks;
               extraMarksUpdate.push(existingParamMarks);
             }
           } else {
-            // no record — insert
             extraMarksInsert.push(
               this.extraParametersMarks.create({
                 studentId,
@@ -245,21 +243,19 @@ export class ResultService {
         : Promise.resolve(),
     ]));
   }
-  // ─── CORE CALCULATION (reusable private method) ─────────────────────
 
+  // ─── CORE CALCULATION (reusable private method) ─────────────────────
   private async calculateResult(
     studentId: number,
     programId: number,
     semester: number,
     examTerm: ExamTerm,
   ) {
-    // fetch subjects for this specific semester only
     const subjects = await this.subjectService.getSubjectsInternal({
       programId,
       semester,
     });
 
-    // fetch marks filtered by semester AND examTerm
     const [subjectMarks, extraMarks] = await Promise.all([
       this.studentSubjectMarks.find({
         where: { studentId, semester, examTerm },
@@ -287,7 +283,6 @@ export class ResultService {
         (ep) => ep.subjectId === subject.id,
       );
 
-      // ✅ AFTER — scale total ep marks to 50 regardless of param count
       const extraTotalObtained = subjectExtraMarks.reduce(
         (sum, ep) => sum + Number(ep.obtainedMarks),
         0,
@@ -377,7 +372,7 @@ export class ResultService {
       });
 
       await this.publishedResultRepo.save({
-        ...(existing ?? {}), // spreads id if exists → update, else insert
+        ...(existing ?? {}),
         studentId,
         programId: student.programId,
         semester,
@@ -478,8 +473,20 @@ export class ResultService {
           secondTermMark: Number(ss?.finalMarkOutOf100 ?? 0),
           finalMarkOutOf100,
           grade,
-          subjectObtainedOutOf50: Number(fs.subjectObtainedOutOf50),
-          extraParamObtainedOutOf50: Number(fs.extraParamObtainedOutOf50),
+          subjectObtainedOutOf50: parseFloat(
+            (
+              (Number(fs.subjectObtainedOutOf50) +
+                Number(ss?.subjectObtainedOutOf50 ?? 0)) /
+              2
+            ).toFixed(2),
+          ),
+          extraParamObtainedOutOf50: parseFloat(
+            (
+              (Number(fs.extraParamObtainedOutOf50) +
+                Number(ss?.extraParamObtainedOutOf50 ?? 0)) /
+              2
+            ).toFixed(2),
+          ),
         };
       }),
     );
@@ -505,10 +512,6 @@ export class ResultService {
     return true;
   }
 
-  /* 
-  publish bulk will handle bulk publish for both terminal and also
-  for final terminal if passed terminal as final
-  */
   async publishBulk(dto: PublishBulkDto, res: Response) {
     const {
       programId,
@@ -530,7 +533,6 @@ export class ResultService {
       semesters,
     });
 
-    // Check if the Map has any students at all
     let hasAnyStudents = false;
     for (const [semester, students] of studentsBySemester.entries()) {
       if (students && students.length > 0) {
@@ -657,7 +659,6 @@ export class ResultService {
     return incomplete;
   }
 
-  // ─── COLLECT MISSING TERM RESULTS (FINAL only) ───────────────────────────────
   private async collectMissingTermResults(
     studentsBySemester: Map<number, Student[]>,
   ): Promise<
@@ -728,8 +729,6 @@ export class ResultService {
     let errorCount = 0;
     for (const [semester, students] of studentsBySemester) {
       for (const student of students) {
-        // 2. Wrap the logic in the limit function
-
         const task = limit(async () => {
           try {
             await this.publishSingle(
@@ -749,8 +748,6 @@ export class ResultService {
         tasks.push(task);
       }
     }
-
-    // 3. Wait for the limited execution to complete
 
     await Promise.all(tasks);
 
@@ -900,7 +897,6 @@ export class ResultService {
 
     let cr = 1;
 
-    // ── TITLE ──
     sheet.mergeCells(`A${cr}:F${cr + 5}`);
     const titleCell = sheet.getCell(`A${cr}`);
     titleCell.value = {
@@ -946,7 +942,6 @@ export class ResultService {
     sheet.getRow(cr).height = 8;
     cr++;
 
-    // ── HEADER ROW ──
     const headerRow = sheet.getRow(cr);
     headerRow.values = [
       'ID',
@@ -966,7 +961,6 @@ export class ResultService {
     ];
     cr++;
 
-    // ── DATA ROWS ──
     incompleteData.forEach((item, index) => {
       const row = sheet.getRow(cr);
       row.height = 20;
@@ -999,7 +993,6 @@ export class ResultService {
       cr++;
     });
 
-    // ── FOOTER ──
     cr++;
     sheet.mergeCells(`A${cr}:C${cr}`);
     sheet.getRow(cr).getCell(1).value =
@@ -1046,8 +1039,6 @@ export class ResultService {
     res.end();
   }
 
-  // ─── GENERATE MISSING RESULT REPORT ──────────────────────────────────────────
-  // ─── GENERATE MISSING RESULT REPORT ──────────────────────────────────────────
   private async generateMissingResultReport(
     missingData: {
       student: Student;
@@ -1121,7 +1112,6 @@ export class ResultService {
 
     let cr = 1;
 
-    // ── TITLE ──
     sheet.mergeCells(`A${cr}:G${cr + 5}`);
     const titleCell = sheet.getCell(`A${cr}`);
     titleCell.value = {
@@ -1167,7 +1157,6 @@ export class ResultService {
     sheet.getRow(cr).height = 8;
     cr++;
 
-    // ── HEADER ROW ──
     const headerRow = sheet.getRow(cr);
     headerRow.values = [
       'ID',
@@ -1188,7 +1177,6 @@ export class ResultService {
     ];
     cr++;
 
-    // ── DATA ROWS ──
     missingData.forEach((item, index) => {
       const row = sheet.getRow(cr);
       row.height = 20;
@@ -1226,7 +1214,6 @@ export class ResultService {
       cr++;
     });
 
-    // ── FOOTER ──
     cr++;
     sheet.mergeCells(`A${cr}:D${cr}`);
     sheet.getRow(cr).getCell(1).value =
@@ -1275,7 +1262,6 @@ export class ResultService {
   }
 
   //grading system related
-
   async getGradingSystem() {
     const system = await this.gradingSystemRepo.find({
       order: { maxGPA: 'DESC' },
@@ -1322,7 +1308,6 @@ export class ResultService {
 
     const qb = this.publishedResultRepo
       .createQueryBuilder('pr')
-      // ─── JOIN only active students AND match result to their current semester
       .innerJoin(
         'pr.student',
         'student',
@@ -1348,12 +1333,10 @@ export class ResultService {
         'student.currentSemester     AS currentSemester',
       ]);
 
-    // ─── OPTIONAL FILTERS (all andWhere so join condition is never overridden)
     if (programId) qb.andWhere('pr.programId = :programId', { programId });
     if (semester) qb.andWhere('pr.semester = :semester', { semester });
     if (examTerm) qb.andWhere('pr.examTerm = :examTerm', { examTerm });
 
-    // ─── SEARCH: roll number, registration number, full name
     if (search?.trim()) {
       const term = `%${search.trim()}%`;
       qb.andWhere(
@@ -1366,7 +1349,6 @@ export class ResultService {
       );
     }
 
-    // ─── ORDER: FINAL before SECOND before FIRST, then by roll number
     qb.orderBy(
       `CASE WHEN pr.examTerm = '${ExamTerm.FINAL}' THEN 0 WHEN pr.examTerm = '${ExamTerm.SECOND}' THEN 1 ELSE 2 END`,
       'ASC',
@@ -1397,14 +1379,10 @@ export class ResultService {
         publishedAt: r.publishedAt,
         subjectBreakdown: r.subjectBreakdown,
       })),
-
       total,
       page,
       limit,
       totalPages: Math.ceil(total / limit),
-      // ...(programId ? { programId } : {}),
-      // ...(semester ? { semester } : {}),
-      // ...(examTerm ? { examTerm } : {}),
     };
   }
 
@@ -1465,7 +1443,6 @@ export class ResultService {
         message: 'Published result not found for the given semester and term.',
       });
 
-    // 3. Build PDF
     const PDFDocument = require('pdfkit');
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
 
@@ -1530,7 +1507,6 @@ export class ResultService {
     const infoY = doc.y;
 
     doc.rect(LEFT, infoY, pageWidth, 130).fillColor('#F8F9FA').fill();
-
     doc
       .rect(LEFT, infoY, pageWidth, 130)
       .strokeColor('#DDDDDD')
@@ -1772,7 +1748,6 @@ export class ResultService {
     const summaryX = LEFT + pageWidth - summaryW;
 
     doc.rect(summaryX, summaryY, summaryW, 88).fillColor('#F0F4F8').fill();
-
     doc
       .rect(summaryX, summaryY, summaryW, 88)
       .strokeColor('#CCCCCC')
@@ -1819,7 +1794,6 @@ export class ResultService {
       .fillColor('#555555')
       .text('Overall Grade:', LEFT, summaryY + 26);
 
-    const overallGpa = Number(result.gpa);
     const overallGrade =
       result.subjectBreakdown?.length > 0
         ? (result.subjectBreakdown[0]?.grade ?? '—')
@@ -1862,13 +1836,15 @@ export class ResultService {
         message: 'Program does not exist.',
       });
 
+    // ─── Only fetch results where student's currentSemester matches semester ───
     const results = await this.publishedResultRepo
       .createQueryBuilder('pr')
       .innerJoinAndSelect(
         'pr.student',
         'student',
-        'student.status NOT IN (:...excluded)',
-        { excluded: [StudentStatus.PASSED, StudentStatus.SUSPENDED] },
+        `student.status NOT IN (:...excluded)
+         AND student.current_semester = :semester`,
+        { excluded: [StudentStatus.PASSED, StudentStatus.SUSPENDED], semester },
       )
       .where('pr.programId = :programId', { programId })
       .andWhere('pr.semester = :semester', { semester })
@@ -2011,7 +1987,6 @@ export class ResultService {
     ws.getRow(cr).height = 20;
     cr++;
 
-    // spacer
     ws.getRow(cr).height = 6;
     cr++;
 
@@ -2253,13 +2228,15 @@ export class ResultService {
         message: 'Program does not exist.',
       });
 
+    // ─── Only fetch results where student's currentSemester matches semester ───
     const results = await this.publishedResultRepo
       .createQueryBuilder('pr')
       .innerJoinAndSelect(
         'pr.student',
         'student',
-        'student.status NOT IN (:...excluded)',
-        { excluded: [StudentStatus.PASSED, StudentStatus.SUSPENDED] },
+        `student.status NOT IN (:...excluded)
+         AND student.current_semester = :semester`,
+        { excluded: [StudentStatus.PASSED, StudentStatus.SUSPENDED], semester },
       )
       .where('pr.programId = :programId', { programId })
       .andWhere('pr.semester = :semester', { semester })
@@ -2390,7 +2367,6 @@ export class ResultService {
       align: 'left' | 'center' | 'right' = 'center',
     ) => {
       rect(x, y, w, h, bg);
-      // border
       doc
         .save()
         .rect(x, y, w, h)
@@ -2589,7 +2565,6 @@ export class ResultService {
 
     const rowsPerPage = Math.floor((CONTENT_H - HEADER_BLOCK_H) / DATA_H);
 
-    let currentRow = 0;
     let pageRowCount = 0;
     let tableY = CONTENT_TOP;
     drawTopInfo();
@@ -2597,7 +2572,6 @@ export class ResultService {
     let dataY = tableY + HEADER_BLOCK_H;
 
     for (let ri = 0; ri < results.length; ri++) {
-      // need new page?
       if (pageRowCount >= rowsPerPage) {
         drawSignatureFooter();
         doc.addPage();
@@ -2613,7 +2587,6 @@ export class ResultService {
       const y = dataY;
       let x = MARGIN;
 
-      // fixed cols
       cell(
         r.student?.rollNumber ?? '—',
         x,
@@ -2654,7 +2627,6 @@ export class ResultService {
       );
       x += COL_REG;
 
-      // subject cols
       for (const [subId] of subjects) {
         const bd = r.subjectBreakdown?.find((s: any) => s.subjectId === subId);
         const subBg = isOdd ? CLR.SUB_ODD : CLR.EVEN;
@@ -2694,7 +2666,6 @@ export class ResultService {
         x += sTOT;
       }
 
-      // summary cols
       cell(
         Number(r.totalObtained).toFixed(1),
         x,
