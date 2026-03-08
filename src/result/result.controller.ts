@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   HttpCode,
   Param,
   Post,
@@ -22,6 +23,7 @@ import {
 
 import {
   GetPublishedResultDto,
+  GradeSheetQueryDto,
   PublishBulkDto,
   PublishBulkReporDto,
   PublishSingleDto,
@@ -149,5 +151,15 @@ export class ResultController {
       'Result fetched successfully.',
       200,
     );
+  }
+
+  @Public()
+  @Get('gradesheet')
+  @Header('Content-Type', 'application/pdf')
+  async downloadGradeSheet(
+    @Query() dto: GradeSheetQueryDto,
+    @Res() res: Response,
+  ) {
+    return await this.resultService.generateGradeSheet(dto, res);
   }
 }

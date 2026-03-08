@@ -124,3 +124,20 @@ export class GetPublishedResultDto {
   @Transform(({ value }) => (value === '' ? undefined : value))
   examTerm?: ExamTerm;
 }
+
+export class GradeSheetQueryDto {
+  @IsNotEmpty({ message: 'Student id is required.' })
+  @IsNumber()
+  @Type(() => Number)
+  studentId: number;
+
+  @IsNotEmpty({ message: 'Semester is required.' })
+  @IsNumber()
+  @Type(() => Number)
+  semester?: number;
+
+  @IsNotEmpty({ message: 'Exam term is required.' })
+  @IsEnum(ExamTerm)
+  @Transform(({ value }) => (value === '' ? undefined : value))
+  examTerm?: ExamTerm;
+}

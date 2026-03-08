@@ -11,6 +11,7 @@ import { Repository } from 'typeorm';
 import { AddMarksDTO, MarkFetchQueryDto } from './dto/marks.dto';
 import { SubjectService } from 'src/subject/subject.service';
 import { StudentService } from 'src/student/student.service';
+import PDFDocument from 'pdfkit';
 import {
   AuditActCodes,
   ExamTerm,
@@ -31,7 +32,11 @@ import {
   StudentResultEmail,
 } from 'src/mailing/interfaces/mailing-interface';
 import { MailingService } from 'src/mailing/mailing.service';
-import { PublishBulkDto } from './dto/result-publish.dto';
+import {
+  GetPublishedResultDto,
+  GradeSheetQueryDto,
+  PublishBulkDto,
+} from './dto/result-publish.dto';
 import { Student } from 'src/database/entities/student.entity';
 import type { Response } from 'express';
 import pLimit from 'p-limit';
@@ -1431,5 +1436,423 @@ export class ResultService {
       passCount: Number(r.passCount),
       failCount: Number(r.totalStudents) - Number(r.passCount),
     }));
+  }
+
+  async generateGradeSheet(
+    dto: GradeSheetQueryDto,
+    res: Response,
+  ): Promise<void> {
+    // 1. Fetch student
+
+    const { studentId, semester, examTerm } = dto;
+    const student = await this.studentService.findStudentById(studentId);
+    if (!student)
+      throw new NotFoundException({
+        success: false,
+        statusCode: 404,
+        message: 'Student does not exist.',
+      });
+
+    // 2. Fetch published result
+    const result = await this.publishedResultRepo.findOne({
+      where: { studentId, semester, examTerm },
+    });
+    if (!result)
+      throw new NotFoundException({
+        success: false,
+        statusCode: 404,
+        message: 'Published result not found for the given semester and term.',
+      });
+
+    // 3. Build PDF
+    const PDFDocument = require('pdfkit');
+    const doc = new PDFDocument({ margin: 50, size: 'A4' });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=gradesheet_${student.rollNumber ?? studentId}_sem${semester}_${examTerm}.pdf`,
+    );
+    doc.pipe(res);
+
+    const pageWidth = doc.page.width - 100; // left+right margin = 100
+    const LEFT = 50;
+
+    const drawHRule = (y: number, color = '#CCCCCC') => {
+      doc
+        .moveTo(LEFT, y)
+        .lineTo(LEFT + pageWidth, y)
+        .strokeColor(color)
+        .lineWidth(0.5)
+        .stroke();
+    };
+
+    const examNameMap: Record<string, string> = {
+      [ExamTerm.FIRST]: 'First Term Examination',
+      [ExamTerm.SECOND]: 'Second Term Examination',
+      [ExamTerm.FINAL]: 'Final Result (Combined)',
+    };
+
+    doc
+      .fontSize(18)
+      .font('Helvetica-Bold')
+      .fillColor('#1a1a2e')
+      .text('RESULT MANAGEMENT SYSTEM', { align: 'center' });
+
+    doc
+      .fontSize(11)
+      .font('Helvetica')
+      .fillColor('#555555')
+      .text('Official Academic Grade Sheet', { align: 'center' });
+
+    doc.moveDown(0.4);
+    drawHRule(doc.y, '#1a1a2e');
+    doc.moveDown(0.8);
+
+    doc
+      .fontSize(13)
+      .font('Helvetica-Bold')
+      .fillColor('#000000')
+      .text(examNameMap[examTerm!] ?? examTerm, { align: 'center' });
+
+    doc
+      .fontSize(10)
+      .font('Helvetica')
+      .fillColor('#555555')
+      .text(`Semester ${semester}`, { align: 'center' });
+
+    doc.moveDown(1);
+
+    const infoY = doc.y;
+
+    doc.rect(LEFT, infoY, pageWidth, 130).fillColor('#F8F9FA').fill();
+
+    doc
+      .rect(LEFT, infoY, pageWidth, 130)
+      .strokeColor('#DDDDDD')
+      .lineWidth(0.8)
+      .stroke();
+
+    // Section label
+    doc
+      .fontSize(9)
+      .font('Helvetica-Bold')
+      .fillColor('#888888')
+      .text('STUDENT INFORMATION', LEFT + 12, infoY + 10);
+
+    // Two-column layout for student details
+    const colLeft = LEFT + 12;
+    const colRight = LEFT + pageWidth / 2 + 10;
+    let infoRowY = infoY + 26;
+    const rowGap = 18;
+
+    const infoField = (label: string, value: string, x: number, y: number) => {
+      doc
+        .fontSize(8.5)
+        .font('Helvetica-Bold')
+        .fillColor('#555555')
+        .text(`${label}:`, x, y, { continued: false });
+
+      doc
+        .fontSize(8.5)
+        .font('Helvetica')
+        .fillColor('#1a1a1a')
+        .text(value || '—', x + 105, y, { width: pageWidth / 2 - 115 });
+    };
+
+    // Left column
+    infoField(
+      'Full Name',
+      `${student.firstName ?? ''} ${student.lastName ?? ''}`.trim(),
+      colLeft,
+      infoRowY,
+    );
+    infoField(
+      'Roll Number',
+      student.rollNumber ?? '—',
+      colLeft,
+      infoRowY + rowGap,
+    );
+    infoField(
+      'Registration No',
+      student.registrationNumber ?? '—',
+      colLeft,
+      infoRowY + rowGap * 2,
+    );
+    infoField('Email', student.email ?? '—', colLeft, infoRowY + rowGap * 3);
+
+    // Right column
+    infoField('Semester', `Semester ${semester}`, colRight, infoRowY);
+    infoField(
+      'Exam Term',
+      examNameMap[examTerm!] ?? examTerm,
+      colRight,
+      infoRowY + rowGap,
+    );
+    infoField(
+      'Address',
+      student.address1 ?? '—',
+      colRight,
+      infoRowY + rowGap * 2,
+    );
+    // infoField(
+    //   'Published By',
+    //   result.publishedBy ?? '—',
+    //   colRight,
+    //   infoRowY + rowGap * 3,
+    // );
+
+    doc.y = infoY + 138;
+    doc.moveDown(1);
+
+    // ─── SUBJECT MARKS TABLE ──────────────────────────────────────────────────
+    doc
+      .fontSize(10)
+      .font('Helvetica-Bold')
+      .fillColor('#1a1a1a')
+      .text('SUBJECT-WISE MARKS', LEFT);
+
+    doc.moveDown(0.5);
+
+    const tableTop = doc.y;
+    const colWidths = {
+      code: 70,
+      name: 185,
+      written: 80,
+      practical: 85,
+      total: 70,
+      grade: 55,
+      gpa: 0, // fills remaining
+    };
+    colWidths.gpa =
+      pageWidth - Object.values(colWidths).reduce((a, b) => a + b, 0);
+
+    const cols = {
+      code: LEFT,
+      name: LEFT + colWidths.code,
+      written: LEFT + colWidths.code + colWidths.name,
+      practical: LEFT + colWidths.code + colWidths.name + colWidths.written,
+      total:
+        LEFT +
+        colWidths.code +
+        colWidths.name +
+        colWidths.written +
+        colWidths.practical,
+      grade:
+        LEFT +
+        colWidths.code +
+        colWidths.name +
+        colWidths.written +
+        colWidths.practical +
+        colWidths.total,
+      gpa:
+        LEFT +
+        colWidths.code +
+        colWidths.name +
+        colWidths.written +
+        colWidths.practical +
+        colWidths.total +
+        colWidths.grade,
+    };
+
+    const HEADER_H = 22;
+
+    // Table header background
+    doc.rect(LEFT, tableTop, pageWidth, HEADER_H).fillColor('#2C3E50').fill();
+
+    // Header labels
+    const headerStyle = () =>
+      doc.fontSize(8.5).font('Helvetica-Bold').fillColor('#FFFFFF');
+
+    const drawHeaderCell = (text: string, x: number, width: number) => {
+      headerStyle().text(text, x + 5, tableTop + 7, {
+        width: width - 10,
+        align: 'center',
+      });
+    };
+
+    drawHeaderCell('Code', cols.code, colWidths.code);
+    drawHeaderCell('Subject Name', cols.name, colWidths.name);
+    drawHeaderCell('Written (/50)', cols.written, colWidths.written);
+    drawHeaderCell('Practical (/50)', cols.practical, colWidths.practical);
+    drawHeaderCell('Total (/100)', cols.total, colWidths.total);
+    drawHeaderCell('Grade', cols.grade, colWidths.grade);
+    drawHeaderCell('GPA', cols.gpa, colWidths.gpa);
+
+    let rowY = tableTop + HEADER_H;
+    const ROW_H = 22;
+
+    // Data rows
+    result.subjectBreakdown.forEach((subject: any, idx: number) => {
+      const isEven = idx % 2 === 0;
+      const subjectGpa = this.calculateGPA(subject.finalMarkOutOf100);
+
+      // Row background
+      doc
+        .rect(LEFT, rowY, pageWidth, ROW_H)
+        .fillColor(isEven ? '#FFFFFF' : '#F6F8FA')
+        .fill();
+
+      const cellText = (
+        text: string,
+        x: number,
+        width: number,
+        bold = false,
+        align: 'left' | 'center' | 'right' = 'center',
+      ) => {
+        doc
+          .fontSize(8.5)
+          .font(bold ? 'Helvetica-Bold' : 'Helvetica')
+          .fillColor('#1a1a1a')
+          .text(String(text ?? '—'), x + 5, rowY + 7, {
+            width: width - 10,
+            align,
+          });
+      };
+
+      cellText(subject.subjectCode, cols.code, colWidths.code, true, 'center');
+      cellText(subject.subjectName, cols.name, colWidths.name, false, 'left');
+      cellText(
+        subject.subjectObtainedOutOf50?.toFixed(2),
+        cols.written,
+        colWidths.written,
+      );
+      cellText(
+        subject.extraParamObtainedOutOf50?.toFixed(2),
+        cols.practical,
+        colWidths.practical,
+      );
+      cellText(
+        subject.finalMarkOutOf100?.toFixed(2),
+        cols.total,
+        colWidths.total,
+        true,
+      );
+      cellText(subject.grade, cols.grade, colWidths.grade, true);
+      cellText(subjectGpa.toFixed(2), cols.gpa, colWidths.gpa, true);
+
+      // Row bottom border
+      doc
+        .moveTo(LEFT, rowY + ROW_H)
+        .lineTo(LEFT + pageWidth, rowY + ROW_H)
+        .strokeColor('#E5E7EB')
+        .lineWidth(0.3)
+        .stroke();
+
+      // Vertical dividers
+      [
+        cols.name,
+        cols.written,
+        cols.practical,
+        cols.total,
+        cols.grade,
+        cols.gpa,
+        LEFT + pageWidth,
+      ].forEach((x) => {
+        doc
+          .moveTo(x, tableTop)
+          .lineTo(x, rowY + ROW_H)
+          .strokeColor('#E5E7EB')
+          .lineWidth(0.3)
+          .stroke();
+      });
+
+      rowY += ROW_H;
+    });
+
+    // Table outer border
+    doc
+      .rect(LEFT, tableTop, pageWidth, rowY - tableTop)
+      .strokeColor('#CCCCCC')
+      .lineWidth(0.8)
+      .stroke();
+
+    doc.y = rowY;
+    doc.moveDown(1.2);
+
+    // ─── SUMMARY BLOCK ────────────────────────────────────────────────────────
+    const summaryY = doc.y;
+    const summaryW = 210;
+    const summaryX = LEFT + pageWidth - summaryW;
+
+    doc.rect(summaryX, summaryY, summaryW, 88).fillColor('#F0F4F8').fill();
+
+    doc
+      .rect(summaryX, summaryY, summaryW, 88)
+      .strokeColor('#CCCCCC')
+      .lineWidth(0.8)
+      .stroke();
+
+    doc
+      .fontSize(9)
+      .font('Helvetica-Bold')
+      .fillColor('#888888')
+      .text('RESULT SUMMARY', summaryX + 10, summaryY + 8);
+
+    const summaryRow = (label: string, value: string, y: number) => {
+      doc
+        .fontSize(9)
+        .font('Helvetica')
+        .fillColor('#555555')
+        .text(label, summaryX + 10, y);
+      doc
+        .fontSize(9)
+        .font('Helvetica-Bold')
+        .fillColor('#1a1a1a')
+        .text(value, summaryX + 10, y, {
+          align: 'right',
+          width: summaryW - 20,
+        });
+    };
+
+    summaryRow(
+      'Total Marks:',
+      `${result.totalObtained} / ${result.totalFull}`,
+      summaryY + 26,
+    );
+    summaryRow('Percentage:', `${result.percentage}%`, summaryY + 44);
+    summaryRow(
+      'GPA:',
+      `${Number(result.gpa).toFixed(2)} / 4.00`,
+      summaryY + 62,
+    );
+
+    // Overall grade on the left
+    doc
+      .fontSize(9)
+      .font('Helvetica')
+      .fillColor('#555555')
+      .text('Overall Grade:', LEFT, summaryY + 26);
+
+    const overallGpa = Number(result.gpa);
+    const overallGrade =
+      result.subjectBreakdown?.length > 0
+        ? (result.subjectBreakdown[0]?.grade ?? '—')
+        : '—';
+
+    doc
+      .fontSize(28)
+      .font('Helvetica-Bold')
+      .fillColor('#1a1a2e')
+      .text(overallGrade, LEFT, summaryY + 38, { width: 80, align: 'left' });
+
+    doc.y = summaryY + 96;
+    doc.moveDown(1.5);
+
+    // ─── FOOTER ───────────────────────────────────────────────────────────────
+    drawHRule(doc.y, '#AAAAAA');
+    doc.moveDown(0.5);
+
+    const now = new Date();
+    doc
+      .fontSize(8)
+      .font('Helvetica')
+      .fillColor('#888888')
+      .text(
+        `Generated on: ${now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}  |  This is a system-generated document.`,
+        { align: 'center' },
+      );
+
+    doc.end();
   }
 }
