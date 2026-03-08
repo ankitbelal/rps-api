@@ -207,10 +207,7 @@ export class ResultService {
 
           if (existingParamMarks) {
             // record exists — update only if value changed
-            if (
-              existingParamMarks.obtainedMarks !== params.mark ||
-              existingParamMarks.fullMarks !== params.fullMarks
-            ) {
+            if (existingParamMarks.obtainedMarks !== params.mark) {
               existingParamMarks.obtainedMarks = params.mark;
               existingParamMarks.fullMarks = params.fullMarks;
               extraMarksUpdate.push(existingParamMarks);
