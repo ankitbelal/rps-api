@@ -9,7 +9,7 @@ import {
   IsOptional,
   ValidateIf,
 } from 'class-validator';
-import { NoticeType, NoticeUserType } from 'utils/enums/general-enums';
+import { NoticeUserType } from 'utils/enums/general-enums';
 
 import {
   registerDecorator,
@@ -21,14 +21,19 @@ export class SingleNoticeDto {
   @IsNotEmpty({ message: 'Subject is required.' })
   subject: string;
 
-  @IsNotEmpty({ message: 'Descriptioin is required.' })
+  @IsNotEmpty({ message: 'Description is required.' })
   description: string;
 
   @IsNotEmpty({ message: 'Recipient user type is required.' })
   @IsEnum(NoticeUserType, { message: 'Recipient user type must be valid.' })
   recipientType: NoticeUserType;
 
-  @IsNotEmpty({ message: 'Receipent is required.' })
+  @ValidateIf(
+    (o) =>
+      o.recipientType === NoticeUserType.STUDENT ||
+      o.recipientType === NoticeUserType.TEACHER,
+  )
+  @IsNotEmpty({ message: 'Recipient is required for student or teacher.' })
   recipientId: number;
 
   @IsOptional()

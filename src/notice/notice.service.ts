@@ -43,11 +43,17 @@ export class NoticeService {
         message: 'Unauthorized access.',
       });
 
-    if (user.userType === UserType.ADMIN)
+    if (
+      user.userType === UserType.ADMIN ||
+      user.userType === UserType.SUPERADMIN
+    )
       dto.publisherType = NoticeUserType.ADMIN;
 
     if (user.userType === UserType.TEACHER)
       dto.publisherType = NoticeUserType.TEACHER;
+
+    if (user.userType === UserType.STUDENT)
+      dto.publisherType = NoticeUserType.STUDENT;
 
     if (dto.recipientType === NoticeUserType.STUDENT) {
       const student = await this.studentService.findStudentById(
@@ -87,6 +93,10 @@ export class NoticeService {
       if (dto.sendEmail) await this.handleMailing(dto);
     }
 
+    if (dto.recipientType === NoticeUserType.ADMIN) {
+      // this.handleMailing();
+    }
+
     await this.singleNoticeRepo.save(this.singleNoticeRepo.create(dto));
     return true;
   }
@@ -104,13 +114,35 @@ export class NoticeService {
   async getNoticesForMe(noticeQueryDto: NoticeQueryDto) {
     const { page = 1, limit = 10, userId, filter } = noticeQueryDto;
 
-    const baseQuery = () =>
+    const user = await this.findUserById(userId!);
+    const isAdmin =
+      user?.userType === UserType.ADMIN ||
+      user?.userType === UserType.SUPERADMIN;
+    const isStudent = user?.userType === UserType.STUDENT;
+
+    const baseCountQuery = () =>
       this.singleNoticeRepo
         .createQueryBuilder('notice')
         .leftJoinAndSelect('notice.publisher', 'p')
         .where('notice.recipientId = :userId', { userId });
 
-    const dataQuery = baseQuery()
+    const baseDataQuery = () => {
+      const qb = this.singleNoticeRepo
+        .createQueryBuilder('notice')
+        .leftJoinAndSelect('notice.publisher', 'p');
+
+      if (isAdmin) {
+        qb.where('notice.recipientType = :recipientType', {
+          recipientType: NoticeUserType.ADMIN,
+        });
+      } else {
+        qb.where('notice.recipientId = :userId', { userId });
+      }
+
+      return qb;
+    };
+
+    const dataQuery = baseDataQuery()
       .select([
         'notice.id',
         'notice.subject',
@@ -140,36 +172,44 @@ export class NoticeService {
       dataQuery.andWhere('notice.publisherType = :type', {
         type: NoticeUserType.TEACHER,
       });
+    } else if (filter === 'student') {
+      dataQuery.andWhere('notice.publisherType = :type', {
+        type: NoticeUserType.STUDENT,
+      });
     }
 
     const [data, total] = await dataQuery.getManyAndCount();
 
-    const [unreadCount, adminCount, teacherCount, allCount] = await Promise.all(
-      [
-        baseQuery()
+    const [unreadCount, adminCount, teacherCount, studentCount, allCount] =
+      await Promise.all([
+        baseCountQuery()
           .andWhere('notice.status = :status', {
             status: SingleNoticeStatus.UNREAD,
           })
           .getCount(),
-        baseQuery()
+        baseCountQuery()
           .andWhere('notice.publisherType = :type', {
             type: NoticeUserType.ADMIN,
           })
           .getCount(),
-        baseQuery()
+        baseCountQuery()
           .andWhere('notice.publisherType = :type', {
             type: NoticeUserType.TEACHER,
           })
           .getCount(),
-        baseQuery().getCount(),
-      ],
-    );
+        baseCountQuery()
+          .andWhere('notice.publisherType = :type', {
+            type: NoticeUserType.STUDENT,
+          })
+          .getCount(),
+        baseCountQuery().getCount(),
+      ]);
 
     const counts = {
       all: allCount,
       unread: unreadCount,
-      admin: adminCount,
-      teacher: teacherCount,
+      ...(isAdmin && { teacher: teacherCount, student: studentCount }),
+      ...(isStudent && { teacher: teacherCount, admin: adminCount }),
     };
 
     const lastPage = Math.ceil(total / limit);

@@ -28,8 +28,8 @@ export class SingleUserNotice {
   @Column({ name: 'recipient_type', type: 'enum', enum: NoticeUserType })
   recipientType: NoticeUserType;
 
-  @Column({ name: 'recipient_id' })
-  recipientId: number;
+  @Column({ name: 'recipient_id', nullable: true })
+  recipientId?: number;
 
   @ManyToOne(() => User, { eager: false, nullable: true })
   @JoinColumn({ name: 'recipient_id' })
