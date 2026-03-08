@@ -1497,7 +1497,7 @@ export class ResultService {
       .fontSize(18)
       .font('Helvetica-Bold')
       .fillColor('#1a1a2e')
-      .text('RESULT MANAGEMENT SYSTEM', { align: 'center' });
+      .text('Internal Evaluation System', { align: 'center' });
 
     doc
       .fontSize(11)
@@ -1591,13 +1591,18 @@ export class ResultService {
       colRight,
       infoRowY + rowGap * 2,
     );
-    result.publishedAt
-      ? new Date(result.publishedAt).toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        })
-      : '—';
+    infoField(
+      'Published On',
+      result.publishedAt
+        ? new Date(result.publishedAt).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          })
+        : '—',
+      colRight,
+      infoRowY + rowGap * 3,
+    );
     doc.y = infoY + 138;
     doc.moveDown(1);
 
