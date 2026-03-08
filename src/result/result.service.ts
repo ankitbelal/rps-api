@@ -163,11 +163,7 @@ export class ResultService {
         where: { studentId, semester, examTerm },
       }),
       this.extraParametersMarks.find({
-        where: {
-          studentId,
-          semester,
-          examTerm,
-        },
+        where: { studentId, semester, examTerm },
       }),
     ]);
 
@@ -176,15 +172,19 @@ export class ResultService {
     const extraMarksInsert: ExtraParametersMarks[] = [];
     const extraMarksUpdate: ExtraParametersMarks[] = [];
 
-    marks.map((subject) => {
+    marks.forEach((subject) => {
       const existing = existingSubjectMarks.find(
         (s) => s.subjectId === subject.subjectId,
       );
 
-      if (existing && existing.obtainedMarks !== subject.obtainedMarks) {
-        existing.obtainedMarks = subject.obtainedMarks!;
-        subjectMarksUpdate.push(existing);
+      if (existing) {
+        // record exists — update only if value changed
+        if (existing.obtainedMarks !== subject.obtainedMarks) {
+          existing.obtainedMarks = subject.obtainedMarks!;
+          subjectMarksUpdate.push(existing);
+        }
       } else {
+        // no record — insert
         subjectMarksInsert.push(
           this.studentSubjectMarks.create({
             studentId,
@@ -197,20 +197,25 @@ export class ResultService {
       }
 
       if (subject.parameters?.length) {
-        subject.parameters.map((params) => {
+        subject.parameters.forEach((params) => {
           const existingParamMarks = existingExtraMarks.find(
             (ep) =>
               ep.subjectId === subject.subjectId &&
               ep.evaluationParameterId === params.parameterId,
           );
 
-          if (
-            existingParamMarks &&
-            existingParamMarks.obtainedMarks !== params.mark
-          ) {
-            existingParamMarks.obtainedMarks = params.mark;
-            extraMarksUpdate.push(existingParamMarks);
+          if (existingParamMarks) {
+            // record exists — update only if value changed
+            if (
+              existingParamMarks.obtainedMarks !== params.mark ||
+              existingParamMarks.fullMarks !== params.fullMarks
+            ) {
+              existingParamMarks.obtainedMarks = params.mark;
+              existingParamMarks.fullMarks = params.fullMarks;
+              extraMarksUpdate.push(existingParamMarks);
+            }
           } else {
+            // no record — insert
             extraMarksInsert.push(
               this.extraParametersMarks.create({
                 studentId,
@@ -219,6 +224,7 @@ export class ResultService {
                 subjectId: subject.subjectId,
                 evaluationParameterId: params.parameterId,
                 obtainedMarks: params.mark,
+                fullMarks: params.fullMarks,
               }),
             );
           }
@@ -241,7 +247,6 @@ export class ResultService {
         : Promise.resolve(),
     ]));
   }
-
   // ─── CORE CALCULATION (reusable private method) ─────────────────────
 
   private async calculateResult(
@@ -369,7 +374,6 @@ export class ResultService {
         examTerm,
       );
 
-      // ✅ manual upsert — find existing to get id, then save
       const existing = await this.publishedResultRepo.findOne({
         where: { studentId, semester, examTerm },
       });
@@ -482,21 +486,23 @@ export class ResultService {
       }),
     );
 
-    await this.publishedResultRepo.upsert(
-      {
-        studentId,
-        programId: firstTerm.programId,
-        semester,
-        examTerm: ExamTerm.FINAL,
-        totalObtained: finalTotalObtained,
-        totalFull: finalTotalFull,
-        percentage: finalPercentage,
-        gpa: this.calculateGPA(finalPercentage),
-        subjectBreakdown,
-        publishedBy: await this.getUserName(publishedBy),
-      },
-      ['studentId', 'semester', 'examTerm'],
-    );
+    const existing = await this.publishedResultRepo.findOne({
+      where: { studentId, semester, examTerm: ExamTerm.FINAL },
+    });
+
+    await this.publishedResultRepo.save({
+      ...(existing ?? {}),
+      studentId,
+      programId: firstTerm.programId,
+      semester,
+      examTerm: ExamTerm.FINAL,
+      totalObtained: finalTotalObtained,
+      totalFull: finalTotalFull,
+      percentage: finalPercentage,
+      gpa: this.calculateGPA(finalPercentage),
+      subjectBreakdown,
+      publishedBy: await this.getUserName(publishedBy),
+    });
 
     return true;
   }

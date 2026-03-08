@@ -64,4 +64,8 @@ export class ParameterMarkDTO {
   @IsNotEmpty({ message: 'Mark is required.' })
   @IsNumber({}, { message: 'Mark must be a number.' })
   mark: number;
+
+  @IsNotEmpty({ message: 'Full marks is required.' })
+  @IsNumber({}, { message: 'Full marks must be number.' })
+  fullMarks: number;
 }

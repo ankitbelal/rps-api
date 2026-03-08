@@ -62,7 +62,7 @@ export class ExtraParametersMarks {
   @Column({
     name: 'full_marks',
     type: 'decimal',
-    default: 100.0,
+    default: 10.0,
   })
   fullMarks: number;
 

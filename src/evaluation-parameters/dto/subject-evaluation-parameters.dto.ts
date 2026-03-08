@@ -10,9 +10,10 @@ export class AssignSubjectEvaluationParamsDto {
   @IsNotEmpty({ message: 'Subject is required.' })
   subjectId: number;
 
-  @ArrayNotEmpty({
-    message: 'Please assign at least one evaluation parameter to proceed.',
-  })
+  // @ArrayNotEmpty({
+  //   message: 'Please assign at least one evaluation parameter to proceed.',
+  // })
+  @IsOptional()
   @ValidateNested({ each: true })
   @Type(() => ParameterDto)
   parameters: ParameterDto[];
