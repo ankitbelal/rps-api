@@ -35,6 +35,7 @@ import { MailingService } from 'src/mailing/mailing.service';
 import {
   GetPublishedResultDto,
   GradeSheetQueryDto,
+  LedgerQueryDto,
   PublishBulkDto,
 } from './dto/result-publish.dto';
 import { Student } from 'src/database/entities/student.entity';
@@ -1850,5 +1851,395 @@ export class ResultService {
       );
 
     doc.end();
+  }
+
+  async generateLedger(dto: LedgerQueryDto, res: Response): Promise<void> {
+    const { examTerm, programId, semester } = dto;
+    const ExcelJS = require('exceljs');
+
+    const program = await this.programService.findProgramById(programId);
+    if (!program)
+      throw new NotFoundException({
+        success: false,
+        statusCode: 404,
+        message: 'Program does not exist.',
+      });
+
+    const results = await this.publishedResultRepo
+      .createQueryBuilder('pr')
+      .innerJoinAndSelect(
+        'pr.student',
+        'student',
+        'student.status NOT IN (:...excluded)',
+        { excluded: [StudentStatus.PASSED, StudentStatus.SUSPENDED] },
+      )
+      .where('pr.programId = :programId', { programId })
+      .andWhere('pr.semester = :semester', { semester })
+      .andWhere('pr.examTerm = :examTerm', { examTerm })
+      .orderBy('student.rollNumber', 'ASC')
+      .getMany();
+
+    if (!results.length)
+      throw new NotFoundException({
+        success: false,
+        statusCode: 404,
+        message: 'No published results found.',
+      });
+
+    const subjectMap = new Map<number, { name: string; code: string }>();
+    for (const r of results) {
+      for (const s of r.subjectBreakdown ?? []) {
+        if (!subjectMap.has(s.subjectId)) {
+          subjectMap.set(s.subjectId, {
+            name: s.subjectName,
+            code: s.subjectCode,
+          });
+        }
+      }
+    }
+    const subjects = Array.from(subjectMap.entries());
+
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'LMS System';
+    const ws = wb.addWorksheet('Ledger', {
+      pageSetup: {
+        paperSize: 9,
+        orientation: 'landscape',
+        fitToPage: true,
+        fitToWidth: 1,
+      },
+    });
+
+    const C_HEADER_DARK = 'FF1F3864';
+    const C_HEADER_MID = 'FF2E75B6';
+    const C_HEADER_LIGHT = 'FFD6E4F0';
+    const C_WHITE = 'FFFFFFFF';
+    const C_STRIPE_ODD = 'FFF5F9FF';
+    const C_STRIPE_EVEN = 'FFFFFFFF';
+    const C_FOOTER_BG = 'FFEFF6FF';
+    const C_BORDER = 'FFB0C4DE';
+    const C_TEXT_DARK = 'FF1A1A2E';
+    const C_TEXT_MID = 'FF2C3E50';
+    const C_TEXT_LIGHT = 'FFFFFFFF';
+    const C_ACCENT_TOT = 'FFFFE0B2';
+    const C_ACCENT_SUM = 'FFFFD700';
+
+    const thinBorder = (color = C_BORDER) => ({
+      top: { style: 'thin' as const, color: { argb: color } },
+      left: { style: 'thin' as const, color: { argb: color } },
+      bottom: { style: 'thin' as const, color: { argb: color } },
+      right: { style: 'thin' as const, color: { argb: color } },
+    });
+
+    const medBorder = () => ({
+      top: { style: 'medium' as const, color: { argb: 'FF1F3864' } },
+      left: { style: 'medium' as const, color: { argb: 'FF1F3864' } },
+      bottom: { style: 'medium' as const, color: { argb: 'FF1F3864' } },
+      right: { style: 'medium' as const, color: { argb: 'FF1F3864' } },
+    });
+
+    const applyFill = (cell: any, argb: string) => {
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb } };
+    };
+
+    const applyFont = (cell: any, opts: any) => {
+      cell.font = { name: 'Arial', size: 9, ...opts };
+    };
+
+    const center = (cell: any) => {
+      cell.alignment = {
+        horizontal: 'center',
+        vertical: 'middle',
+        wrapText: true,
+      };
+    };
+
+    const left = (cell: any) => {
+      cell.alignment = {
+        horizontal: 'left',
+        vertical: 'middle',
+        wrapText: true,
+      };
+    };
+
+    const FIXED_COLS = 3;
+    const SUB_COLS = 3;
+    const SUMMARY_COLS = 3;
+    const totalCols = FIXED_COLS + subjects.length * SUB_COLS + SUMMARY_COLS;
+
+    ws.getColumn(1).width = 14;
+    ws.getColumn(2).width = 22;
+    ws.getColumn(3).width = 16;
+    for (let i = 0; i < subjects.length; i++) {
+      const base = FIXED_COLS + i * SUB_COLS + 1;
+      ws.getColumn(base).width = 7;
+      ws.getColumn(base + 1).width = 7;
+      ws.getColumn(base + 2).width = 8;
+    }
+    const summaryBase = FIXED_COLS + subjects.length * SUB_COLS + 1;
+    ws.getColumn(summaryBase).width = 9;
+    ws.getColumn(summaryBase + 1).width = 8;
+    ws.getColumn(summaryBase + 2).width = 8;
+
+    const colLetter = (n: number) => {
+      let s = '';
+      while (n > 0) {
+        const m = (n - 1) % 26;
+        s = String.fromCharCode(65 + m) + s;
+        n = Math.floor((n - 1) / 26);
+      }
+      return s;
+    };
+
+    let cr = 1;
+
+    ws.mergeCells(cr, 1, cr, totalCols);
+    const collegeCell = ws.getCell(cr, 1);
+    collegeCell.value =
+      'College: ................................................................';
+    applyFont(collegeCell, {
+      size: 10,
+      bold: false,
+      color: { argb: C_TEXT_DARK },
+    });
+    left(collegeCell);
+    ws.getRow(cr).height = 18;
+    cr++;
+
+    ws.mergeCells(cr, 1, cr, totalCols);
+    const progCell = ws.getCell(cr, 1);
+    progCell.value = `Program: ${program.name}   |   Semester: ${semester}   |   ${this.examNameMap[examTerm]}`;
+    applyFont(progCell, { size: 11, bold: true, color: { argb: C_TEXT_DARK } });
+    left(progCell);
+    ws.getRow(cr).height = 20;
+    cr++;
+
+    // spacer
+    ws.getRow(cr).height = 6;
+    cr++;
+
+    const hdr1Row = ws.getRow(cr);
+    hdr1Row.height = 30;
+
+    ws.mergeCells(cr, 1, cr + 1, 1);
+    const rollHdr = ws.getCell(cr, 1);
+    rollHdr.value = 'Roll No';
+    applyFill(rollHdr, C_HEADER_DARK);
+    applyFont(rollHdr, { bold: true, color: { argb: C_TEXT_LIGHT } });
+    center(rollHdr);
+    rollHdr.border = medBorder();
+
+    ws.mergeCells(cr, 2, cr + 1, 2);
+    const nameHdr = ws.getCell(cr, 2);
+    nameHdr.value = 'Name';
+    applyFill(nameHdr, C_HEADER_DARK);
+    applyFont(nameHdr, { bold: true, color: { argb: C_TEXT_LIGHT } });
+    center(nameHdr);
+    nameHdr.border = medBorder();
+
+    ws.mergeCells(cr, 3, cr + 1, 3);
+    const regHdr = ws.getCell(cr, 3);
+    regHdr.value = 'Reg No';
+    applyFill(regHdr, C_HEADER_DARK);
+    applyFont(regHdr, { bold: true, color: { argb: C_TEXT_LIGHT } });
+    center(regHdr);
+    regHdr.border = medBorder();
+
+    for (let i = 0; i < subjects.length; i++) {
+      const [, sub] = subjects[i];
+      const base = FIXED_COLS + i * SUB_COLS + 1;
+      ws.mergeCells(cr, base, cr, base + 2);
+      const subCell = ws.getCell(cr, base);
+      subCell.value = `${sub.name}\n(${sub.code})`;
+      applyFill(subCell, C_HEADER_MID);
+      applyFont(subCell, { bold: true, color: { argb: C_TEXT_LIGHT } });
+      center(subCell);
+      subCell.border = medBorder();
+    }
+
+    ws.mergeCells(cr, summaryBase, cr + 1, summaryBase);
+    const totHdr = ws.getCell(cr, summaryBase);
+    totHdr.value = 'Total';
+    applyFill(totHdr, C_ACCENT_SUM);
+    applyFont(totHdr, { bold: true, color: { argb: C_TEXT_DARK } });
+    center(totHdr);
+    totHdr.border = medBorder();
+
+    ws.mergeCells(cr, summaryBase + 1, cr + 1, summaryBase + 1);
+    const pctHdr = ws.getCell(cr, summaryBase + 1);
+    pctHdr.value = '%';
+    applyFill(pctHdr, C_ACCENT_SUM);
+    applyFont(pctHdr, { bold: true, color: { argb: C_TEXT_DARK } });
+    center(pctHdr);
+    pctHdr.border = medBorder();
+
+    ws.mergeCells(cr, summaryBase + 2, cr + 1, summaryBase + 2);
+    const gpaHdr = ws.getCell(cr, summaryBase + 2);
+    gpaHdr.value = 'GPA';
+    applyFill(gpaHdr, C_ACCENT_SUM);
+    applyFont(gpaHdr, { bold: true, color: { argb: C_TEXT_DARK } });
+    center(gpaHdr);
+    gpaHdr.border = medBorder();
+
+    cr++;
+
+    const hdr2Row = ws.getRow(cr);
+    hdr2Row.height = 20;
+
+    for (let i = 0; i < subjects.length; i++) {
+      const base = FIXED_COLS + i * SUB_COLS + 1;
+      const labels = ['TH', 'PR', 'Tot'];
+      for (let j = 0; j < 3; j++) {
+        const cell = ws.getCell(cr, base + j);
+        cell.value = labels[j];
+        applyFill(cell, C_HEADER_LIGHT);
+        applyFont(cell, { bold: true, color: { argb: C_TEXT_DARK } });
+        center(cell);
+        cell.border = thinBorder();
+      }
+    }
+
+    cr++;
+
+    const dataStartRow = cr;
+
+    for (let ri = 0; ri < results.length; ri++) {
+      const r = results[ri];
+      const row = ws.getRow(cr);
+      row.height = 18;
+      const isOdd = ri % 2 === 0;
+      const stripColor = isOdd ? C_STRIPE_ODD : C_STRIPE_EVEN;
+
+      const setCell = (col: number, val: any, opts: any = {}) => {
+        const cell = ws.getCell(cr, col);
+        cell.value = val ?? '—';
+        applyFill(cell, opts.bg ?? stripColor);
+        applyFont(cell, { color: { argb: C_TEXT_DARK }, ...opts.font });
+        opts.align === 'left' ? left(cell) : center(cell);
+        cell.border = thinBorder();
+      };
+
+      setCell(1, r.student?.rollNumber, { align: 'left' });
+      setCell(
+        2,
+        `${r.student?.firstName ?? ''} ${r.student?.lastName ?? ''}`.trim(),
+        { align: 'left' },
+      );
+      setCell(3, r.student?.registrationNumber, { align: 'left' });
+
+      for (let i = 0; i < subjects.length; i++) {
+        const [subId] = subjects[i];
+        const base = FIXED_COLS + i * SUB_COLS + 1;
+        const breakdown = r.subjectBreakdown?.find(
+          (s: any) => s.subjectId === subId,
+        );
+
+        setCell(
+          base,
+          breakdown ? Number(breakdown.subjectObtainedOutOf50).toFixed(2) : '—',
+          { bg: isOdd ? 'FFEEF4FB' : C_WHITE },
+        );
+        setCell(
+          base + 1,
+          breakdown
+            ? Number(breakdown.extraParamObtainedOutOf50).toFixed(2)
+            : '—',
+          { bg: isOdd ? 'FFEEF4FB' : C_WHITE },
+        );
+        setCell(
+          base + 2,
+          breakdown ? Number(breakdown.finalMarkOutOf100).toFixed(2) : '—',
+          { bg: isOdd ? C_ACCENT_TOT : 'FFFFF3E0', font: { bold: true } },
+        );
+      }
+
+      setCell(summaryBase, Number(r.totalObtained).toFixed(2), {
+        bg: 'FFFFF9C4',
+        font: { bold: true },
+      });
+      setCell(summaryBase + 1, `${Number(r.percentage).toFixed(2)}%`, {
+        bg: 'FFFFF9C4',
+      });
+      setCell(summaryBase + 2, Number(r.gpa).toFixed(2), {
+        bg: 'FFFFF9C4',
+        font: { bold: true },
+      });
+
+      cr++;
+    }
+
+    ws.mergeCells(cr, 1, cr, FIXED_COLS);
+    const footerLabel = ws.getCell(cr, 1);
+    footerLabel.value = 'Total No. of Students (Per Course)';
+    applyFill(footerLabel, C_FOOTER_BG);
+    applyFont(footerLabel, { bold: true, color: { argb: C_TEXT_DARK } });
+    left(footerLabel);
+    footerLabel.border = medBorder();
+
+    for (let i = 0; i < subjects.length; i++) {
+      const base = FIXED_COLS + i * SUB_COLS + 1;
+      ws.mergeCells(cr, base, cr, base + 1);
+      const blankCell = ws.getCell(cr, base);
+      applyFill(blankCell, C_FOOTER_BG);
+      blankCell.border = thinBorder();
+
+      const totCol = colLetter(base + 2);
+      const countCell = ws.getCell(cr, base + 2);
+      countCell.value = `=COUNTA(${totCol}${dataStartRow}:${totCol}${cr - 1})-COUNTIF(${totCol}${dataStartRow}:${totCol}${cr - 1},"—")`;
+      applyFill(countCell, C_FOOTER_BG);
+      applyFont(countCell, { bold: true, color: { argb: C_TEXT_DARK } });
+      center(countCell);
+      countCell.border = thinBorder();
+    }
+
+    for (let s = 0; s < SUMMARY_COLS; s++) {
+      const cell = ws.getCell(cr, summaryBase + s);
+      applyFill(cell, C_FOOTER_BG);
+      cell.border = thinBorder();
+    }
+
+    ws.getRow(cr).height = 20;
+    cr += 2;
+
+    const sigStartCol = totalCols - 3;
+
+    const sigLine = (label: string) => {
+      ws.mergeCells(cr, sigStartCol, cr, totalCols);
+      const cell = ws.getCell(cr, sigStartCol);
+      cell.value = label;
+      applyFont(cell, { size: 9, color: { argb: C_TEXT_MID } });
+      left(cell);
+      ws.getRow(cr).height = 18;
+      cr++;
+    };
+
+    sigLine('Head of Institute: ......................................');
+    sigLine(
+      'Signature: ......................................................',
+    );
+    sigLine(
+      'Date: ...............................................................',
+    );
+
+    ws.views = [
+      {
+        state: 'frozen',
+        xSplit: 3,
+        ySplit: dataStartRow - 1,
+        activeCell: 'D6',
+      },
+    ];
+
+    const examLabel = this.examNameMap[examTerm].replace(/\s+/g, '_');
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=ledger_${program.code}_sem${semester}_${examLabel}_${Date.now()}.xlsx`,
+    );
+    await wb.xlsx.write(res);
+    res.end();
   }
 }

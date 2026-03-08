@@ -141,3 +141,19 @@ export class GradeSheetQueryDto {
   @Transform(({ value }) => (value === '' ? undefined : value))
   examTerm?: ExamTerm;
 }
+
+export class LedgerQueryDto {
+  @IsNotEmpty({ message: 'Program is required.' })
+  @IsNumber()
+  @Type(() => Number)
+  programId: number;
+
+  @IsNotEmpty({ message: 'Semester must be specified.' })
+  @IsNumber()
+  @Type(() => Number)
+  semester: number[];
+
+  @IsNotEmpty({ message: 'Exam term is required.' })
+  @IsEnum(ExamTerm)
+  examTerm: ExamTerm;
+}

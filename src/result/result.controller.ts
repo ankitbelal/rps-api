@@ -24,6 +24,7 @@ import {
 import {
   GetPublishedResultDto,
   GradeSheetQueryDto,
+  LedgerQueryDto,
   PublishBulkDto,
   PublishBulkReporDto,
   PublishSingleDto,
@@ -160,5 +161,15 @@ export class ResultController {
     @Res() res: Response,
   ) {
     return await this.resultService.generateGradeSheet(dto, res);
+  }
+
+  @Public()
+  @Get('ledger')
+  async generateLedger(
+    @Query() legderQueryDto: LedgerQueryDto,
+    @Res()
+    res: Response,
+  ) {
+    return this.resultService.generateLedger(legderQueryDto, res);
   }
 }
