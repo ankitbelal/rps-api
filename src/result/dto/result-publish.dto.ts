@@ -156,4 +156,7 @@ export class LedgerQueryDto {
   @IsNotEmpty({ message: 'Exam term is required.' })
   @IsEnum(ExamTerm)
   examTerm: ExamTerm;
+
+  @IsOptional()
+  type?: string;
 }

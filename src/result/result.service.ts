@@ -2242,4 +2242,576 @@ export class ResultService {
     await wb.xlsx.write(res);
     res.end();
   }
+
+  async generateLedgerPdf(dto: LedgerQueryDto, res: Response): Promise<void> {
+    const PDFDocument = require('pdfkit');
+
+    const { examTerm, programId, semester } = dto;
+
+    const program = await this.programService.findProgramById(programId);
+    if (!program)
+      throw new NotFoundException({
+        success: false,
+        statusCode: 404,
+        message: 'Program does not exist.',
+      });
+
+    const results = await this.publishedResultRepo
+      .createQueryBuilder('pr')
+      .innerJoinAndSelect(
+        'pr.student',
+        'student',
+        'student.status NOT IN (:...excluded)',
+        { excluded: [StudentStatus.PASSED, StudentStatus.SUSPENDED] },
+      )
+      .where('pr.programId = :programId', { programId })
+      .andWhere('pr.semester = :semester', { semester })
+      .andWhere('pr.examTerm = :examTerm', { examTerm })
+      .orderBy('student.rollNumber', 'ASC')
+      .getMany();
+
+    if (!results.length)
+      throw new NotFoundException({
+        success: false,
+        statusCode: 404,
+        message: 'No published results found.',
+      });
+
+    const subjectMap = new Map<number, { name: string; code: string }>();
+    for (const r of results) {
+      for (const s of r.subjectBreakdown ?? []) {
+        if (!subjectMap.has(s.subjectId))
+          subjectMap.set(s.subjectId, {
+            name: s.subjectName,
+            code: s.subjectCode,
+          });
+      }
+    }
+    const subjects = Array.from(subjectMap.entries());
+
+    const PAGE_W = 841.89;
+    const PAGE_H = 595.28;
+    const MARGIN = 28;
+    const TABLE_W = PAGE_W - MARGIN * 2;
+
+    const COL_ROLL = 58;
+    const COL_NAME = 90;
+    const COL_REG = 72;
+    const FIXED_W = COL_ROLL + COL_NAME + COL_REG;
+
+    const COL_TH = 28;
+    const COL_PR = 28;
+    const COL_TOT = 34;
+    const SUB_W = COL_TH + COL_PR + COL_TOT;
+
+    const COL_TOTAL = 42;
+    const COL_PCT = 38;
+    const COL_GPA = 32;
+    const SUM_W = COL_TOTAL + COL_PCT + COL_GPA;
+
+    const SUBJECTS_W = subjects.length * SUB_W;
+    const availSubW = TABLE_W - FIXED_W - SUM_W;
+    const subScale = SUBJECTS_W > availSubW ? availSubW / SUBJECTS_W : 1;
+    const sTH = COL_TH * subScale;
+    const sPR = COL_PR * subScale;
+    const sTOT = COL_TOT * subScale;
+    const sSUB = sTH + sPR + sTOT;
+
+    const HDR1_H = 28;
+    const HDR2_H = 16;
+    const DATA_H = 16;
+    const FOOTER_H = 50;
+
+    const HEADER_BLOCK_H = HDR1_H + HDR2_H;
+    const TOP_INFO_H = 48;
+
+    const CONTENT_TOP = MARGIN + TOP_INFO_H;
+    const CONTENT_BOTTOM = PAGE_H - MARGIN - FOOTER_H;
+    const CONTENT_H = CONTENT_BOTTOM - CONTENT_TOP;
+
+    const CLR = {
+      HDR_DARK: '#2D2D2D',
+      HDR_MID: '#555555',
+      HDR_LIGHT: '#E8E8E8',
+      ODD: '#F5F5F5',
+      EVEN: '#FFFFFF',
+      SUB_ODD: '#F0F0F0',
+      TOT_ODD: '#E0E0E0',
+      TOT_EVEN: '#EBEBEB',
+      SUMMARY: '#D4D4D4',
+      FOOTER_BG: '#F0F0F0',
+      BORDER: '#999999',
+      TXT_DARK: '#000000',
+      TXT_MID: '#333333',
+      TXT_LIGHT: '#FFFFFF',
+      TXT_SUM: '#000000',
+    };
+
+    const doc = new PDFDocument({
+      size: 'A4',
+      layout: 'landscape',
+      margin: 0,
+      autoFirstPage: true,
+      bufferPages: true,
+    });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    const examLabel = this.examNameMap[examTerm].replace(/\s+/g, '_');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=ledger_${program.code}_sem${semester}_${examLabel}_${Date.now()}.pdf`,
+    );
+    doc.pipe(res);
+
+    const rect = (
+      x: number,
+      y: number,
+      w: number,
+      h: number,
+      color: string,
+      stroke = false,
+    ) => {
+      doc.save().rect(x, y, w, h);
+      if (stroke) {
+        doc.strokeColor(color).lineWidth(0.5).stroke();
+      } else {
+        doc.fillColor(color).fill();
+      }
+      doc.restore();
+    };
+
+    const cell = (
+      text: string,
+      x: number,
+      y: number,
+      w: number,
+      h: number,
+      bg: string,
+      txtColor: string,
+      fontSize = 6.5,
+      bold = false,
+      align: 'left' | 'center' | 'right' = 'center',
+    ) => {
+      rect(x, y, w, h, bg);
+      // border
+      doc
+        .save()
+        .rect(x, y, w, h)
+        .strokeColor(CLR.BORDER)
+        .lineWidth(0.3)
+        .stroke()
+        .restore();
+      doc
+        .save()
+        .font(bold ? 'Helvetica-Bold' : 'Helvetica')
+        .fontSize(fontSize)
+        .fillColor(txtColor);
+      const pad = 2;
+      doc.text(String(text ?? '—'), x + pad, y + h / 2 - fontSize / 2, {
+        width: w - pad * 2,
+        align,
+        lineBreak: false,
+        ellipsis: true,
+      });
+      doc.restore();
+    };
+
+    const drawTopInfo = () => {
+      const y = MARGIN;
+      doc
+        .font('Helvetica')
+        .fontSize(8)
+        .fillColor(CLR.TXT_DARK)
+        .text(
+          'College: ................................................................',
+          MARGIN,
+          y,
+          { lineBreak: false },
+        );
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(9)
+        .fillColor(CLR.TXT_DARK)
+        .text(
+          `Program: ${program.name}   |   Semester: ${semester}   |   ${this.examNameMap[examTerm]}`,
+          MARGIN,
+          y + 16,
+          { lineBreak: false },
+        );
+    };
+
+    const drawTableHeader = (y: number) => {
+      let x = MARGIN;
+
+      const fixedCols = [
+        { label: 'Roll No', w: COL_ROLL },
+        { label: 'Name', w: COL_NAME },
+        { label: 'Reg No', w: COL_REG },
+      ];
+      fixedCols.forEach(({ label, w }) => {
+        rect(x, y, w, HEADER_BLOCK_H, CLR.HDR_DARK);
+        doc
+          .save()
+          .rect(x, y, w, HEADER_BLOCK_H)
+          .strokeColor('#FFFFFF')
+          .lineWidth(0.4)
+          .stroke()
+          .restore();
+        doc
+          .save()
+          .font('Helvetica-Bold')
+          .fontSize(6.5)
+          .fillColor(CLR.TXT_LIGHT)
+          .text(label, x + 2, y + HEADER_BLOCK_H / 2 - 3.5, {
+            width: w - 4,
+            align: 'center',
+            lineBreak: false,
+          })
+          .restore();
+        x += w;
+      });
+
+      for (const [, sub] of subjects) {
+        rect(x, y, sSUB, HDR1_H, CLR.HDR_MID);
+        doc
+          .save()
+          .rect(x, y, sSUB, HDR1_H)
+          .strokeColor('#FFFFFF')
+          .lineWidth(0.4)
+          .stroke()
+          .restore();
+        doc
+          .save()
+          .font('Helvetica-Bold')
+          .fontSize(5.5)
+          .fillColor(CLR.TXT_LIGHT)
+          .text(`${sub.name} (${sub.code})`, x + 1, y + 2, {
+            width: sSUB - 2,
+            align: 'center',
+            lineBreak: true,
+          })
+          .restore();
+        x += sSUB;
+      }
+
+      const sumCols = [
+        { label: 'Total', w: COL_TOTAL },
+        { label: '%', w: COL_PCT },
+        { label: 'GPA', w: COL_GPA },
+      ];
+      sumCols.forEach(({ label, w }) => {
+        rect(x, y, w, HEADER_BLOCK_H, CLR.SUMMARY);
+        doc
+          .save()
+          .rect(x, y, w, HEADER_BLOCK_H)
+          .strokeColor(CLR.BORDER)
+          .lineWidth(0.4)
+          .stroke()
+          .restore();
+        doc
+          .save()
+          .font('Helvetica-Bold')
+          .fontSize(6.5)
+          .fillColor(CLR.TXT_SUM)
+          .text(label, x + 1, y + HEADER_BLOCK_H / 2 - 3.5, {
+            width: w - 2,
+            align: 'center',
+            lineBreak: false,
+          })
+          .restore();
+        x += w;
+      });
+
+      x = MARGIN + FIXED_W;
+      for (let i = 0; i < subjects.length; i++) {
+        const cols = [
+          { label: 'TH', w: sTH },
+          { label: 'PR', w: sPR },
+          { label: 'Tot', w: sTOT },
+        ];
+        cols.forEach(({ label, w }) => {
+          rect(x, y + HDR1_H, w, HDR2_H, CLR.HDR_LIGHT);
+          doc
+            .save()
+            .rect(x, y + HDR1_H, w, HDR2_H)
+            .strokeColor(CLR.BORDER)
+            .lineWidth(0.3)
+            .stroke()
+            .restore();
+          doc
+            .save()
+            .font('Helvetica-Bold')
+            .fontSize(6)
+            .fillColor(CLR.TXT_DARK)
+            .text(label, x + 1, y + HDR1_H + HDR2_H / 2 - 3, {
+              width: w - 2,
+              align: 'center',
+              lineBreak: false,
+            })
+            .restore();
+          x += w;
+        });
+      }
+
+      doc
+        .save()
+        .rect(MARGIN, y, TABLE_W, HEADER_BLOCK_H)
+        .strokeColor(CLR.HDR_DARK)
+        .lineWidth(0.8)
+        .stroke()
+        .restore();
+    };
+
+    const drawSignatureFooter = () => {
+      const sigY = PAGE_H - MARGIN - FOOTER_H + 6;
+      const sigX = PAGE_W - MARGIN - 220;
+      const lines = [
+        'Head of Institute: ......................................',
+        'Signature: ......................................................',
+        'Date: ...............................................................',
+      ];
+      lines.forEach((line, i) => {
+        doc
+          .save()
+          .font('Helvetica')
+          .fontSize(8)
+          .fillColor(CLR.TXT_MID)
+          .text(line, sigX, sigY + i * 14, { lineBreak: false })
+          .restore();
+      });
+
+      doc
+        .save()
+        .moveTo(sigX - 4, sigY - 6)
+        .lineTo(PAGE_W - MARGIN, sigY - 6)
+        .strokeColor(CLR.BORDER)
+        .lineWidth(0.5)
+        .stroke()
+        .restore();
+    };
+
+    const rowsPerPage = Math.floor((CONTENT_H - HEADER_BLOCK_H) / DATA_H);
+
+    let currentRow = 0;
+    let pageRowCount = 0;
+    let tableY = CONTENT_TOP;
+    drawTopInfo();
+    drawTableHeader(tableY);
+    let dataY = tableY + HEADER_BLOCK_H;
+
+    for (let ri = 0; ri < results.length; ri++) {
+      // need new page?
+      if (pageRowCount >= rowsPerPage) {
+        drawSignatureFooter();
+        doc.addPage();
+        drawTopInfo();
+        drawTableHeader(CONTENT_TOP);
+        dataY = CONTENT_TOP + HEADER_BLOCK_H;
+        pageRowCount = 0;
+      }
+
+      const r = results[ri];
+      const isOdd = ri % 2 === 0;
+      const strip = isOdd ? CLR.ODD : CLR.EVEN;
+      const y = dataY;
+      let x = MARGIN;
+
+      // fixed cols
+      cell(
+        r.student?.rollNumber ?? '—',
+        x,
+        y,
+        COL_ROLL,
+        DATA_H,
+        strip,
+        CLR.TXT_DARK,
+        6.5,
+        false,
+        'left',
+      );
+      x += COL_ROLL;
+      cell(
+        `${r.student?.firstName ?? ''} ${r.student?.lastName ?? ''}`.trim(),
+        x,
+        y,
+        COL_NAME,
+        DATA_H,
+        strip,
+        CLR.TXT_DARK,
+        6.5,
+        false,
+        'left',
+      );
+      x += COL_NAME;
+      cell(
+        r.student?.registrationNumber ?? '—',
+        x,
+        y,
+        COL_REG,
+        DATA_H,
+        strip,
+        CLR.TXT_DARK,
+        6,
+        false,
+        'left',
+      );
+      x += COL_REG;
+
+      // subject cols
+      for (const [subId] of subjects) {
+        const bd = r.subjectBreakdown?.find((s: any) => s.subjectId === subId);
+        const subBg = isOdd ? CLR.SUB_ODD : CLR.EVEN;
+        const totBg = isOdd ? CLR.TOT_ODD : CLR.TOT_EVEN;
+
+        cell(
+          bd ? Number(bd.subjectObtainedOutOf50).toFixed(1) : '—',
+          x,
+          y,
+          sTH,
+          DATA_H,
+          subBg,
+          CLR.TXT_DARK,
+        );
+        x += sTH;
+        cell(
+          bd ? Number(bd.extraParamObtainedOutOf50).toFixed(1) : '—',
+          x,
+          y,
+          sPR,
+          DATA_H,
+          subBg,
+          CLR.TXT_DARK,
+        );
+        x += sPR;
+        cell(
+          bd ? Number(bd.finalMarkOutOf100).toFixed(1) : '—',
+          x,
+          y,
+          sTOT,
+          DATA_H,
+          totBg,
+          CLR.TXT_DARK,
+          6.5,
+          true,
+        );
+        x += sTOT;
+      }
+
+      // summary cols
+      cell(
+        Number(r.totalObtained).toFixed(1),
+        x,
+        y,
+        COL_TOTAL,
+        DATA_H,
+        CLR.SUMMARY,
+        CLR.TXT_SUM,
+        6.5,
+        true,
+      );
+      x += COL_TOTAL;
+      cell(
+        `${Number(r.percentage).toFixed(1)}%`,
+        x,
+        y,
+        COL_PCT,
+        DATA_H,
+        CLR.SUMMARY,
+        CLR.TXT_SUM,
+        6.5,
+      );
+      x += COL_PCT;
+      cell(
+        Number(r.gpa).toFixed(2),
+        x,
+        y,
+        COL_GPA,
+        DATA_H,
+        CLR.SUMMARY,
+        CLR.TXT_SUM,
+        6.5,
+        true,
+      );
+
+      dataY += DATA_H;
+      pageRowCount++;
+    }
+
+    if (pageRowCount >= rowsPerPage) {
+      drawSignatureFooter();
+      doc.addPage();
+      drawTopInfo();
+      drawTableHeader(CONTENT_TOP);
+      dataY = CONTENT_TOP + HEADER_BLOCK_H;
+    }
+
+    const fY = dataY;
+    rect(MARGIN, fY, FIXED_W, DATA_H, CLR.FOOTER_BG);
+    doc
+      .save()
+      .font('Helvetica-Bold')
+      .fontSize(6.5)
+      .fillColor(CLR.TXT_DARK)
+      .text(
+        'Total No. of Students (Per Course)',
+        MARGIN + 2,
+        fY + DATA_H / 2 - 3.5,
+        { width: FIXED_W - 4, lineBreak: false },
+      )
+      .restore();
+    doc
+      .save()
+      .rect(MARGIN, fY, FIXED_W, DATA_H)
+      .strokeColor(CLR.BORDER)
+      .lineWidth(0.3)
+      .stroke()
+      .restore();
+
+    let fx = MARGIN + FIXED_W;
+    for (let i = 0; i < subjects.length; i++) {
+      rect(fx, fY, sTH + sPR, DATA_H, CLR.FOOTER_BG);
+      doc
+        .save()
+        .rect(fx, fY, sTH + sPR, DATA_H)
+        .strokeColor(CLR.BORDER)
+        .lineWidth(0.3)
+        .stroke()
+        .restore();
+      fx += sTH + sPR;
+
+      rect(fx, fY, sTOT, DATA_H, CLR.FOOTER_BG);
+      doc
+        .save()
+        .font('Helvetica-Bold')
+        .fontSize(6.5)
+        .fillColor(CLR.TXT_DARK)
+        .text(String(results.length), fx + 1, fY + DATA_H / 2 - 3.5, {
+          width: sTOT - 2,
+          align: 'center',
+          lineBreak: false,
+        })
+        .restore();
+      doc
+        .save()
+        .rect(fx, fY, sTOT, DATA_H)
+        .strokeColor(CLR.BORDER)
+        .lineWidth(0.3)
+        .stroke()
+        .restore();
+      fx += sTOT;
+    }
+
+    rect(fx, fY, SUM_W, DATA_H, CLR.FOOTER_BG);
+    doc
+      .save()
+      .rect(fx, fY, SUM_W, DATA_H)
+      .strokeColor(CLR.BORDER)
+      .lineWidth(0.3)
+      .stroke()
+      .restore();
+
+    drawSignatureFooter();
+
+    doc.end();
+  }
 }

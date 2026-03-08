@@ -170,6 +170,9 @@ export class ResultController {
     @Res()
     res: Response,
   ) {
-    return this.resultService.generateLedger(legderQueryDto, res);
+    if (legderQueryDto.type === 'excel')
+      return await this.resultService.generateLedger(legderQueryDto, res);
+
+    return await this.resultService.generateLedgerPdf(legderQueryDto, res);
   }
 }
