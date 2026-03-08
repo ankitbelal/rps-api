@@ -153,7 +153,6 @@ export class ResultController {
     );
   }
 
-  @Public()
   @Get('gradesheet')
   @Header('Content-Type', 'application/pdf')
   async downloadGradeSheet(
